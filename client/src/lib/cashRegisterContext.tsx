@@ -429,6 +429,9 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setIsReceiptVisible(true);
           updateStatus("Card refund approved", "success");
           
+          // Reset refund mode after successful refund
+          setRefundMode(false);
+          
           toast({
             title: "Refund Approved",
             description: `Card refund of $${parseFloat(amount).toFixed(2)} approved`,
@@ -447,6 +450,9 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setIsReceiptVisible(true);
           updateStatus("Card refund declined", "error");
           
+          // Also reset refund mode even if declined
+          setRefundMode(false);
+          
           toast({
             title: "Refund Declined",
             description: data.message || "Card refund was declined.",
@@ -458,13 +464,16 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setIsProcessing(false);
         updateStatus("Card refund processing failed", "error");
         
+        // Reset refund mode on error too
+        setRefundMode(false);
+        
         toast({
           title: "Refund Failed",
           description: "Failed to process card refund. Please try again.",
           variant: "destructive",
         });
       });
-  }, [amount, terminalConfig, terminalStatus, updateStatus, toast]);
+  }, [amount, terminalConfig, terminalStatus, updateStatus, toast, setRefundMode]);
 
   const resetTransaction = useCallback(() => {
     setAmount("0.00");

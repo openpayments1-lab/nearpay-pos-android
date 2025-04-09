@@ -106,6 +106,9 @@ export default function CashRegister() {
     
     // Close the dialog
     setShowRefundDialog(false);
+    
+    // Note: refund mode will be reset automatically after the refund is processed
+    // in the processRefund function in the cashRegisterContext
   };
 
   // Format amount for display
