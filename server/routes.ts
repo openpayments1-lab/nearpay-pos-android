@@ -417,19 +417,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check simplified format from our service
       result.status === 'approved' || 
       
+      // Special check for Return transaction type
+      (resp.TransactionType === "Return" && 
+       (resp.GeneralResponse?.StatusCode === "0000" || resp.GeneralResponse?.ResultCode === "0")) ||
+      
       // Check PascalCase properties directly from Dejavoo API
       (resp.GeneralResponse?.StatusCode === "0000" || 
        resp.GeneralResponse?.StatusCode?.includes("Approved")) ||
       (resp.GeneralResponse?.ResultCode === "0") ||
       (resp.GeneralResponse?.HostResponseCode === "00") ||
-      (resp.GeneralResponse?.Message?.includes("Approved")) ||
+      ((resp.GeneralResponse?.Message || "").includes("Approved")) ||
       
       // Check camelCase properties from our interface
       (resp.generalResponse?.statusCode === "0000" || 
        resp.generalResponse?.statusCode?.includes("Approved")) ||
       (resp.generalResponse?.resultCode === "0") ||
       (resp.generalResponse?.hostResponseCode === "00") ||
-      (resp.generalResponse?.message?.includes("Approved"));
+      ((resp.generalResponse?.message || "").includes("Approved"));
     
     console.log("Refund approval check result:", isApproved);
     

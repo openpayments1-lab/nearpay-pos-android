@@ -390,11 +390,35 @@ export async function processRefund(
     
     console.log('Received refund response from Dejavoo API:', JSON.stringify(response));
     
-    // Parse the response - using the same approval detection logic as card payment
-    if ((response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
+    // Type assertion to safely handle both PascalCase and camelCase properties
+    const rawResponse = response as any;
+    
+    // Parse the response - check for approval in both camelCase and PascalCase fields
+    // First check PascalCase properties (direct API response format)
+    if ((rawResponse.GeneralResponse?.StatusCode === "0000") ||
+        (rawResponse.GeneralResponse?.ResultCode === "0") ||
+        (rawResponse.GeneralResponse?.HostResponseCode === "00") ||
+        (rawResponse.GeneralResponse?.Message && rawResponse.GeneralResponse.Message.includes("Approved"))) {
+      
+      console.log("Refund approved (PascalCase fields)");
+      return {
+        status: "approved",
+        transactionId: rawResponse.TransactionNumber || rawResponse.ReferenceId || generateUniqueId(),
+        dateTime: new Date().toISOString(),
+        cardType: rawResponse.CardData?.CardType || "Credit",
+        maskedPan: rawResponse.CardData?.Last4 ? `**** **** **** ${rawResponse.CardData.Last4}` : "**** **** **** ****",
+        authCode: rawResponse.AuthCode || "",
+        hostResponseCode: rawResponse.GeneralResponse?.HostResponseCode || "",
+        hostResponseMessage: rawResponse.GeneralResponse?.HostResponseMessage || ""
+      };
+    } 
+    // Then check camelCase properties (our interface format)
+    else if ((response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
         (response.generalResponse?.resultCode === "0") ||
         (response.generalResponse?.hostResponseCode === "00") ||
         (response.generalResponse?.message && response.generalResponse.message.includes("Approved"))) {
+      
+      console.log("Refund approved (camelCase fields)");
       return {
         status: "approved",
         transactionId: response.transactionNumber || response.referenceId || generateUniqueId(),
@@ -406,13 +430,18 @@ export async function processRefund(
         hostResponseMessage: response.generalResponse?.hostResponseMessage || ""
       };
     } else {
+      console.log("Refund declined");
       return {
         status: "declined",
-        message: response.generalResponse?.detailedMessage || 
+        message: rawResponse.GeneralResponse?.DetailedMessage || 
+                 rawResponse.GeneralResponse?.Message || 
+                 response.generalResponse?.detailedMessage || 
                  response.generalResponse?.message || 
                  "Refund declined",
-        hostResponseCode: response.generalResponse?.hostResponseCode || "",
-        hostResponseMessage: response.generalResponse?.hostResponseMessage || ""
+        hostResponseCode: rawResponse.GeneralResponse?.HostResponseCode || 
+                         response.generalResponse?.hostResponseCode || "",
+        hostResponseMessage: rawResponse.GeneralResponse?.HostResponseMessage || 
+                            response.generalResponse?.hostResponseMessage || ""
       };
     }
   } catch (error) {

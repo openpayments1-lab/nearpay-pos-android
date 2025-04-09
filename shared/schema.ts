@@ -208,6 +208,9 @@ export interface DejavooTransactionResponse {
     ARC?: string;
   };
   
+  // Extended data (for Return/Refund transactions)
+  ExtendedDataByApplication?: Record<string, any>;
+  
   // Our duplicated interface fields (camelCase for backward compatibility)
   generalResponse?: {
     hostResponseCode?: string;

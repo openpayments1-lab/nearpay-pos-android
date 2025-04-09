@@ -556,8 +556,8 @@ export class DejavooApiService {
     
     console.log("Sending refund request to Dejavoo API with payload:", JSON.stringify(payload));
     
-    // Process the refund
-    return this.makeApiRequest<DejavooTransactionResponse>('Payment/Refund', payload, {
+    // Process the refund - using the correct "Return" endpoint rather than "Refund"
+    return this.makeApiRequest<DejavooTransactionResponse>('Payment/Return', payload, {
       timeout: (options.transactionTimeout || 90) * 1000
     });
   }
