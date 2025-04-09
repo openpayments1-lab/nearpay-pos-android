@@ -309,12 +309,13 @@ export class DejavooApiService {
    */
   public async checkStatus(): Promise<StatusResponse> {
     try {
-      // Create explicit payload with required fields
+      // Create explicit payload with required fields - following documentation format
+      const referenceId = this.generateReferenceId();
       const payload = {
+        ReferenceId: referenceId,
+        PaymentType: "Credit", // Required field explicitly added
         Tpn: this.config.tpn,
-        Authkey: this.config.authKey,
-        ReferenceId: this.generateReferenceId(),
-        PaymentType: "Credit" // Required field explicitly added
+        Authkey: this.config.authKey
       };
       
       // Use the Status endpoint
@@ -437,18 +438,15 @@ export class DejavooApiService {
     const referenceId = options.referenceId || this.generateReferenceId();
     console.log(`Using ReferenceId for transaction: ${referenceId}`);
     
-    // Create base payload with our specific referenceId
+    // Create base payload with our specific referenceId - matching Dejavoo documentation exactly
     const payload = {
-      Tpn: this.config.tpn,
-      Authkey: this.config.authKey,
-      ReferenceId: referenceId,
       Amount: amount,
-      TipAmount: options.enableTipping ? null : (options.tipAmount || 0),
-      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
+      TipAmount: options.enableTipping ? options.tipAmount || null : null,
+      ExternalReceipt: "",
       PaymentType: "Credit",
+      ReferenceId: referenceId,
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      // The GetReceipt field must be "True"/"False" strings rather than "Yes"/"No"
-      GetReceipt: "Yes", // The GetReceipt field must be "Yes"/"No" strings
+      GetReceipt: "No",  // Documentation shows this as "No" 
       MerchantNumber: null,
       InvoiceNumber: options.invoiceNumber || "",
       CaptureSignature: options.captureSignature || options.enableSignature || false,
@@ -456,6 +454,8 @@ export class DejavooApiService {
       CallbackInfo: {
         Url: options.callbackUrl || ""
       },
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey,
       SPInProxyTimeout: options.transactionTimeout || null,
       CustomFields: options.customFields || {}
     };
@@ -480,12 +480,12 @@ export class DejavooApiService {
         // Wait 2 seconds before polling (avoid overloading the API)
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Create a status check payload with the same reference ID
+        // Create a status check payload with the same reference ID - matching documentation format
         const statusPayload = {
-          Tpn: this.config.tpn,
-          Authkey: this.config.authKey,
           ReferenceId: referenceId,
-          PaymentType: "Credit"
+          PaymentType: "Credit",
+          Tpn: this.config.tpn,
+          Authkey: this.config.authKey
         };
         
         try {
@@ -531,18 +531,24 @@ export class DejavooApiService {
     amount: number,
     options: CardPaymentOptions = {}
   ): Promise<DejavooTransactionResponse> {
-    // Create base payload
+    // Create base payload matching documentation format
+    const referenceId = options.referenceId || this.generateReferenceId();
     const payload = {
-      ...this.createBasePayload(),
       Amount: amount,
-      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
+      TipAmount: null,
+      ExternalReceipt: "",
       PaymentType: "Credit",
+      ReferenceId: referenceId,
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      GetReceipt: options.getReceipt ? "Yes" : "No",
+      GetReceipt: "No",
       MerchantNumber: null,
       InvoiceNumber: options.invoiceNumber || "",
       CaptureSignature: options.captureSignature || options.enableSignature || false,
-      GetExtendedData: true
+      GetExtendedData: true,
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey,
+      SPInProxyTimeout: options.transactionTimeout || null,
+      CustomFields: options.customFields || {}
     };
     
     // Process the refund

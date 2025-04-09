@@ -72,12 +72,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This helps prevent mixed responses from multiple status checks
       const referenceId = Math.random().toString(16).slice(2) + Date.now().toString(36);
       
-      // Get detailed terminal status with a consistent referenceId
+      // Get detailed terminal status with a consistent referenceId - matching documentation format
       const statusPayload = {
-        Tpn: terminalType || "2247257465",
-        Authkey: apiKey || "JEkE6S7jPk",
         ReferenceId: referenceId,
-        PaymentType: "Credit"
+        PaymentType: "Credit",
+        Tpn: terminalType || "2247257465",
+        Authkey: apiKey || "JEkE6S7jPk"
       };
       
       // Make a direct API request to ensure we use the same referenceId
