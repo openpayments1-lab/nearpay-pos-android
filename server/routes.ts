@@ -1,134 +1,353 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { checkTerminalConnection, processCardPayment } from "./dejavooService";
+/**
+ * routes.ts
+ * 
+ * This file defines the API routes for the application.
+ */
 
+import { Express, Request, Response, NextFunction } from 'express';
+import { Server, createServer } from 'http';
+import { storage } from './storage';
+import { insertTransactionSchema2 } from '../shared/schema';
+import { 
+  checkTerminalConnection, 
+  processCardPayment, 
+  processRefund, 
+  voidTransaction, 
+  settleBatch, 
+  getBatchDetails,
+  getTerminalInfo
+} from './dejavooService';
+import { DejavooApiService, DejavooTerminalConfig } from './services/DejavooApiService';
+
+// Create a route handler with error catching
+function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await fn(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+/**
+ * Register all application routes
+ * @param app Express application
+ * @returns HTTP server instance
+ */
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Terminal connection check endpoint
-  app.post("/api/terminal/check", async (req, res) => {
-    try {
-      const { ip, terminalType, apiKey, testMode } = req.body;
-      
-      if (!ip) {
-        return res.status(400).json({ error: "Terminal IP address is required" });
-      }
-      
-      // Pass additional configuration for terminal check
-      const connected = await checkTerminalConnection(ip, {
-        terminalType,
-        apiKey,
-        testMode
-      });
-      
-      return res.json({ connected });
-    } catch (error) {
-      console.error("Terminal check error:", error);
-      return res.status(500).json({ error: "Failed to check terminal connection" });
+  // Register route handlers
+  
+  // Get all transactions
+  app.get('/api/transactions', asyncHandler(async (req, res) => {
+    const transactions = await storage.getTransactions();
+    res.json(transactions);
+  }));
+  
+  // Get single transaction by ID
+  app.get('/api/transactions/:id', asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const transaction = await storage.getTransaction(id);
+    
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
     }
-  });
-
-  // Cash payment endpoint
-  app.post("/api/payment/cash", async (req, res) => {
-    try {
-      const { amount } = req.body;
-      
-      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-        return res.status(400).json({ error: "Valid amount is required" });
+    
+    res.json(transaction);
+  }));
+  
+  // Check terminal connection
+  app.post('/api/terminal/check', asyncHandler(async (req, res) => {
+    const { ip, terminalType, apiKey, testMode } = req.body;
+    
+    const connected = await checkTerminalConnection(ip, {
+      terminalType,
+      apiKey,
+      testMode
+    });
+    
+    res.json({ connected });
+  }));
+  
+  // Process card payment
+  app.post('/api/payment/card', asyncHandler(async (req, res) => {
+    const { amount, terminalConfig } = req.body;
+    
+    // Validate amount
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+    
+    const result = await processCardPayment(
+      terminalConfig.terminalIp, 
+      numericAmount, 
+      {
+        terminalType: terminalConfig.terminalType,
+        apiKey: terminalConfig.apiKey,
+        enableTipping: terminalConfig.enableTipping,
+        enableSignature: terminalConfig.enableSignature,
+        testMode: terminalConfig.testMode,
+        transactionTimeout: terminalConfig.transactionTimeout
       }
-      
-      // Store transaction in database
-      const transaction = await storage.createTransaction({
-        amount: parseFloat(amount),
-        paymentMethod: "cash",
-        status: "completed",
+    );
+    
+    // If transaction was approved, save it to the database
+    if (result.status === 'approved') {
+      try {
+        // Parse transaction data
+        const transactionData = {
+          amount: numericAmount,
+          paymentMethod: 'card',
+          status: result.status,
+          dateTime: new Date(),
+          terminalIp: terminalConfig.terminalIp,
+          cardDetails: result.cardType ? {
+            type: result.cardType,
+            number: result.maskedPan || '**** **** **** ****',
+            authCode: result.authCode || 'N/A'
+          } : null
+        };
+        
+        // Validate transaction data
+        const validatedData = insertTransactionSchema2.parse(transactionData);
+        
+        // Save transaction to database
+        const savedTransaction = await storage.createTransaction(validatedData);
+        console.log('Transaction saved:', savedTransaction);
+      } catch (error) {
+        console.error('Error saving transaction:', error);
+        // Continue even if saving fails - don't affect the response
+      }
+    }
+    
+    res.json(result);
+  }));
+  
+  // Process cash payment
+  app.post('/api/payment/cash', asyncHandler(async (req, res) => {
+    const { amount } = req.body;
+    
+    // Validate amount
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+    
+    // Generate a unique transaction ID
+    const transactionId = Math.random().toString(16).slice(2);
+    
+    // Save transaction to database
+    try {
+      const transactionData = {
+        amount: numericAmount,
+        paymentMethod: 'cash',
+        status: 'completed',
+        dateTime: new Date(),
         terminalIp: null,
-        cardDetails: null,
+        cardDetails: null
+      };
+      
+      // Validate transaction data
+      const validatedData = insertTransactionSchema2.parse(transactionData);
+      
+      // Save transaction to database
+      const savedTransaction = await storage.createTransaction(validatedData);
+      console.log('Cash transaction saved:', savedTransaction);
+      
+      // Return transaction information
+      res.json({
+        status: 'completed',
+        transactionId,
         dateTime: new Date().toISOString()
       });
-      
-      return res.json({
-        transactionId: transaction.id,
-        amount: transaction.amount,
-        status: transaction.status,
-        dateTime: transaction.dateTime
-      });
     } catch (error) {
-      console.error("Cash payment error:", error);
-      return res.status(500).json({ error: "Failed to process cash payment" });
+      console.error('Error saving cash transaction:', error);
+      res.status(500).json({ error: 'Failed to process cash payment' });
     }
-  });
-
-  // Card payment endpoint
-  app.post("/api/payment/card", async (req, res) => {
+  }));
+  
+  // Process card refund
+  app.post('/api/payment/refund', asyncHandler(async (req, res) => {
+    const { amount, terminalConfig } = req.body;
+    
+    // Validate amount
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+    
+    const result = await processRefund(
+      terminalConfig.terminalIp, 
+      numericAmount, 
+      {
+        terminalType: terminalConfig.terminalType,
+        apiKey: terminalConfig.apiKey,
+        enableSignature: terminalConfig.enableSignature,
+        testMode: terminalConfig.testMode,
+        transactionTimeout: terminalConfig.transactionTimeout
+      }
+    );
+    
+    res.json(result);
+  }));
+  
+  // Void a transaction
+  app.post('/api/payment/void', asyncHandler(async (req, res) => {
+    const { transactionId, terminalConfig } = req.body;
+    
+    if (!transactionId) {
+      return res.status(400).json({ error: 'Transaction ID is required' });
+    }
+    
+    const result = await voidTransaction(
+      terminalConfig.terminalIp,
+      transactionId,
+      {
+        terminalType: terminalConfig.terminalType,
+        apiKey: terminalConfig.apiKey,
+        testMode: terminalConfig.testMode
+      }
+    );
+    
+    res.json(result);
+  }));
+  
+  // Settle batch
+  app.post('/api/terminal/settle', asyncHandler(async (req, res) => {
+    const { terminalConfig } = req.body;
+    
+    const result = await settleBatch(
+      terminalConfig.terminalIp,
+      {
+        terminalType: terminalConfig.terminalType,
+        apiKey: terminalConfig.apiKey,
+        testMode: terminalConfig.testMode
+      }
+    );
+    
+    res.json(result);
+  }));
+  
+  // Get batch details
+  app.post('/api/terminal/batch', asyncHandler(async (req, res) => {
+    const { terminalConfig } = req.body;
+    
+    const result = await getBatchDetails(
+      terminalConfig.terminalIp,
+      {
+        terminalType: terminalConfig.terminalType,
+        apiKey: terminalConfig.apiKey,
+        testMode: terminalConfig.testMode
+      }
+    );
+    
+    res.json(result);
+  }));
+  
+  // Get terminal info
+  app.post('/api/terminal/info', asyncHandler(async (req, res) => {
+    const { terminalConfig } = req.body;
+    
+    const result = await getTerminalInfo(
+      terminalConfig.terminalIp,
+      {
+        terminalType: terminalConfig.terminalType,
+        apiKey: terminalConfig.apiKey,
+        testMode: terminalConfig.testMode
+      }
+    );
+    
+    res.json(result);
+  }));
+  
+  // Demonstrate using DejavooApiService directly
+  app.post('/api/terminal/api-service-demo', asyncHandler(async (req, res) => {
+    const { operation, terminalConfig, params } = req.body;
+    
+    // Create configuration for Dejavoo service
+    const config: DejavooTerminalConfig = {
+      tpn: terminalConfig.terminalType,
+      authKey: terminalConfig.apiKey,
+      testMode: terminalConfig.testMode
+    };
+    
+    // Create service instance
+    const dejavooService = new DejavooApiService(config);
+    
+    // Execute the requested operation
+    let result;
     try {
-      const { amount, terminalConfig } = req.body;
-      
-      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-        return res.status(400).json({ error: "Valid amount is required" });
+      switch (operation) {
+        case 'status':
+          result = await dejavooService.checkStatus();
+          break;
+        case 'sale':
+          result = await dejavooService.processSale(params.amount, params.options);
+          break;
+        case 'refund':
+          result = await dejavooService.processRefund(params.amount, params.options);
+          break;
+        case 'void':
+          result = await dejavooService.voidTransaction(params.transactionId);
+          break;
+        case 'settle':
+          result = await dejavooService.settleBatch();
+          break;
+        case 'batch':
+          result = await dejavooService.getBatchDetails();
+          break;
+        case 'terminal-info':
+          result = await dejavooService.getTerminalInfo();
+          break;
+        case 'tokenize':
+          result = await dejavooService.tokenizeCard(params.options);
+          break;
+        case 'pre-auth':
+          result = await dejavooService.processPreAuth(params.amount, params.options);
+          break;
+        case 'capture':
+          result = await dejavooService.capturePreAuth(params.transactionId, params.amount, params.options);
+          break;
+        case 'transaction-details':
+          result = await dejavooService.getTransactionDetails(params.transactionId);
+          break;
+        case 'adjust-tip':
+          result = await dejavooService.adjustTip(params.transactionId, params.tipAmount);
+          break;
+        case 'cash':
+          result = await dejavooService.processCashTransaction(params.amount, params.options);
+          break;
+        case 'verify-card':
+          result = await dejavooService.verifyCard(params.options);
+          break;
+        case 'receipt':
+          result = await dejavooService.getReceipt(params.transactionId);
+          break;
+        case 'restart':
+          result = await dejavooService.restartTerminal();
+          break;
+        case 'update':
+          result = await dejavooService.updateTerminalSoftware();
+          break;
+        case 'diagnostics':
+          result = await dejavooService.runDiagnostics();
+          break;
+        default:
+          return res.status(400).json({ error: 'Unknown operation' });
       }
       
-      if (!terminalConfig || !terminalConfig.terminalIp) {
-        return res.status(400).json({ error: "Terminal configuration is required" });
-      }
-      
-      // Extract terminal configuration from the request
-      const config = terminalConfig;
-      
-      // Process payment through Dejavoo terminal with full configuration
-      const result = await processCardPayment(
-        config.terminalIp, 
-        parseFloat(amount), 
-        {
-          terminalType: config.terminalType,
-          apiKey: config.apiKey,
-          enableTipping: config.enableTipping,
-          enableSignature: config.enableSignature,
-          testMode: config.testMode,
-          transactionTimeout: config.transactionTimeout
-        }
-      );
-      
-      // Store transaction in database
-      const transaction = await storage.createTransaction({
-        amount: parseFloat(amount),
-        paymentMethod: "card",
-        status: result.status,
-        terminalIp: config.terminalIp,
-        cardDetails: result.status === "approved" ? {
-          type: result.cardType || "Credit",
-          number: result.maskedPan || "**** **** **** ****",
-          authCode: result.authCode || "N/A"
-        } : null,
-        dateTime: new Date().toISOString()
-      });
-      
-      return res.json({
-        transactionId: transaction.id,
-        amount: transaction.amount,
-        status: transaction.status,
-        dateTime: transaction.dateTime,
-        cardType: result.cardType,
-        maskedPan: result.maskedPan,
-        authCode: result.authCode,
-        message: result.message
-      });
+      res.json({ success: true, result });
     } catch (error) {
-      console.error("Card payment error:", error);
-      return res.status(500).json({ error: "Failed to process card payment" });
+      console.error('API service demo error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
-  });
-
-  // Get transaction history endpoint
-  app.get("/api/transactions", async (req, res) => {
-    try {
-      const transactions = await storage.getTransactions();
-      return res.json(transactions);
-    } catch (error) {
-      console.error("Get transactions error:", error);
-      return res.status(500).json({ error: "Failed to get transactions" });
-    }
-  });
-
-  const httpServer = createServer(app);
-  return httpServer;
+  }));
+  
+  // Create HTTP server but don't start listening (index.ts will handle that)
+  const server = createServer(app);
+  return server;
 }

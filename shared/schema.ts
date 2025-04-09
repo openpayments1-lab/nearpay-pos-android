@@ -73,7 +73,77 @@ export interface TerminalConfig {
   transactionTimeout: number;
 }
 
-// Dejavoo Transaction Response
+// Dejavoo General Response Structure
+export interface DejavooGeneralResponse {
+  hostResponseCode?: string;
+  hostResponseMessage?: string;
+  resultCode?: string;
+  statusCode?: string;
+  message?: string;
+  detailedMessage?: string;
+  delayBeforeNextRequest?: number | null;
+}
+
+// Dejavoo Card Data
+export interface DejavooCardData {
+  cardType?: string;
+  entryType?: string;
+  last4?: string;
+  first4?: string;
+  bin?: string;
+  expirationDate?: string;
+  name?: string;
+}
+
+// Dejavoo EMV Data
+export interface DejavooEMVData {
+  applicationName?: string;
+  aid?: string;
+  tvr?: string;
+  tsi?: string;
+  iad?: string;
+  arc?: string;
+}
+
+// Dejavoo Receipt Data
+export interface DejavooReceiptData {
+  customer?: string;
+  merchant?: string;
+}
+
+// Dejavoo Amount Data
+export interface DejavooAmountData {
+  totalAmount?: number | null;
+  amount?: number | null;
+  tipAmount?: number | null;
+  feeAmount?: number | null;
+  taxAmount?: number | null;
+}
+
+// Dejavoo Full Transaction Response
+export interface DejavooFullResponse {
+  generalResponse?: DejavooGeneralResponse;
+  paymentType?: string;
+  transactionType?: string;
+  amounts?: DejavooAmountData;
+  authCode?: string;
+  referenceId?: string;
+  invoiceNumber?: string;
+  serialNumber?: string;
+  batchNumber?: string;
+  transactionNumber?: string;
+  voided?: boolean;
+  signature?: string;
+  iPosToken?: string;
+  token?: string;
+  rrn?: string;
+  extendedDataByApplication?: Record<string, any>;
+  cardData?: DejavooCardData;
+  emvData?: DejavooEMVData;
+  receipts?: DejavooReceiptData;
+}
+
+// Simplified Dejavoo Transaction Response (for backward compatibility)
 export interface DejavooTransactionResponse {
   status: string;
   message?: string;

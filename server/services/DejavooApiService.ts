@@ -1,0 +1,734 @@
+/**
+ * DejavooApiService.ts
+ * 
+ * A comprehensive service for interacting with the Dejavoo SPIN REST API.
+ * This service provides methods for payment processing, terminal management, 
+ * batch operations, and reporting.
+ */
+
+import axios, { AxiosRequestConfig } from 'axios';
+
+// Base API URL
+const API_BASE_URL = 'https://api.spinpos.net/v2';
+
+/**
+ * Interface for terminal configuration
+ */
+export interface DejavooTerminalConfig {
+  tpn: string;           // Terminal ID (TPN)
+  authKey: string;       // Authentication Key
+  testMode?: boolean;    // Whether to use test mode
+}
+
+/**
+ * Interface for card payment options
+ */
+export interface CardPaymentOptions {
+  // Transaction parameters
+  tipAmount?: number;               // Optional tip amount
+  enableTipping?: boolean;          // Allow customer to add tip on terminal
+  enableSignature?: boolean;        // Require customer signature
+  transactionTimeout?: number;      // Timeout in seconds
+  invoiceNumber?: string;           // Optional invoice number reference
+  
+  // Terminal configuration
+  terminalType?: string;            // Terminal identifier (TPN)
+  apiKey?: string;                  // API key (Auth key)
+  testMode?: boolean;               // Whether to use test mode
+  
+  // Receipt options
+  externalReceipt?: boolean;        // Whether to use external receipt
+  printReceipt?: boolean;           // Whether to print receipt on terminal
+  getReceipt?: boolean;             // Whether to get receipt data in response
+  captureSignature?: boolean;       // Whether to capture signature
+  
+  // Advanced options
+  callbackUrl?: string;             // URL for transaction callbacks
+  customFields?: Record<string, any>; // Any custom fields to include
+}
+
+/**
+ * Interface for EMV Card Data in response
+ */
+export interface CardData {
+  cardType: string;
+  entryType: string;
+  last4: string;
+  first4: string;
+  bin: string;
+  expirationDate: string;
+  name: string;
+}
+
+/**
+ * Interface for EMV Data in response
+ */
+export interface EMVData {
+  applicationName: string;
+  aid: string;
+  tvr: string;
+  tsi: string;
+  iad: string;
+  arc: string;
+}
+
+/**
+ * Interface for receipt data
+ */
+export interface ReceiptData {
+  customer: string;
+  merchant: string;
+}
+
+/**
+ * Interface for payment amounts
+ */
+export interface AmountData {
+  totalAmount: number | null;
+  amount: number | null;
+  tipAmount: number | null;
+  feeAmount: number | null;
+  taxAmount: number | null;
+}
+
+/**
+ * Interface for General API Response
+ */
+export interface GeneralResponse {
+  hostResponseCode: string;
+  hostResponseMessage: string;
+  resultCode: string;
+  statusCode: string;
+  message: string;
+  detailedMessage: string;
+  delayBeforeNextRequest: number | null;
+}
+
+/**
+ * Interface for Transaction Response
+ */
+export interface DejavooTransactionResponse {
+  generalResponse: GeneralResponse;
+  paymentType: string;
+  transactionType: string;
+  amounts: AmountData;
+  authCode: string;
+  referenceId: string;
+  invoiceNumber: string;
+  serialNumber: string;
+  batchNumber: string;
+  transactionNumber: string;
+  voided: boolean;
+  signature: string;
+  iPosToken: string;
+  token: string;
+  rrn: string;
+  extendedDataByApplication: Record<string, any>;
+  cardData: CardData;
+  emvData: EMVData;
+  receipts: ReceiptData;
+}
+
+/**
+ * Interface for batch details
+ */
+export interface BatchDetails {
+  batchNumber: string;
+  batchStatus: string;
+  openTime: string;
+  closeTime: string;
+  totalAmount: number;
+  transactionCount: number;
+}
+
+/**
+ * Response for a status check
+ */
+export interface StatusResponse {
+  success: boolean;
+  message: string;
+  online: boolean;
+  details?: Record<string, any>;
+}
+
+/**
+ * Dejavoo API Service Class
+ * 
+ * Provides methods to interact with all Dejavoo SPIN API endpoints
+ */
+export class DejavooApiService {
+  private config: DejavooTerminalConfig;
+  
+  /**
+   * Constructor
+   * @param config Terminal configuration with TPN and Auth Key
+   */
+  constructor(config: DejavooTerminalConfig) {
+    this.config = config;
+  }
+  
+  /**
+   * Set configuration
+   * @param config Terminal configuration
+   */
+  public setConfig(config: DejavooTerminalConfig): void {
+    this.config = config;
+  }
+  
+  /**
+   * Get current configuration
+   * @returns Current terminal configuration
+   */
+  public getConfig(): DejavooTerminalConfig {
+    return this.config;
+  }
+  
+  /**
+   * Generate a unique reference ID
+   * @returns Unique reference ID string
+   */
+  private generateReferenceId(): string {
+    return Math.random().toString(16).slice(2) + Date.now().toString(36);
+  }
+  
+  /**
+   * Create the standard request payload with authentication
+   * @returns Base payload with TPN and Auth Key
+   */
+  private createBasePayload(): Record<string, any> {
+    return {
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey,
+      ReferenceId: this.generateReferenceId()
+    };
+  }
+  
+  /**
+   * Make an API request to Dejavoo SPIN API
+   * @param endpoint API endpoint path
+   * @param payload Request payload
+   * @param options Axios request options
+   * @returns Promise with API response
+   */
+  private async makeApiRequest<T>(
+    endpoint: string, 
+    payload: Record<string, any>, 
+    options: AxiosRequestConfig = {}
+  ): Promise<T> {
+    try {
+      const url = `${API_BASE_URL}${endpoint}`;
+      
+      // Set default headers
+      const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+      };
+      
+      // Set default timeout of 60 seconds
+      const timeout = options.timeout || 60000;
+      
+      // Log request (for debugging)
+      console.log(`Making ${endpoint} request:`, JSON.stringify(payload));
+      
+      // Make the API call
+      const response = await axios.post(url, payload, {
+        ...options,
+        headers,
+        timeout
+      });
+      
+      // Log response (for debugging)
+      console.log(`${endpoint} response:`, JSON.stringify(response.data));
+      
+      // Return the response data
+      return response.data as T;
+    } catch (error) {
+      // Handle axios errors
+      if (axios.isAxiosError(error)) {
+        console.error(`Dejavoo API ${endpoint} error:`, error.message);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+        }
+        throw new Error(`Dejavoo API error: ${error.message}`);
+      }
+      
+      // Handle other errors
+      console.error(`Dejavoo API ${endpoint} unexpected error:`, error);
+      throw new Error(`Unexpected error: ${error}`);
+    }
+  }
+  
+  /**
+   * Check terminal connection status
+   * 
+   * Verifies if the terminal is online and responding
+   * 
+   * @returns Promise with status response
+   */
+  public async checkStatus(): Promise<StatusResponse> {
+    try {
+      const payload = this.createBasePayload();
+      
+      // Use the Status endpoint
+      const response = await this.makeApiRequest<any>('/Payment/Status', payload, {
+        timeout: 10000
+      });
+      
+      // Check if terminal is online based on response format
+      if (response.GeneralResponse) {
+        const isOnline = response.GeneralResponse.ResultCode === "Ok" || 
+                        (response.GeneralResponse.StatusCode && 
+                         response.GeneralResponse.StatusCode.includes("Approved"));
+        
+        return {
+          success: true,
+          online: isOnline,
+          message: isOnline ? "Terminal is online" : "Terminal is not responding",
+          details: response
+        };
+      }
+      
+      // Fallback to old response format
+      if (response.Status) {
+        const isOnline = response.Status === "Online" || response.Status === "Success";
+        
+        return {
+          success: true,
+          online: isOnline,
+          message: isOnline ? "Terminal is online" : "Terminal is not responding",
+          details: response
+        };
+      }
+      
+      return {
+        success: false,
+        online: false,
+        message: "Could not determine terminal status"
+      };
+    } catch (error) {
+      console.error("Terminal status check failed:", error);
+      return {
+        success: false,
+        online: false,
+        message: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  }
+  
+  /**
+   * Process a credit/debit card sale
+   * 
+   * Sends a payment request to the terminal and processes a card payment
+   * 
+   * @param amount Payment amount
+   * @param options Additional payment options
+   * @returns Promise with transaction response
+   */
+  public async processSale(
+    amount: number,
+    options: CardPaymentOptions = {}
+  ): Promise<DejavooTransactionResponse> {
+    // Create base payload
+    const payload = {
+      ...this.createBasePayload(),
+      Amount: amount,
+      TipAmount: options.enableTipping ? null : (options.tipAmount || 0),
+      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
+      PaymentType: "Credit",
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      GetReceipt: options.getReceipt ? "Yes" : "No",
+      MerchantNumber: null,
+      InvoiceNumber: options.invoiceNumber || "",
+      CaptureSignature: options.captureSignature || options.enableSignature || false,
+      GetExtendedData: true,
+      CallbackInfo: {
+        Url: options.callbackUrl || ""
+      },
+      SPInProxyTimeout: options.transactionTimeout || null,
+      CustomFields: options.customFields || {}
+    };
+    
+    // Process the payment
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Sale', payload, {
+      timeout: (options.transactionTimeout || 90) * 1000
+    });
+  }
+  
+  /**
+   * Process a refund to a card
+   * 
+   * Issues a refund for a card transaction
+   * 
+   * @param amount Refund amount
+   * @param options Additional refund options
+   * @returns Promise with transaction response
+   */
+  public async processRefund(
+    amount: number,
+    options: CardPaymentOptions = {}
+  ): Promise<DejavooTransactionResponse> {
+    // Create base payload
+    const payload = {
+      ...this.createBasePayload(),
+      Amount: amount,
+      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
+      PaymentType: "Credit",
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      GetReceipt: options.getReceipt ? "Yes" : "No",
+      MerchantNumber: null,
+      InvoiceNumber: options.invoiceNumber || "",
+      CaptureSignature: options.captureSignature || options.enableSignature || false,
+      GetExtendedData: true
+    };
+    
+    // Process the refund
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Refund', payload, {
+      timeout: (options.transactionTimeout || 90) * 1000
+    });
+  }
+  
+  /**
+   * Void a transaction
+   * 
+   * Voids a previously processed transaction that hasn't been settled yet
+   * 
+   * @param transactionId ID of the transaction to void
+   * @returns Promise with transaction response
+   */
+  public async voidTransaction(transactionId: string): Promise<DejavooTransactionResponse> {
+    // Create payload
+    const payload = {
+      ...this.createBasePayload(),
+      TransactionId: transactionId
+    };
+    
+    // Process the void
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Void', payload, {
+      timeout: 30000
+    });
+  }
+  
+  /**
+   * Settle the current batch
+   * 
+   * Closes the current batch and settles all transactions
+   * 
+   * @returns Promise with settle response
+   */
+  public async settleBatch(): Promise<DejavooTransactionResponse> {
+    // Create payload with just the auth info
+    const payload = this.createBasePayload();
+    
+    // Process the batch settlement
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Settle', payload, {
+      timeout: 60000
+    });
+  }
+  
+  /**
+   * Get current batch details
+   * 
+   * Retrieves information about the current open batch
+   * 
+   * @returns Promise with batch details
+   */
+  public async getBatchDetails(): Promise<BatchDetails> {
+    // Create payload with just the auth info
+    const payload = this.createBasePayload();
+    
+    // Get batch details
+    return this.makeApiRequest<BatchDetails>('/Reporting/Batch', payload, {
+      timeout: 30000
+    });
+  }
+  
+  /**
+   * Process a tokenization request
+   * 
+   * Tokenizes a card for future use without charging it
+   * 
+   * @param options Tokenization options
+   * @returns Promise with tokenization response
+   */
+  public async tokenizeCard(
+    options: CardPaymentOptions = {}
+  ): Promise<DejavooTransactionResponse> {
+    // Create payload
+    const payload = {
+      ...this.createBasePayload(),
+      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      GetReceipt: options.getReceipt ? "Yes" : "No",
+      CaptureSignature: options.captureSignature || false,
+      GetExtendedData: true
+    };
+    
+    // Process the tokenization
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Tokenize', payload, {
+      timeout: (options.transactionTimeout || 90) * 1000
+    });
+  }
+  
+  /**
+   * Process a pre-authorization
+   * 
+   * Authorizes a payment without capturing the funds
+   * 
+   * @param amount Authorization amount
+   * @param options Additional options
+   * @returns Promise with authorization response
+   */
+  public async processPreAuth(
+    amount: number,
+    options: CardPaymentOptions = {}
+  ): Promise<DejavooTransactionResponse> {
+    // Create payload
+    const payload = {
+      ...this.createBasePayload(),
+      Amount: amount,
+      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
+      PaymentType: "Credit",
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      GetReceipt: options.getReceipt ? "Yes" : "No",
+      MerchantNumber: null,
+      InvoiceNumber: options.invoiceNumber || "",
+      CaptureSignature: options.captureSignature || options.enableSignature || false,
+      GetExtendedData: true
+    };
+    
+    // Process the pre-auth
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/PreAuth', payload, {
+      timeout: (options.transactionTimeout || 90) * 1000
+    });
+  }
+  
+  /**
+   * Capture a pre-authorized transaction
+   * 
+   * Captures funds from a previous pre-authorization
+   * 
+   * @param transactionId ID of the pre-auth transaction
+   * @param amount Amount to capture (can be different from pre-auth amount)
+   * @param options Additional options
+   * @returns Promise with capture response
+   */
+  public async capturePreAuth(
+    transactionId: string,
+    amount: number,
+    options: CardPaymentOptions = {}
+  ): Promise<DejavooTransactionResponse> {
+    // Create payload
+    const payload = {
+      ...this.createBasePayload(),
+      TransactionId: transactionId,
+      Amount: amount,
+      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      GetReceipt: options.getReceipt ? "Yes" : "No",
+      InvoiceNumber: options.invoiceNumber || ""
+    };
+    
+    // Process the capture
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/PostAuth', payload, {
+      timeout: 30000
+    });
+  }
+  
+  /**
+   * Get transaction details
+   * 
+   * Retrieves detailed information about a specific transaction
+   * 
+   * @param transactionId ID of the transaction
+   * @returns Promise with transaction details
+   */
+  public async getTransactionDetails(transactionId: string): Promise<DejavooTransactionResponse> {
+    // Create payload
+    const payload = {
+      ...this.createBasePayload(),
+      TransactionId: transactionId
+    };
+    
+    // Get transaction details
+    return this.makeApiRequest<DejavooTransactionResponse>('/Reporting/Transaction', payload, {
+      timeout: 30000
+    });
+  }
+  
+  /**
+   * Process a tip adjustment
+   * 
+   * Adds or modifies a tip amount on a previously authorized transaction
+   * 
+   * @param transactionId ID of the transaction
+   * @param tipAmount Tip amount to add
+   * @returns Promise with tip adjustment response
+   */
+  public async adjustTip(
+    transactionId: string,
+    tipAmount: number
+  ): Promise<DejavooTransactionResponse> {
+    // Create payload
+    const payload = {
+      ...this.createBasePayload(),
+      TransactionId: transactionId,
+      TipAmount: tipAmount
+    };
+    
+    // Process tip adjustment
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/TipAdjust', payload, {
+      timeout: 30000
+    });
+  }
+  
+  /**
+   * Process a cash transaction (for record-keeping)
+   * 
+   * Records a cash transaction in the terminal
+   * 
+   * @param amount Transaction amount
+   * @param options Additional options
+   * @returns Promise with cash transaction response
+   */
+  public async processCashTransaction(
+    amount: number,
+    options: CardPaymentOptions = {}
+  ): Promise<DejavooTransactionResponse> {
+    // Create payload
+    const payload = {
+      ...this.createBasePayload(),
+      Amount: amount,
+      TipAmount: options.tipAmount || 0,
+      InvoiceNumber: options.invoiceNumber || "",
+      PrintReceipt: options.printReceipt ? "Yes" : "No"
+    };
+    
+    // Process cash transaction
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Cash', payload, {
+      timeout: 30000
+    });
+  }
+  
+  /**
+   * Get terminal information
+   * 
+   * Retrieves details about the terminal configuration
+   * 
+   * @returns Promise with terminal information
+   */
+  public async getTerminalInfo(): Promise<Record<string, any>> {
+    // Create payload with just the auth info
+    const payload = this.createBasePayload();
+    
+    // Get terminal info
+    return this.makeApiRequest<Record<string, any>>('/Terminal/Info', payload, {
+      timeout: 30000
+    });
+  }
+  
+  /**
+   * Restart the terminal
+   * 
+   * Sends a command to restart the terminal
+   * 
+   * @returns Promise with restart response
+   */
+  public async restartTerminal(): Promise<Record<string, any>> {
+    // Create payload with just the auth info
+    const payload = this.createBasePayload();
+    
+    // Restart terminal
+    return this.makeApiRequest<Record<string, any>>('/Terminal/Restart', payload, {
+      timeout: 60000
+    });
+  }
+  
+  /**
+   * Update terminal software
+   * 
+   * Triggers a software update on the terminal
+   * 
+   * @returns Promise with update response
+   */
+  public async updateTerminalSoftware(): Promise<Record<string, any>> {
+    // Create payload with just the auth info
+    const payload = this.createBasePayload();
+    
+    // Update terminal software
+    return this.makeApiRequest<Record<string, any>>('/Terminal/Update', payload, {
+      timeout: 300000 // 5 minutes timeout for software update
+    });
+  }
+  
+  /**
+   * Run terminal diagnostics
+   * 
+   * Executes diagnostic tests on the terminal
+   * 
+   * @returns Promise with diagnostics results
+   */
+  public async runDiagnostics(): Promise<Record<string, any>> {
+    // Create payload with just the auth info
+    const payload = this.createBasePayload();
+    
+    // Run diagnostics
+    return this.makeApiRequest<Record<string, any>>('/Terminal/Diagnostics', payload, {
+      timeout: 60000
+    });
+  }
+  
+  /**
+   * Process a card verification
+   * 
+   * Verifies a card without charging it
+   * 
+   * @param options Verification options
+   * @returns Promise with verification response
+   */
+  public async verifyCard(
+    options: CardPaymentOptions = {}
+  ): Promise<DejavooTransactionResponse> {
+    // Create payload
+    const payload = {
+      ...this.createBasePayload(),
+      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      GetReceipt: options.getReceipt ? "Yes" : "No",
+      GetExtendedData: true
+    };
+    
+    // Process card verification
+    return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Verify', payload, {
+      timeout: (options.transactionTimeout || 90) * 1000
+    });
+  }
+  
+  /**
+   * Get payment receipt
+   * 
+   * Retrieves the receipt for a specific transaction
+   * 
+   * @param transactionId ID of the transaction
+   * @returns Promise with receipt data
+   */
+  public async getReceipt(transactionId: string): Promise<ReceiptData> {
+    // Create payload
+    const payload = {
+      ...this.createBasePayload(),
+      TransactionId: transactionId
+    };
+    
+    // Get receipt
+    return this.makeApiRequest<ReceiptData>('/Reporting/Receipt', payload, {
+      timeout: 30000
+    });
+  }
+}
+
+// Export a create function for easier instantiation
+export function createDejavooService(config: DejavooTerminalConfig): DejavooApiService {
+  return new DejavooApiService(config);
+}
+
+export default DejavooApiService;
