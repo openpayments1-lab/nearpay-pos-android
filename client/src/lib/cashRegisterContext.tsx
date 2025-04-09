@@ -335,7 +335,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     updateStatus("Ready for transaction", "info");
   }, [updateStatus]);
   
-  // Load terminal configuration from database on initialization
+  // Load terminal configuration from database on initialization - only once
   useEffect(() => {
     const loadTerminalConfig = async () => {
       try {
@@ -349,10 +349,45 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setTerminalConfig(data);
           setTerminalIp(data.terminalIp);
           
-          // Auto-check connection if we have terminal config
+          // Auto-check connection if we have terminal config - using a local version
+          // of the function to avoid dependency loop
           if (data.terminalIp && data.apiKey && data.terminalType) {
             console.log("Auto-checking terminal connection...");
-            checkTerminalConnection(data.terminalIp);
+            
+            const checkConnection = async (ip: string) => {
+              updateStatus("Checking terminal connection...", "info");
+              
+              try {
+                // Pass terminal ID (TPN) and API key for the Dejavoo API
+                const payload = { 
+                  ip, // This is optional now with the remote API
+                  terminalType: data.terminalType, // This is now used as TPN (Terminal ID)
+                  apiKey: data.apiKey,
+                  testMode: data.testMode
+                };
+                
+                const response = await apiRequest("POST", "/api/terminal/check", payload);
+                const result = await response.json();
+                
+                if (result.connected) {
+                  // Terminal is properly connected
+                  setTerminalStatus("connected");
+                  setStatusMessage("Terminal connected successfully");
+                  setStatusType("success");
+                } else {
+                  // Terminal exists but is not connected or has an issue
+                  setTerminalStatus("failed");
+                  setStatusMessage(result.message || "Could not connect to terminal.");
+                  setStatusType("error");
+                }
+              } catch (error) {
+                setTerminalStatus("failed");
+                setStatusMessage("Error connecting to terminal");
+                setStatusType("error");
+              }
+            };
+            
+            checkConnection(data.terminalIp);
           }
         }
       } catch (error) {
@@ -361,7 +396,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
     
     loadTerminalConfig();
-  }, [checkTerminalConnection]);
+  }, []); // Empty dependency array to ensure it only runs once
 
   const value = {
     amount,
