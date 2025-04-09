@@ -133,9 +133,29 @@ export default function CashRegister() {
     <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <header className="mb-6">
-          <h1 className="text-3xl font-bold text-dark text-center">
-            {isRefundMode ? "Cash Register - Refund Mode" : "Cash Register"}
-          </h1>
+          <div className="flex justify-center items-center">
+            <h1 className="text-3xl font-bold text-dark text-center">
+              {isRefundMode ? "Cash Register - Refund Mode" : "Cash Register"}
+            </h1>
+            
+            {/* Cancel Refund button - only visible in refund mode */}
+            {isRefundMode && (
+              <Button 
+                variant="destructive"
+                className="ml-4"
+                onClick={() => {
+                  setRefundMode(false);
+                  toast({
+                    title: "Refund Cancelled",
+                    description: "Returned to normal sales mode",
+                    variant: "default",
+                  });
+                }}
+              >
+                Cancel Refund
+              </Button>
+            )}
+          </div>
         </header>
 
         <Card className="overflow-hidden">
@@ -243,7 +263,23 @@ export default function CashRegister() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRefundDialog(false)} className="mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowRefundDialog(false);
+                  
+                  // If we're already in refund mode, cancel it when closing the dialog
+                  if (isRefundMode) {
+                    setRefundMode(false);
+                    toast({
+                      title: "Refund Cancelled",
+                      description: "Returned to normal sales mode",
+                      variant: "default",
+                    });
+                  }
+                }} 
+                className="mt-4"
+              >
                 Cancel
               </Button>
               <Button 

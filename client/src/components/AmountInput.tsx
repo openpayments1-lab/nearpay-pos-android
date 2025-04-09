@@ -3,9 +3,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useCashRegister } from "@/lib/cashRegisterContext";
 import { formatAmount } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AmountInput() {
-  const { amount, setAmount, isTransactionInProgress } = useCashRegister();
+  const { amount, setAmount, isTransactionInProgress, isRefundMode, setRefundMode } = useCashRegister();
+  const { toast } = useToast();
   const [inputValue, setInputValue] = useState(amount);
 
   const appendToAmount = (digit: string) => {
@@ -39,6 +41,16 @@ export default function AmountInput() {
     if (isTransactionInProgress) return;
     setInputValue("0.00");
     setAmount("0.00");
+    
+    // If in refund mode, also clear that when clicking Clear
+    if (isRefundMode) {
+      setRefundMode(false);
+      toast({
+        title: "Refund Cancelled",
+        description: "Returned to normal sales mode",
+        variant: "default",
+      });
+    }
   };
 
   const backspaceAmount = () => {
