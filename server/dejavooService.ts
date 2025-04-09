@@ -87,9 +87,15 @@ export async function processCardPayment(
     console.log('Received response from Dejavoo API:', JSON.stringify(response));
     
     // Parse the response based on the structure
-    if (response.generalResponse && 
-        response.generalResponse.statusCode && 
-        response.generalResponse.statusCode.includes("Approved")) {
+    // Check for multiple possible approval indicators:
+    // 1. StatusCode that includes "Approved" 
+    // 2. ResultCode of "0" which means success
+    // 3. HostResponseCode of "00" which is standard for approved transactions
+    // 4. Message contains "Approved"
+    if ((response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
+        (response.generalResponse?.resultCode === "0") ||
+        (response.generalResponse?.hostResponseCode === "00") ||
+        (response.generalResponse?.message && response.generalResponse.message.includes("Approved"))) {
       return {
         status: "approved",
         transactionId: response.transactionNumber || response.referenceId || referenceId,
@@ -97,8 +103,8 @@ export async function processCardPayment(
         cardType: response.cardData?.cardType || "Credit",
         maskedPan: response.cardData?.last4 ? `**** **** **** ${response.cardData.last4}` : "**** **** **** ****",
         authCode: response.authCode || "",
-        hostResponseCode: response.generalResponse.hostResponseCode || "",
-        hostResponseMessage: response.generalResponse.hostResponseMessage || ""
+        hostResponseCode: response.generalResponse?.hostResponseCode || "",
+        hostResponseMessage: response.generalResponse?.hostResponseMessage || ""
       };
     } else {
       return {
@@ -164,10 +170,11 @@ export async function voidTransaction(
     
     console.log('Received void response from Dejavoo API:', JSON.stringify(response));
     
-    // Parse the response
-    if (response.generalResponse && 
-        response.generalResponse.statusCode && 
-        response.generalResponse.statusCode.includes("Approved")) {
+    // Parse the response - using the same approval detection logic
+    if ((response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
+        (response.generalResponse?.resultCode === "0") ||
+        (response.generalResponse?.hostResponseCode === "00") ||
+        (response.generalResponse?.message && response.generalResponse.message.includes("Approved"))) {
       return {
         status: "approved",
         message: "Transaction voided successfully",
@@ -225,10 +232,11 @@ export async function settleBatch(
     
     console.log('Received batch settlement response from Dejavoo API:', JSON.stringify(response));
     
-    // Parse the response
-    if (response.generalResponse && 
-        response.generalResponse.statusCode && 
-        response.generalResponse.statusCode.includes("Approved")) {
+    // Parse the response - using the same approval detection logic
+    if ((response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
+        (response.generalResponse?.resultCode === "0") ||
+        (response.generalResponse?.hostResponseCode === "00") ||
+        (response.generalResponse?.message && response.generalResponse.message.includes("Approved"))) {
       return {
         status: "approved",
         message: "Batch settled successfully",
@@ -293,10 +301,11 @@ export async function processRefund(
     
     console.log('Received refund response from Dejavoo API:', JSON.stringify(response));
     
-    // Parse the response
-    if (response.generalResponse && 
-        response.generalResponse.statusCode && 
-        response.generalResponse.statusCode.includes("Approved")) {
+    // Parse the response - using the same approval detection logic as card payment
+    if ((response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
+        (response.generalResponse?.resultCode === "0") ||
+        (response.generalResponse?.hostResponseCode === "00") ||
+        (response.generalResponse?.message && response.generalResponse.message.includes("Approved"))) {
       return {
         status: "approved",
         transactionId: response.transactionNumber || response.referenceId || generateUniqueId(),
@@ -304,8 +313,8 @@ export async function processRefund(
         cardType: response.cardData?.cardType || "Credit",
         maskedPan: response.cardData?.last4 ? `**** **** **** ${response.cardData.last4}` : "**** **** **** ****",
         authCode: response.authCode || "",
-        hostResponseCode: response.generalResponse.hostResponseCode || "",
-        hostResponseMessage: response.generalResponse.hostResponseMessage || ""
+        hostResponseCode: response.generalResponse?.hostResponseCode || "",
+        hostResponseMessage: response.generalResponse?.hostResponseMessage || ""
       };
     } else {
       return {
