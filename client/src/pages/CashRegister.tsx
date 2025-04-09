@@ -27,36 +27,60 @@ export default function CashRegister() {
 
   // Handle URL parameters for refund mode
   useEffect(() => {
-    // Parse the URL query parameters
-    const params = new URLSearchParams(location.split('?')[1]);
-    const isRefund = params.get('refund') === 'true';
-    const amount = params.get('amount');
-    const terminalIp = params.get('terminalIp');
-    
-    if (isRefund && amount) {
-      // Set the refund mode and amount
-      setRefundMode(true);
-      setAmount(parseFloat(amount).toFixed(2));
-      setSelectedPaymentMethod('card');
+    // Parse the URL query parameters safely
+    try {
+      console.log("Checking URL for refund parameters:", location);
       
-      toast({
-        title: "Refund Mode",
-        description: `Ready to process refund for $${parseFloat(amount).toFixed(2)}`,
-        variant: "default",
-      });
+      // Get the query part of the URL (everything after ?)
+      const queryString = location.includes('?') ? location.split('?')[1] : '';
       
-      // If terminal IP is provided, ensure connection while respecting cached status
-      if (terminalIp) {
-        console.log(`Refund mode - checking terminal connection for IP: ${terminalIp}`);
+      if (queryString) {
+        const params = new URLSearchParams(queryString);
+        const isRefund = params.get('refund') === 'true';
+        const amount = params.get('amount');
+        const terminalIp = params.get('terminalIp');
         
-        // Get current connection state
-        const connectionStatus = localStorage.getItem('terminalConnectionStatus');
-        const currentIp = localStorage.getItem('terminalIp');
+        console.log("URL parameters:", { isRefund, amount, terminalIp });
         
-        // Only force a terminal check if not already connected or IP changed
-        const forceCheck = connectionStatus !== 'connected' || currentIp !== terminalIp;
-        checkTerminalConnection(terminalIp, forceCheck);
+        if (isRefund && amount) {
+          console.log("Setting refund mode to TRUE");
+          
+          // Set the refund mode and amount
+          setRefundMode(true);
+          setAmount(parseFloat(amount).toFixed(2));
+          setSelectedPaymentMethod('card');
+          
+          toast({
+            title: "Refund Mode",
+            description: `Ready to process refund for $${parseFloat(amount).toFixed(2)}`,
+            variant: "default",
+          });
+          
+          // If terminal IP is provided, ensure connection while respecting cached status
+          if (terminalIp) {
+            console.log(`Refund mode - checking terminal connection for IP: ${terminalIp}`);
+            
+            // Get current connection state
+            const connectionStatus = localStorage.getItem('terminalConnectionStatus');
+            const currentIp = localStorage.getItem('terminalIp');
+            
+            // Only force a terminal check if not already connected or IP changed
+            const forceCheck = connectionStatus !== 'connected' || currentIp !== terminalIp;
+            checkTerminalConnection(terminalIp, forceCheck);
+          }
+        } else {
+          // Not in refund mode, make sure to reset it
+          console.log("Not in refund mode, resetting refund state");
+          setRefundMode(false);
+        }
+      } else {
+        // No query parameters, make sure refund mode is off
+        console.log("No query parameters, turning refund mode OFF");
+        setRefundMode(false);
       }
+    } catch (error) {
+      console.error("Error parsing URL parameters:", error);
+      setRefundMode(false);
     }
   }, [location, setAmount, setRefundMode, setSelectedPaymentMethod, checkTerminalConnection, toast]);
 
