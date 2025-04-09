@@ -74,12 +74,14 @@ export async function processCardPayment(
     // Create Dejavoo API service instance
     const dejavooService = new DejavooApiService(config);
     
+    console.log(`Processing card payment with amount: $${amount.toFixed(2)}`);
+    
     // Process the sale transaction
     const response = await dejavooService.processSale(amount, {
       enableTipping: options.enableTipping,
       enableSignature: options.enableSignature,
       transactionTimeout: options.transactionTimeout,
-      getReceipt: true
+      // Note: No longer using getReceipt: true option as we're using "False" directly in the payload
     });
     
     console.log('Received response from Dejavoo API:', JSON.stringify(response));
@@ -280,11 +282,13 @@ export async function processRefund(
     // Create Dejavoo API service instance
     const dejavooService = new DejavooApiService(config);
     
+    console.log(`Processing refund with amount: $${amount.toFixed(2)}`);
+    
     // Process the refund
     const response = await dejavooService.processRefund(amount, {
       enableSignature: options.enableSignature,
       transactionTimeout: options.transactionTimeout,
-      getReceipt: true
+      // Note: No longer using getReceipt: true option as we're using "False" directly in the payload
     });
     
     console.log('Received refund response from Dejavoo API:', JSON.stringify(response));

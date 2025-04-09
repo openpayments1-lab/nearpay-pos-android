@@ -447,7 +447,8 @@ export class DejavooApiService {
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PaymentType: "Credit",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      GetReceipt: options.getReceipt ? "Yes" : "No",
+      // The GetReceipt field must be "True"/"False" strings rather than "Yes"/"No"
+      GetReceipt: "Yes", // The GetReceipt field must be "Yes"/"No" strings
       MerchantNumber: null,
       InvoiceNumber: options.invoiceNumber || "",
       CaptureSignature: options.captureSignature || options.enableSignature || false,

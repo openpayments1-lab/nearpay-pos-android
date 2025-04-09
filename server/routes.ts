@@ -182,6 +182,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: 'Invalid amount' });
     }
     
+    console.log(`Card payment request received with amount: $${numericAmount.toFixed(2)}`);
+    console.log(`Using terminal config:`, JSON.stringify(terminalConfig));
+    
     const result = await processCardPayment(
       terminalConfig.terminalIp, 
       numericAmount, 
@@ -279,6 +282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (isNaN(numericAmount) || numericAmount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
+    
+    console.log(`Card refund request received with amount: $${numericAmount.toFixed(2)}`);
+    console.log(`Using terminal config:`, JSON.stringify(terminalConfig));
     
     const result = await processRefund(
       terminalConfig.terminalIp, 
