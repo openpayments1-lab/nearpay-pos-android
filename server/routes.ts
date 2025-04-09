@@ -68,8 +68,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         testMode: testMode || false
       });
       
-      // Get detailed terminal status
-      const statusResponse = await dejavooService.checkStatus();
+      // Create a reusable reference ID for consistent checking
+      // This helps prevent mixed responses from multiple status checks
+      const referenceId = Math.random().toString(16).slice(2) + Date.now().toString(36);
+      
+      // Get detailed terminal status with a consistent referenceId
+      const statusPayload = {
+        Tpn: terminalType || "2247257465",
+        Authkey: apiKey || "JEkE6S7jPk",
+        ReferenceId: referenceId,
+        PaymentType: "Credit"
+      };
+      
+      // Make a direct API request to ensure we use the same referenceId
+      let statusResponse;
+      try {
+        // Try to make a direct API call with consistent referenceId
+        const result = await dejavooService.makeApiRequest('Payment/Status', statusPayload, {
+          timeout: 10000
+        });
+        
+        // Process the response into a standard status format
+        const terminalExists = 
+          result.GeneralResponse?.StatusCode === "2008" || // Terminal in use
+          result.GeneralResponse?.StatusCode === "1000" || // Service busy
+          result.GeneralResponse?.StatusCode === "1001" || // Transaction data not found
+          result.GeneralResponse?.ResultCode === "Ok" ||
+          result.GeneralResponse?.StatusCode?.includes("Approved");
+        
+        let message = "Terminal is not responding";
+        let online = false;
+        
+        if (terminalExists) {
+          if (result.GeneralResponse?.StatusCode === "2008") {
+            message = "Terminal is online but currently in use";
+            online = true; // It's online, just busy
+          } else if (result.GeneralResponse?.StatusCode === "1000") {
+            message = "Terminal is online but service is busy";
+            online = true; // It's online, just busy
+          } else if (result.GeneralResponse?.StatusCode?.includes("Approved")) {
+            message = "Terminal is online and ready";
+            online = true;
+          }
+        } else if (result.GeneralResponse?.StatusCode === "2003") {
+          message = "Terminal ID not found - please check your credentials";
+          online = false;
+        }
+        
+        statusResponse = {
+          success: true,
+          online: online,
+          message: message,
+          details: result
+        };
+      } catch (err) {
+        // If direct API call fails, fall back to the standard method
+        statusResponse = await dejavooService.checkStatus();
+      }
+      
       console.log('Terminal detailed status:', JSON.stringify(statusResponse));
       
       // Return detailed status information

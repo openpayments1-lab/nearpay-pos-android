@@ -224,7 +224,7 @@ export class DejavooApiService {
    * @param options Axios request options
    * @returns Promise with API response
    */
-  private async makeApiRequest<T>(
+  public async makeApiRequest<T>(
     endpoint: string, 
     payload: Record<string, any>, 
     options: AxiosRequestConfig = {}
