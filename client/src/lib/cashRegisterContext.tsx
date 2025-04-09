@@ -30,7 +30,11 @@ interface CashRegisterContextType {
   receipt: Receipt | null;
   isReceiptVisible: boolean;
   processTransaction: () => void;
+  processRefund: () => void;
   resetTransaction: () => void;
+  isRefundMode: boolean;
+  setRefundMode: (isRefund: boolean) => void;
+  lastTransactionId: string | null;
 }
 
 // Default terminal configuration
@@ -63,7 +67,11 @@ const CashRegisterContext = createContext<CashRegisterContextType>({
   receipt: null,
   isReceiptVisible: false,
   processTransaction: () => {},
+  processRefund: () => {},
   resetTransaction: () => {},
+  isRefundMode: false,
+  setRefundMode: () => {},
+  lastTransactionId: null,
 });
 
 export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -80,6 +88,8 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [processingDetails, setProcessingDetails] = useState("");
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [isReceiptVisible, setIsReceiptVisible] = useState(false);
+  const [isRefundMode, setRefundMode] = useState(false);
+  const [lastTransactionId, setLastTransactionId] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -322,6 +332,87 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
       processCardPayment(amount);
     }
   }, [selectedPaymentMethod, amount, processCashPayment, processCardPayment]);
+  
+  const processRefund = useCallback(() => {
+    if (terminalStatus !== "connected") {
+      updateStatus("Terminal not connected. Please check configuration.", "error");
+      return;
+    }
+    
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) return;
+    
+    setIsTransactionInProgress(true);
+    setIsProcessing(true);
+    setProcessingMessage("Processing Refund");
+    setProcessingDetails("Please complete the refund on the terminal");
+    updateStatus("Sending refund request to terminal...", "info");
+    
+    // Only card refunds are supported through the terminal
+    apiRequest("POST", "/api/payment/refund", { 
+      amount,
+      terminalConfig
+    })
+      .then(res => res.json())
+      .then(data => {
+        setIsProcessing(false);
+        
+        if (data.status === "approved") {
+          const cardDetails: CardDetails = {
+            type: data.cardType || "Credit",
+            number: data.maskedPan || "**** **** **** ****",
+            authCode: data.authCode || "N/A"
+          };
+          
+          const newReceipt: Receipt = {
+            transactionId: data.transactionId || generateTransactionId(),
+            amount,
+            paymentMethod: "card",
+            dateTime: data.dateTime || new Date().toLocaleString(),
+            status: "refunded",
+            cardDetails
+          };
+          
+          setReceipt(newReceipt);
+          setIsReceiptVisible(true);
+          updateStatus("Card refund approved", "success");
+          
+          toast({
+            title: "Refund Approved",
+            description: `Card refund of $${parseFloat(amount).toFixed(2)} approved`,
+            variant: "default",
+          });
+        } else {
+          const newReceipt: Receipt = {
+            transactionId: data.transactionId || generateTransactionId(),
+            amount,
+            paymentMethod: "card",
+            dateTime: data.dateTime || new Date().toLocaleString(),
+            status: "declined"
+          };
+          
+          setReceipt(newReceipt);
+          setIsReceiptVisible(true);
+          updateStatus("Card refund declined", "error");
+          
+          toast({
+            title: "Refund Declined",
+            description: data.message || "Card refund was declined.",
+            variant: "destructive",
+          });
+        }
+      })
+      .catch(error => {
+        setIsProcessing(false);
+        updateStatus("Card refund processing failed", "error");
+        
+        toast({
+          title: "Refund Failed",
+          description: "Failed to process card refund. Please try again.",
+          variant: "destructive",
+        });
+      });
+  }, [amount, terminalConfig, terminalStatus, updateStatus, toast]);
 
   const resetTransaction = useCallback(() => {
     setAmount("0.00");
@@ -417,7 +508,11 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     receipt,
     isReceiptVisible,
     processTransaction,
-    resetTransaction
+    processRefund,
+    resetTransaction,
+    isRefundMode,
+    setRefundMode,
+    lastTransactionId
   };
 
   return (
