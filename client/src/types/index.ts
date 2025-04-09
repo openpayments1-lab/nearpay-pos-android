@@ -35,6 +35,17 @@ export interface Receipt {
   cardDetails?: CardDetails;
 }
 
+// Transaction interface for the database transactions
+export interface Transaction {
+  id: number;
+  amount: number;
+  paymentMethod: string;
+  status: string;
+  dateTime: string | Date;
+  terminalIp: string | null;
+  cardDetails: CardDetails | null;
+}
+
 // Transaction response from Dejavoo terminal
 export interface DejavooTransactionResponse {
   status: string;

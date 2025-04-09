@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, CreditCard, History } from "lucide-react";
+import { Settings, CreditCard, History, RotateCcw, RefreshCcw } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import AmountInput from "@/components/AmountInput";
 import PaymentMethod from "@/components/PaymentMethod";
@@ -12,77 +12,34 @@ import TerminalConfig from "@/components/TerminalConfig";
 import ProcessingOverlay from "@/components/ProcessingOverlay";
 import { useCashRegister } from "@/lib/cashRegisterContext";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { apiRequest } from "@/lib/queryClient";
+import { Transaction } from "@/types";
 
 export default function CashRegister() {
   const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  
   const { 
     terminalStatus, 
     checkTerminalConnection,
     setAmount,
     setRefundMode,
-    setSelectedPaymentMethod
+    setSelectedPaymentMethod,
+    isRefundMode
   } = useCashRegister();
   const [location] = useLocation();
   const { toast } = useToast();
-
-  // Handle URL parameters for refund mode
-  useEffect(() => {
-    // Parse the URL query parameters safely
-    try {
-      console.log("Checking URL for refund parameters:", location);
-      
-      // Get the query part of the URL (everything after ?)
-      const queryString = location.includes('?') ? location.split('?')[1] : '';
-      
-      if (queryString) {
-        const params = new URLSearchParams(queryString);
-        const isRefund = params.get('refund') === 'true';
-        const amount = params.get('amount');
-        const terminalIp = params.get('terminalIp');
-        
-        console.log("URL parameters:", { isRefund, amount, terminalIp });
-        
-        if (isRefund && amount) {
-          console.log("Setting refund mode to TRUE");
-          
-          // Set the refund mode and amount
-          setRefundMode(true);
-          setAmount(parseFloat(amount).toFixed(2));
-          setSelectedPaymentMethod('card');
-          
-          toast({
-            title: "Refund Mode",
-            description: `Ready to process refund for $${parseFloat(amount).toFixed(2)}`,
-            variant: "default",
-          });
-          
-          // If terminal IP is provided, ensure connection while respecting cached status
-          if (terminalIp) {
-            console.log(`Refund mode - checking terminal connection for IP: ${terminalIp}`);
-            
-            // Get current connection state
-            const connectionStatus = localStorage.getItem('terminalConnectionStatus');
-            const currentIp = localStorage.getItem('terminalIp');
-            
-            // Only force a terminal check if not already connected or IP changed
-            const forceCheck = connectionStatus !== 'connected' || currentIp !== terminalIp;
-            checkTerminalConnection(terminalIp, forceCheck);
-          }
-        } else {
-          // Not in refund mode, make sure to reset it
-          console.log("Not in refund mode, resetting refund state");
-          setRefundMode(false);
-        }
-      } else {
-        // No query parameters, make sure refund mode is off
-        console.log("No query parameters, turning refund mode OFF");
-        setRefundMode(false);
-      }
-    } catch (error) {
-      console.error("Error parsing URL parameters:", error);
-      setRefundMode(false);
-    }
-  }, [location, setAmount, setRefundMode, setSelectedPaymentMethod, checkTerminalConnection, toast]);
 
   useEffect(() => {
     // Check terminal connection on component mount if IP is stored
@@ -96,11 +53,86 @@ export default function CashRegister() {
     }
   }, [checkTerminalConnection]);
 
+  // Function to fetch recent transactions for the refund dialog
+  const fetchRecentTransactions = async () => {
+    try {
+      setLoadingTransactions(true);
+      const response = await apiRequest('GET', '/api/transactions');
+      const data = await response.json();
+      
+      // Filter to show only approved card transactions that can be refunded
+      const refundableTransactions = data.filter((t: Transaction) => 
+        t.paymentMethod === 'card' && t.status === 'approved'
+      );
+      
+      setTransactions(refundableTransactions);
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load transactions for refund.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
+  // Function to handle opening the refund dialog
+  const handleOpenRefundDialog = () => {
+    fetchRecentTransactions();
+    setShowRefundDialog(true);
+  };
+
+  // Function to handle selecting a transaction for refund
+  const handleSelectTransactionForRefund = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+  };
+
+  // Function to process the selected refund
+  const handleProcessRefund = () => {
+    if (!selectedTransaction) return;
+    
+    // Set up refund mode with the selected transaction
+    setRefundMode(true);
+    setAmount(selectedTransaction.amount.toFixed(2));
+    setSelectedPaymentMethod('card');
+    
+    toast({
+      title: "Refund Mode Activated",
+      description: `Ready to process refund for $${selectedTransaction.amount.toFixed(2)}`,
+      variant: "default",
+    });
+    
+    // Close the dialog
+    setShowRefundDialog(false);
+  };
+
+  // Format amount for display
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string | Date) => {
+    try {
+      return new Date(dateString).toLocaleString();
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return String(dateString);
+    }
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <header className="mb-6">
-          <h1 className="text-3xl font-bold text-dark text-center">Cash Register</h1>
+          <h1 className="text-3xl font-bold text-dark text-center">
+            {isRefundMode ? "Cash Register - Refund Mode" : "Cash Register"}
+          </h1>
         </header>
 
         <Card className="overflow-hidden">
@@ -122,7 +154,7 @@ export default function CashRegister() {
           <Receipt />
         </Card>
         
-        {/* Settings and History Buttons */}
+        {/* Settings, Refund and History Buttons */}
         <div className="fixed bottom-6 right-6 flex space-x-3 z-50">
           <Link href="/history">
             <Button 
@@ -133,6 +165,15 @@ export default function CashRegister() {
               <span>Transaction History</span>
             </Button>
           </Link>
+          
+          <Button 
+            variant="default"
+            className="bg-teal-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-teal-700"
+            onClick={handleOpenRefundDialog}
+          >
+            <RefreshCcw className="h-5 w-5 mr-1" />
+            <span>Process Refund</span>
+          </Button>
           
           <Button 
             variant="default"
@@ -150,6 +191,69 @@ export default function CashRegister() {
         <TerminalConfig 
           onClose={() => setShowConfigDialog(false)} 
         />
+      )}
+
+      {/* Refund Dialog */}
+      {showRefundDialog && (
+        <Dialog open={true} onOpenChange={setShowRefundDialog}>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle>Process Refund</DialogTitle>
+              <DialogDescription>
+                Select a transaction to refund from the list below.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="max-h-[350px] overflow-y-auto">
+              {loadingTransactions ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">
+                  No refundable transactions found.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 my-4">
+                  {transactions.map((transaction) => (
+                    <div 
+                      key={transaction.id} 
+                      className={`border rounded-md p-3 cursor-pointer transition-all ${
+                        selectedTransaction?.id === transaction.id 
+                          ? 'border-amber-600 bg-amber-50' 
+                          : 'hover:border-gray-400'
+                      }`}
+                      onClick={() => handleSelectTransactionForRefund(transaction)}
+                    >
+                      <div className="flex justify-between">
+                        <span className="font-medium">Transaction #{transaction.id}</span>
+                        <span className="font-bold">{formatAmount(transaction.amount)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-500 mt-1">
+                        <span>{transaction.cardDetails?.type || 'Card'}</span>
+                        <span>{formatDate(transaction.dateTime)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRefundDialog(false)} className="mt-4">
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleProcessRefund}
+                disabled={!selectedTransaction || loadingTransactions}
+                className="bg-amber-600 hover:bg-amber-700 text-white mt-4"
+              >
+                <RefreshCcw className="h-4 w-4 mr-2" />
+                Process Refund
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Processing Overlay */}
