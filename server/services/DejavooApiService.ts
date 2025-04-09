@@ -240,6 +240,12 @@ export class DejavooApiService {
       // Set default timeout of 60 seconds
       const timeout = options.timeout || 60000;
       
+      // Ensure PaymentType is properly set for Payment endpoints
+      if (endpoint.startsWith('/Payment/') && !payload.PaymentType) {
+        payload.PaymentType = "Credit";
+        console.log(`WARNING: PaymentType was missing for ${endpoint}, adding default "Credit" value`);
+      }
+      
       // Log request (for debugging)
       console.log(`Making ${endpoint} request:`, JSON.stringify(payload));
       
@@ -281,7 +287,13 @@ export class DejavooApiService {
    */
   public async checkStatus(): Promise<StatusResponse> {
     try {
-      const payload = this.createPaymentPayload("Credit");
+      // Create explicit payload with required fields
+      const payload = {
+        Tpn: this.config.tpn,
+        Authkey: this.config.authKey,
+        ReferenceId: this.generateReferenceId(),
+        PaymentType: "Credit" // Required field explicitly added
+      };
       
       // Use the Status endpoint
       const response = await this.makeApiRequest<any>('/Payment/Status', payload, {
@@ -412,7 +424,10 @@ export class DejavooApiService {
   public async voidTransaction(transactionId: string): Promise<DejavooTransactionResponse> {
     // Create payload
     const payload = {
-      ...this.createPaymentPayload("Credit"),
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey,
+      ReferenceId: this.generateReferenceId(),
+      PaymentType: "Credit", // Required field explicitly added
       TransactionId: transactionId
     };
     
@@ -431,7 +446,12 @@ export class DejavooApiService {
    */
   public async settleBatch(): Promise<DejavooTransactionResponse> {
     // Create payload with auth info and required fields
-    const payload = this.createPaymentPayload("Credit");
+    const payload = {
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey,
+      ReferenceId: this.generateReferenceId(),
+      PaymentType: "Credit" // Required field explicitly added
+    };
     
     // Process the batch settlement
     return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Settle', payload, {
