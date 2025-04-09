@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, CreditCard, History } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import AmountInput from "@/components/AmountInput";
 import PaymentMethod from "@/components/PaymentMethod";
 import TransactionStatus from "@/components/TransactionStatus";
@@ -11,10 +11,40 @@ import Receipt from "@/components/Receipt";
 import TerminalConfig from "@/components/TerminalConfig";
 import ProcessingOverlay from "@/components/ProcessingOverlay";
 import { useCashRegister } from "@/lib/cashRegisterContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CashRegister() {
   const [showConfigDialog, setShowConfigDialog] = useState(false);
-  const { terminalStatus, checkTerminalConnection } = useCashRegister();
+  const { 
+    terminalStatus, 
+    checkTerminalConnection,
+    setAmount,
+    setRefundMode,
+    setSelectedPaymentMethod
+  } = useCashRegister();
+  const [location] = useLocation();
+  const { toast } = useToast();
+
+  // Handle URL parameters for refund mode
+  useEffect(() => {
+    // Parse the URL query parameters
+    const params = new URLSearchParams(location.split('?')[1]);
+    const isRefund = params.get('refund') === 'true';
+    const amount = params.get('amount');
+    
+    if (isRefund && amount) {
+      // Set the refund mode and amount
+      setRefundMode(true);
+      setAmount(parseFloat(amount).toFixed(2));
+      setSelectedPaymentMethod('card');
+      
+      toast({
+        title: "Refund Mode",
+        description: `Ready to process refund for $${parseFloat(amount).toFixed(2)}`,
+        variant: "default",
+      });
+    }
+  }, [location, setAmount, setRefundMode, setSelectedPaymentMethod, toast]);
 
   useEffect(() => {
     // Check terminal connection on component mount if IP is stored

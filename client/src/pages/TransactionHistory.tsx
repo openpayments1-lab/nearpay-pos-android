@@ -3,7 +3,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 // Define the transaction interface directly
 interface CardDetails {
@@ -27,6 +27,8 @@ export default function TransactionHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isProcessingRefund, setIsProcessingRefund] = useState(false);
+  const [_, setLocation] = useLocation();
   const { toast } = useToast();
 
   const fetchTransactions = async () => {
@@ -78,6 +80,46 @@ export default function TransactionHistory() {
 
   const handleCloseReceipt = () => {
     setSelectedTransaction(null);
+  };
+  
+  const handleRefund = async () => {
+    if (!selectedTransaction) return;
+    
+    // Only card transactions can be refunded via the terminal
+    if (selectedTransaction.paymentMethod !== 'card' || !selectedTransaction.terminalIp) {
+      toast({
+        title: "Cannot Process Refund",
+        description: "Only card transactions can be refunded through this interface.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Transactions already refunded can't be refunded again
+    if (selectedTransaction.status === 'refunded') {
+      toast({
+        title: "Already Refunded",
+        description: "This transaction has already been refunded.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Set processing state
+    setIsProcessingRefund(true);
+    
+    try {
+      // Navigate to refund screen with prefilled amount
+      setLocation(`/?refund=true&amount=${selectedTransaction.amount}`);
+    } catch (error) {
+      console.error('Error initiating refund:', error);
+      setIsProcessingRefund(false);
+      toast({
+        title: "Refund Error",
+        description: "Failed to initiate refund. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -182,7 +224,29 @@ export default function TransactionHistory() {
                   )}
                 </div>
                 
-                <div className="mt-4 flex justify-end">
+                <div className="mt-4 flex justify-between">
+                  {/* Refund button - only show for card transactions that are approved and not already refunded */}
+                  <div>
+                    {selectedTransaction.paymentMethod === 'card' && 
+                     selectedTransaction.status === 'approved' && (
+                      <Button
+                        variant="outline"
+                        className="flex items-center text-amber-600 border-amber-600 hover:bg-amber-100"
+                        onClick={handleRefund}
+                        disabled={isProcessingRefund}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                          <path d="M3 3v5h5" />
+                          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                          <path d="M16 21h5v-5" />
+                        </svg>
+                        {isProcessingRefund ? 'Processing...' : 'Refund Full Amount'}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Print button */}
                   <Button
                     variant="outline"
                     className="flex items-center"
