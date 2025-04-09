@@ -324,8 +324,12 @@ export class DejavooApiService {
       
       // Check if terminal is online based on response format
       if (response.GeneralResponse) {
+        // First check if we have a Serial Number - if so, the terminal exists
+        const hasSerialNumber = response.SerialNumber && response.SerialNumber.length > 0;
+        
         // Check if we got a valid response that indicates the terminal exists
         const terminalExists = 
+          hasSerialNumber || // If we have a serial number, the terminal exists
           response.GeneralResponse.StatusCode === "2008" || // Terminal in use
           response.GeneralResponse.StatusCode === "1000" || // Service busy
           response.GeneralResponse.StatusCode === "1001" || // Transaction data not found
@@ -348,6 +352,10 @@ export class DejavooApiService {
           } else if (response.GeneralResponse.StatusCode === "1000") {
             message = "Terminal is online but service is busy";
             online = true; // It's online, just busy
+          } else if (response.GeneralResponse.StatusCode === "1001" && hasSerialNumber) {
+            // This means the terminal is online but no transaction was found with this reference ID
+            message = "Terminal is online and ready";
+            online = true; // It's connected!
           } else if (response.GeneralResponse.StatusCode?.includes("Approved")) {
             message = "Terminal is online and ready";
             online = true;

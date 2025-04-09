@@ -84,12 +84,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let statusResponse;
       try {
         // Try to make a direct API call with consistent referenceId
-        const result = await dejavooService.makeApiRequest('Payment/Status', statusPayload, {
+        // TypeScript typing for the API response
+        interface DejavooStatusResponse {
+          SerialNumber?: string;
+          GeneralResponse?: {
+            StatusCode?: string;
+            ResultCode?: string;
+            Message?: string;
+            DetailedMessage?: string;
+          };
+        }
+        
+        const result = await dejavooService.makeApiRequest<DejavooStatusResponse>('Payment/Status', statusPayload, {
           timeout: 10000
         });
         
         // Process the response into a standard status format
+        // First check if we have a response with a Serial Number - if so, the terminal exists
+        const hasSerialNumber = result.SerialNumber && result.SerialNumber.length > 0;
+        
+        // Now check specific status codes
         const terminalExists = 
+          hasSerialNumber || // If we have a serial number, the terminal exists
           result.GeneralResponse?.StatusCode === "2008" || // Terminal in use
           result.GeneralResponse?.StatusCode === "1000" || // Service busy
           result.GeneralResponse?.StatusCode === "1001" || // Transaction data not found
@@ -106,6 +122,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else if (result.GeneralResponse?.StatusCode === "1000") {
             message = "Terminal is online but service is busy";
             online = true; // It's online, just busy
+          } else if (result.GeneralResponse?.StatusCode === "1001" && hasSerialNumber) {
+            // This means the terminal is online but no transaction was found with this reference ID
+            message = "Terminal is online and ready";
+            online = true; // It's connected!
           } else if (result.GeneralResponse?.StatusCode?.includes("Approved")) {
             message = "Terminal is online and ready";
             online = true;
