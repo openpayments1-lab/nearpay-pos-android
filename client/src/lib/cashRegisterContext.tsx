@@ -137,6 +137,13 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setTerminalStatus("connected");
         updateStatus("Terminal connected successfully", "success");
         
+        // Store the terminal connection status in local storage
+        try {
+          localStorage.setItem('terminalConnectionStatus', 'connected');
+        } catch (e) {
+          // Ignore local storage errors
+        }
+        
         toast({
           title: "Terminal Connected",
           description: "Successfully connected to Dejavoo terminal.",
@@ -145,6 +152,13 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
       } else {
         // Terminal exists but is not connected or has an issue
         setTerminalStatus("failed");
+        
+        // Clear the terminal connection status from local storage
+        try {
+          localStorage.removeItem('terminalConnectionStatus');
+        } catch (e) {
+          // Ignore local storage errors
+        }
         
         // Use the detailed message from the API if available
         if (data.message) {
@@ -159,10 +173,26 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
               statusType = "warning";
               toastVariant = "default";
               title = "Terminal Busy";
+              
+              // If terminal is busy, it's still connected
+              setTerminalStatus("connected");
+              try {
+                localStorage.setItem('terminalConnectionStatus', 'connected');
+              } catch (e) {
+                // Ignore local storage errors
+              }
             } else if (data.message.includes("busy")) {
               statusType = "warning";
               toastVariant = "default";
               title = "Service Busy";
+              
+              // If service is busy, the terminal is still connected
+              setTerminalStatus("connected");
+              try {
+                localStorage.setItem('terminalConnectionStatus', 'connected');
+              } catch (e) {
+                // Ignore local storage errors
+              }
             } else if (data.message.includes("not found")) {
               statusType = "error";
               title = "Invalid Terminal ID";
@@ -190,6 +220,13 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     } catch (error) {
       setTerminalStatus("failed");
       updateStatus("Error connecting to terminal", "error");
+      
+      // Clear the terminal connection status from local storage
+      try {
+        localStorage.removeItem('terminalConnectionStatus');
+      } catch (e) {
+        // Ignore local storage errors
+      }
       
       toast({
         title: "Connection Error",
@@ -440,45 +477,25 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setTerminalConfig(data);
           setTerminalIp(data.terminalIp);
           
-          // Auto-check connection if we have terminal config - using a local version
-          // of the function to avoid dependency loop
+          // Don't auto-check connection - just assume it's there if we have config
+          // This prevents excessive terminal polling
           if (data.terminalIp && data.apiKey && data.terminalType) {
-            console.log("Auto-checking terminal connection...");
+            // Just set the terminal status to configured, but don't check connection
+            setTerminalStatus("configured");
+            setStatusMessage("Terminal configured");
+            setStatusType("info");
             
-            const checkConnection = async (ip: string) => {
-              updateStatus("Checking terminal connection...", "info");
-              
-              try {
-                // Pass terminal ID (TPN) and API key for the Dejavoo API
-                const payload = { 
-                  ip, // This is optional now with the remote API
-                  terminalType: data.terminalType, // This is now used as TPN (Terminal ID)
-                  apiKey: data.apiKey,
-                  testMode: data.testMode
-                };
-                
-                const response = await apiRequest("POST", "/api/terminal/check", payload);
-                const result = await response.json();
-                
-                if (result.connected) {
-                  // Terminal is properly connected
-                  setTerminalStatus("connected");
-                  setStatusMessage("Terminal connected successfully");
-                  setStatusType("success");
-                } else {
-                  // Terminal exists but is not connected or has an issue
-                  setTerminalStatus("failed");
-                  setStatusMessage(result.message || "Could not connect to terminal.");
-                  setStatusType("error");
-                }
-              } catch (error) {
-                setTerminalStatus("failed");
-                setStatusMessage("Error connecting to terminal");
-                setStatusType("error");
+            // Optionally check local storage for a previously successful connection
+            try {
+              const storedStatus = localStorage.getItem('terminalConnectionStatus');
+              if (storedStatus === 'connected') {
+                setTerminalStatus("connected");
+                setStatusMessage("Terminal connected");
+                setStatusType("success");
               }
-            };
-            
-            checkConnection(data.terminalIp);
+            } catch (e) {
+              // Ignore local storage errors
+            }
           }
         }
       } catch (error) {

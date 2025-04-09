@@ -2,7 +2,7 @@
 export type PaymentMethod = 'cash' | 'card';
 
 // Terminal connection status
-export type TerminalStatus = 'not-configured' | 'connected' | 'failed';
+export type TerminalStatus = 'not-configured' | 'configured' | 'connected' | 'failed';
 
 // Status message type for transaction status
 export type StatusType = 'info' | 'success' | 'error' | 'warning';

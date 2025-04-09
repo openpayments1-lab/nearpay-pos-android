@@ -160,6 +160,8 @@ export default function TransactionStatus() {
           <span className={`inline-block h-2.5 w-2.5 rounded-full mr-2 ${
             terminalStatus === 'connected' 
               ? 'bg-success' 
+              : terminalStatus === 'configured'
+                ? 'bg-amber-400'
               : terminalStatus === 'failed' 
                 ? 'bg-destructive' 
                 : 'bg-gray-300'
@@ -167,6 +169,8 @@ export default function TransactionStatus() {
           <span className="text-sm text-gray-600">
             {terminalStatus === 'connected' 
               ? 'Connected' 
+              : terminalStatus === 'configured'
+                ? 'Configured'
               : terminalStatus === 'failed' 
                 ? 'Connection failed' 
                 : 'Not configured'}
