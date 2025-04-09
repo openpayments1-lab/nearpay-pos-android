@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Create Dejavoo API Service to get detailed status
       const dejavooService = new DejavooApiService({
-        tpn: terminalType || "2247257465", // 10-digit Test TPN (meets length requirement)
+        tpn: terminalType || "224725746503", // Updated with correct terminal ID from user
         authKey: apiKey || "JEkE6S7jPk",   // Use valid API key
         testMode: testMode || false
       });
@@ -74,7 +74,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get detailed terminal status with a consistent referenceId
       const statusPayload = {
-        Tpn: terminalType || "2247257465",
+        Tpn: terminalType || "224725746503",
         Authkey: apiKey || "JEkE6S7jPk",
         ReferenceId: referenceId,
         PaymentType: "Credit"
@@ -95,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         }
         
-        const result = await dejavooService.makeApiRequest<DejavooStatusResponse>('status', statusPayload, {
+        const result = await dejavooService.makeApiRequest<DejavooStatusResponse>('spin/status', statusPayload, {
           timeout: 10000
         });
         
