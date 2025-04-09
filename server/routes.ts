@@ -225,38 +225,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Transaction result from processCardPayment:', JSON.stringify(result));
     
     // Check if transaction was approved - handle both simplified and full response formats
+    console.log("Checking response for approval indicators:", JSON.stringify(result));
+    
+    // Type assertion to safely handle mixed case properties
+    const resp = result as any;
+    
     const isApproved = 
-      // Check simplified format
+      // Check simplified format from our service
       result.status === 'approved' || 
-      // Check Dejavoo API format with case-insensitive comparison
-      (result.GeneralResponse?.Message === 'Approved' && 
-       result.GeneralResponse?.HostResponseCode === '00') ||
-      // Additional check for API format (string indexing fallback)
-      ((result as any)?.GeneralResponse?.Message === 'Approved' && 
-       (result as any)?.GeneralResponse?.HostResponseCode === '00');
+      
+      // Check PascalCase properties directly from Dejavoo API
+      (resp.GeneralResponse?.StatusCode === "0000" || 
+       resp.GeneralResponse?.StatusCode?.includes("Approved")) ||
+      (resp.GeneralResponse?.ResultCode === "0") ||
+      (resp.GeneralResponse?.HostResponseCode === "00") ||
+      (resp.GeneralResponse?.Message?.includes("Approved")) ||
+      
+      // Check camelCase properties from our interface
+      (resp.generalResponse?.statusCode === "0000" || 
+       resp.generalResponse?.statusCode?.includes("Approved")) ||
+      (resp.generalResponse?.resultCode === "0") ||
+      (resp.generalResponse?.hostResponseCode === "00") ||
+      (resp.generalResponse?.message?.includes("Approved"));
+    
+    console.log("Transaction approval check result:", isApproved);
     
     if (isApproved) {
       try {
         console.log("Transaction approved, saving to database");
         
-        // Parse transaction data from either format
+        // Parse transaction data using type assertion to handle mixed case
+        console.log("Extracting transaction data from response");
+        
+        // Get card information from various possible formats
+        let cardType = "Credit";
+        let cardLast4 = "****";
+        let authCode = "N/A";
+        
+        // First try PascalCase (direct API response format)
+        if (resp.CardData && resp.CardData.CardType) {
+          console.log("Found PascalCase CardData");
+          cardType = resp.CardData.CardType;
+          cardLast4 = resp.CardData.Last4 || "****";
+          authCode = resp.AuthCode || "N/A";
+        } 
+        // Then try camelCase (our interface format)
+        else if (resp.cardData && resp.cardData.cardType) {
+          console.log("Found camelCase cardData");
+          cardType = resp.cardData.cardType;
+          cardLast4 = resp.cardData.last4 || "****";
+          authCode = resp.authCode || "N/A";
+        } 
+        // Fallback to our simplified service response format
+        else if (result.cardType) {
+          console.log("Using simplified format");
+          cardType = result.cardType;
+          cardLast4 = result.maskedPan ? result.maskedPan.slice(-4) : "****";
+          authCode = result.authCode || "N/A";
+        }
+        
+        console.log(`Card information extracted - Type: ${cardType}, Last4: ${cardLast4}, AuthCode: ${authCode}`);
+        
         const transactionData = {
           amount: numericAmount,
           paymentMethod: 'card',
           status: 'approved',
           dateTime: new Date(),
           terminalIp: terminalConfig.terminalIp,
-          cardDetails: ((result as any)?.CardData) ? {
-            // Use the full Dejavoo response format with type assertion
-            type: (result as any).CardData.CardType || "Credit",
-            number: `**** **** **** ${(result as any).CardData.Last4 || '****'}`,
-            authCode: (result as any).AuthCode || 'N/A'
-          } : result.cardType ? {
-            // Fall back to simplified format
-            type: result.cardType,
-            number: result.maskedPan || '**** **** **** ****',
-            authCode: result.authCode || 'N/A'
-          } : null
+          cardDetails: {
+            type: cardType,
+            number: `**** **** **** ${cardLast4}`,
+            authCode: authCode
+          }
         };
         
         // Validate transaction data
@@ -348,38 +388,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Refund result from processRefund:', JSON.stringify(result));
     
     // Check if refund was approved - handle both simplified and full response formats
+    console.log("Checking refund response for approval indicators:", JSON.stringify(result));
+    
+    // Type assertion to safely handle mixed case properties
+    const resp = result as any;
+    
     const isApproved = 
-      // Check simplified format
+      // Check simplified format from our service
       result.status === 'approved' || 
-      // Check Dejavoo API format with case-insensitive comparison
-      (result.GeneralResponse?.Message === 'Approved' && 
-       result.GeneralResponse?.HostResponseCode === '00') ||
-      // Additional check for API format (string indexing fallback)
-      ((result as any)?.GeneralResponse?.Message === 'Approved' && 
-       (result as any)?.GeneralResponse?.HostResponseCode === '00');
+      
+      // Check PascalCase properties directly from Dejavoo API
+      (resp.GeneralResponse?.StatusCode === "0000" || 
+       resp.GeneralResponse?.StatusCode?.includes("Approved")) ||
+      (resp.GeneralResponse?.ResultCode === "0") ||
+      (resp.GeneralResponse?.HostResponseCode === "00") ||
+      (resp.GeneralResponse?.Message?.includes("Approved")) ||
+      
+      // Check camelCase properties from our interface
+      (resp.generalResponse?.statusCode === "0000" || 
+       resp.generalResponse?.statusCode?.includes("Approved")) ||
+      (resp.generalResponse?.resultCode === "0") ||
+      (resp.generalResponse?.hostResponseCode === "00") ||
+      (resp.generalResponse?.message?.includes("Approved"));
+    
+    console.log("Refund approval check result:", isApproved);
     
     if (isApproved) {
       try {
         console.log("Refund approved, saving to database");
         
-        // Parse transaction data from either format
+        // Parse transaction data using type assertion to handle mixed case
+        console.log("Extracting refund transaction data from response");
+        
+        // Get card information from various possible formats
+        let cardType = "Credit";
+        let cardLast4 = "****";
+        let authCode = "N/A";
+        
+        // First try PascalCase (direct API response format)
+        if (resp.CardData && resp.CardData.CardType) {
+          console.log("Found PascalCase CardData in refund");
+          cardType = resp.CardData.CardType;
+          cardLast4 = resp.CardData.Last4 || "****";
+          authCode = resp.AuthCode || "N/A";
+        } 
+        // Then try camelCase (our interface format)
+        else if (resp.cardData && resp.cardData.cardType) {
+          console.log("Found camelCase cardData in refund");
+          cardType = resp.cardData.cardType;
+          cardLast4 = resp.cardData.last4 || "****";
+          authCode = resp.authCode || "N/A";
+        } 
+        // Fallback to our simplified service response format
+        else if (result.cardType) {
+          console.log("Using simplified format for refund");
+          cardType = result.cardType;
+          cardLast4 = result.maskedPan ? result.maskedPan.slice(-4) : "****";
+          authCode = result.authCode || "N/A";
+        }
+        
+        console.log(`Refund card information extracted - Type: ${cardType}, Last4: ${cardLast4}, AuthCode: ${authCode}`);
+        
         const transactionData = {
           amount: numericAmount,
           paymentMethod: 'card',
           status: 'refunded',
           dateTime: new Date(),
           terminalIp: terminalConfig.terminalIp,
-          cardDetails: ((result as any)?.CardData) ? {
-            // Use the full Dejavoo response format with type assertion
-            type: (result as any).CardData.CardType || "Credit",
-            number: `**** **** **** ${(result as any).CardData.Last4 || '****'}`,
-            authCode: (result as any).AuthCode || 'N/A'
-          } : result.cardType ? {
-            // Fall back to simplified format
-            type: result.cardType,
-            number: result.maskedPan || '**** **** **** ****',
-            authCode: result.authCode || 'N/A'
-          } : null
+          cardDetails: {
+            type: cardType,
+            number: `**** **** **** ${cardLast4}`,
+            authCode: authCode
+          }
         };
         
         // Validate transaction data
