@@ -204,6 +204,19 @@ export class DejavooApiService {
   }
   
   /**
+   * Create a payment request payload with authentication and payment type
+   * This is needed for all payment-related API calls
+   * @param paymentType Type of payment (Default: "Credit")
+   * @returns Base payload with PaymentType field
+   */
+  private createPaymentPayload(paymentType: string = "Credit"): Record<string, any> {
+    return {
+      ...this.createBasePayload(),
+      PaymentType: paymentType
+    };
+  }
+  
+  /**
    * Make an API request to Dejavoo SPIN API
    * @param endpoint API endpoint path
    * @param payload Request payload
@@ -268,10 +281,7 @@ export class DejavooApiService {
    */
   public async checkStatus(): Promise<StatusResponse> {
     try {
-      const payload = {
-        ...this.createBasePayload(),
-        PaymentType: "Credit" // Required field for Dejavoo API
-      };
+      const payload = this.createPaymentPayload("Credit");
       
       // Use the Status endpoint
       const response = await this.makeApiRequest<any>('/Payment/Status', payload, {
@@ -402,9 +412,8 @@ export class DejavooApiService {
   public async voidTransaction(transactionId: string): Promise<DejavooTransactionResponse> {
     // Create payload
     const payload = {
-      ...this.createBasePayload(),
-      TransactionId: transactionId,
-      PaymentType: "Credit" // Required field for Dejavoo API
+      ...this.createPaymentPayload("Credit"),
+      TransactionId: transactionId
     };
     
     // Process the void
@@ -422,10 +431,7 @@ export class DejavooApiService {
    */
   public async settleBatch(): Promise<DejavooTransactionResponse> {
     // Create payload with auth info and required fields
-    const payload = {
-      ...this.createBasePayload(),
-      PaymentType: "Credit" // Required field for Dejavoo API
-    };
+    const payload = this.createPaymentPayload("Credit");
     
     // Process the batch settlement
     return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Settle', payload, {
