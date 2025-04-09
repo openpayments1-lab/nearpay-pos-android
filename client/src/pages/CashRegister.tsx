@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings, CreditCard, History } from "lucide-react";
 import AmountInput from "@/components/AmountInput";
 import PaymentMethod from "@/components/PaymentMethod";
 import TransactionStatus from "@/components/TransactionStatus";
