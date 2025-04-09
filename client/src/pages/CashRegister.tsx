@@ -50,12 +50,12 @@ export default function CashRegister() {
         
         {/* Settings button */}
         <Button 
-          variant="outline"
-          size="icon"
-          className="fixed bottom-6 right-6 bg-white p-3 rounded-full shadow-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+          variant="default"
+          className="fixed bottom-6 right-6 bg-blue-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-blue-700 z-50"
           onClick={() => setShowConfigDialog(true)}
         >
-          <Settings className="h-5 w-5" />
+          <Settings className="h-5 w-5 mr-1" />
+          <span>Terminal Settings</span>
         </Button>
       </div>
 
