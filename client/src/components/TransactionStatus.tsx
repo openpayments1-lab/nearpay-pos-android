@@ -63,19 +63,26 @@ export default function TransactionStatus() {
   let bgClass = 'bg-gray-50';
   let textClass = 'text-gray-700';
   
-  switch (statusType) {
-    case 'success':
-      bgClass = 'bg-green-50';
-      textClass = 'text-success';
-      break;
-    case 'error':
-      bgClass = 'bg-red-50';
-      textClass = 'text-destructive';
-      break;
-    case 'warning':
-      bgClass = 'bg-yellow-50';
-      textClass = 'text-warning';
-      break;
+  // In refund mode, always use amber colors
+  if (isRefundMode) {
+    bgClass = 'bg-amber-50';
+    textClass = 'text-amber-700';
+  } else {
+    // Standard status colors
+    switch (statusType) {
+      case 'success':
+        bgClass = 'bg-green-50';
+        textClass = 'text-success';
+        break;
+      case 'error':
+        bgClass = 'bg-red-50';
+        textClass = 'text-destructive';
+        break;
+      case 'warning':
+        bgClass = 'bg-yellow-50';
+        textClass = 'text-warning';
+        break;
+    }
   }
 
   // Check if this transaction is refundable (only approved card transactions can be refunded)
@@ -102,7 +109,16 @@ export default function TransactionStatus() {
       <h2 className="text-lg font-semibold text-gray-700 mb-3">Transaction Status</h2>
       <div className={`${bgClass} rounded-lg p-4 mb-4 min-h-[120px] flex flex-col justify-center items-center`}>
         <div className="text-center">
-          <StatusIcon type={statusType} />
+          {isRefundMode ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-600 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 21h5v-5" />
+            </svg>
+          ) : (
+            <StatusIcon type={statusType} />
+          )}
           <p className={`${textClass} font-medium`}>
             {isRefundMode ? "Enter the refund amount and click 'Process Refund'" : statusMessage}
           </p>

@@ -536,8 +536,9 @@ export class DejavooApiService {
     // Create base payload matching documentation format
     const referenceId = options.referenceId || this.generateReferenceId();
     const payload = {
+      TransactionType: "Refund", // Explicitly set transaction type for refund
       Amount: amount,
-      TipAmount: null,
+      TipAmount: 0,
       ExternalReceipt: "",
       PaymentType: "Credit",
       ReferenceId: referenceId,
@@ -552,6 +553,8 @@ export class DejavooApiService {
       SPInProxyTimeout: options.transactionTimeout || null,
       CustomFields: options.customFields || {}
     };
+    
+    console.log("Sending refund request to Dejavoo API with payload:", JSON.stringify(payload));
     
     // Process the refund
     return this.makeApiRequest<DejavooTransactionResponse>('Payment/Refund', payload, {

@@ -109,8 +109,13 @@ export default function TransactionHistory() {
     setIsProcessingRefund(true);
     
     try {
-      // Navigate to refund screen with prefilled amount
-      setLocation(`/?refund=true&amount=${selectedTransaction.amount}`);
+      // Navigate to refund screen with prefilled amount and terminal IP
+      setLocation(`/?refund=true&amount=${selectedTransaction.amount}&terminalIp=${selectedTransaction.terminalIp}`);
+      
+      toast({
+        title: "Refund Initiated",
+        description: `Preparing to refund ${formatAmount(selectedTransaction.amount)}. Please confirm on the next screen.`,
+      });
     } catch (error) {
       console.error('Error initiating refund:', error);
       setIsProcessingRefund(false);

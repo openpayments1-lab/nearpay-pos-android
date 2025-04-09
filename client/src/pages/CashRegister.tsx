@@ -31,6 +31,7 @@ export default function CashRegister() {
     const params = new URLSearchParams(location.split('?')[1]);
     const isRefund = params.get('refund') === 'true';
     const amount = params.get('amount');
+    const terminalIp = params.get('terminalIp');
     
     if (isRefund && amount) {
       // Set the refund mode and amount
@@ -43,8 +44,14 @@ export default function CashRegister() {
         description: `Ready to process refund for $${parseFloat(amount).toFixed(2)}`,
         variant: "default",
       });
+      
+      // If terminal IP is provided, make sure we check the connection
+      if (terminalIp) {
+        console.log(`Refund mode - checking terminal connection for IP: ${terminalIp}`);
+        checkTerminalConnection(terminalIp);
+      }
     }
-  }, [location, setAmount, setRefundMode, setSelectedPaymentMethod, toast]);
+  }, [location, setAmount, setRefundMode, setSelectedPaymentMethod, checkTerminalConnection, toast]);
 
   useEffect(() => {
     // Check terminal connection on component mount if IP is stored
