@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, CreditCard, History } from "lucide-react";
+import { Link } from "wouter";
 import AmountInput from "@/components/AmountInput";
 import PaymentMethod from "@/components/PaymentMethod";
 import TransactionStatus from "@/components/TransactionStatus";
@@ -49,15 +50,27 @@ export default function CashRegister() {
           <Receipt />
         </Card>
         
-        {/* Settings button */}
-        <Button 
-          variant="default"
-          className="fixed bottom-6 right-6 bg-blue-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-blue-700 z-50"
-          onClick={() => setShowConfigDialog(true)}
-        >
-          <Settings className="h-5 w-5 mr-1" />
-          <span>Terminal Settings</span>
-        </Button>
+        {/* Settings and History Buttons */}
+        <div className="fixed bottom-6 right-6 flex space-x-3 z-50">
+          <Link href="/history">
+            <Button 
+              variant="default"
+              className="bg-amber-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-amber-700"
+            >
+              <History className="h-5 w-5 mr-1" />
+              <span>Transaction History</span>
+            </Button>
+          </Link>
+          
+          <Button 
+            variant="default"
+            className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-blue-700"
+            onClick={() => setShowConfigDialog(true)}
+          >
+            <Settings className="h-5 w-5 mr-1" />
+            <span>Terminal Settings</span>
+          </Button>
+        </div>
       </div>
 
       {/* Terminal Configuration Dialog */}
