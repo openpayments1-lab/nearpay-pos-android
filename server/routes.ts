@@ -224,17 +224,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Log transaction result for debugging
     console.log('Transaction result from processCardPayment:', JSON.stringify(result));
     
-    // If transaction was approved, save it to the database
-    if (result.status === 'approved') {
+    // Check if transaction was approved - handle both simplified and full response formats
+    const isApproved = 
+      // Check simplified format
+      result.status === 'approved' || 
+      // Check Dejavoo API format with case-insensitive comparison
+      (result.GeneralResponse?.Message === 'Approved' && 
+       result.GeneralResponse?.HostResponseCode === '00') ||
+      // Additional check for API format (string indexing fallback)
+      ((result as any)?.GeneralResponse?.Message === 'Approved' && 
+       (result as any)?.GeneralResponse?.HostResponseCode === '00');
+    
+    if (isApproved) {
       try {
-        // Parse transaction data
+        console.log("Transaction approved, saving to database");
+        
+        // Parse transaction data from either format
         const transactionData = {
           amount: numericAmount,
           paymentMethod: 'card',
-          status: result.status,
+          status: 'approved',
           dateTime: new Date(),
           terminalIp: terminalConfig.terminalIp,
-          cardDetails: result.cardType ? {
+          cardDetails: ((result as any)?.CardData) ? {
+            // Use the full Dejavoo response format with type assertion
+            type: (result as any).CardData.CardType || "Credit",
+            number: `**** **** **** ${(result as any).CardData.Last4 || '****'}`,
+            authCode: (result as any).AuthCode || 'N/A'
+          } : result.cardType ? {
+            // Fall back to simplified format
             type: result.cardType,
             number: result.maskedPan || '**** **** **** ****',
             authCode: result.authCode || 'N/A'
@@ -325,6 +343,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transactionTimeout: terminalConfig.transactionTimeout
       }
     );
+    
+    // Log transaction result for debugging
+    console.log('Refund result from processRefund:', JSON.stringify(result));
+    
+    // Check if refund was approved - handle both simplified and full response formats
+    const isApproved = 
+      // Check simplified format
+      result.status === 'approved' || 
+      // Check Dejavoo API format with case-insensitive comparison
+      (result.GeneralResponse?.Message === 'Approved' && 
+       result.GeneralResponse?.HostResponseCode === '00') ||
+      // Additional check for API format (string indexing fallback)
+      ((result as any)?.GeneralResponse?.Message === 'Approved' && 
+       (result as any)?.GeneralResponse?.HostResponseCode === '00');
+    
+    if (isApproved) {
+      try {
+        console.log("Refund approved, saving to database");
+        
+        // Parse transaction data from either format
+        const transactionData = {
+          amount: numericAmount,
+          paymentMethod: 'card',
+          status: 'refunded',
+          dateTime: new Date(),
+          terminalIp: terminalConfig.terminalIp,
+          cardDetails: ((result as any)?.CardData) ? {
+            // Use the full Dejavoo response format with type assertion
+            type: (result as any).CardData.CardType || "Credit",
+            number: `**** **** **** ${(result as any).CardData.Last4 || '****'}`,
+            authCode: (result as any).AuthCode || 'N/A'
+          } : result.cardType ? {
+            // Fall back to simplified format
+            type: result.cardType,
+            number: result.maskedPan || '**** **** **** ****',
+            authCode: result.authCode || 'N/A'
+          } : null
+        };
+        
+        // Validate transaction data
+        const validatedData = insertTransactionSchema2.parse(transactionData);
+        
+        // Save transaction to database
+        const savedTransaction = await storage.createTransaction(validatedData);
+        console.log('Refund transaction saved:', savedTransaction);
+      } catch (error) {
+        console.error('Error saving refund transaction:', error);
+        // Continue even if saving fails - don't affect the response
+      }
+    } else {
+      console.log('Refund was not approved, status:', result.status);
+    }
     
     res.json(result);
   }));

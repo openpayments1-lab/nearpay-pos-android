@@ -144,6 +144,7 @@ export interface DejavooFullResponse {
 }
 
 // Simplified Dejavoo Transaction Response (for backward compatibility)
+// This interface represents our internal simplified transaction response
 export interface DejavooTransactionResponse {
   status: string;
   message?: string;
@@ -154,6 +155,34 @@ export interface DejavooTransactionResponse {
   authCode?: string;
   hostResponseCode?: string;
   hostResponseMessage?: string;
+  
+  // Add actual Dejavoo API response properties for better type compatibility
+  GeneralResponse?: {
+    HostResponseCode?: string;
+    HostResponseMessage?: string;
+    ResultCode?: string;
+    StatusCode?: string;
+    Message?: string;
+    DetailedMessage?: string;
+  };
+  PaymentType?: string;
+  TransactionType?: string;
+  Amounts?: {
+    TotalAmount?: number | null;
+    Amount?: number | null;
+    TipAmount?: number | null;
+  };
+  AuthCode?: string;
+  ReferenceId?: string;
+  CardData?: {
+    CardType?: string;
+    EntryType?: string;
+    Last4?: string;
+    First4?: string;
+    BIN?: string;
+    ExpirationDate?: string;
+    Name?: string;
+  };
 }
 
 // Settings table to store application settings
