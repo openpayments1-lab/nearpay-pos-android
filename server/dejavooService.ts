@@ -79,7 +79,7 @@ export async function processCardPayment(
       enableTipping: options.enableTipping,
       enableSignature: options.enableSignature,
       transactionTimeout: options.transactionTimeout,
-      getReceipt: true
+      printReceipt: true  // Use printReceipt instead of getReceipt
     });
     
     console.log('Received response from Dejavoo API:', JSON.stringify(response));
@@ -284,7 +284,7 @@ export async function processRefund(
     const response = await dejavooService.processRefund(amount, {
       enableSignature: options.enableSignature,
       transactionTimeout: options.transactionTimeout,
-      getReceipt: true
+      printReceipt: true  // Use printReceipt instead of getReceipt
     });
     
     console.log('Received refund response from Dejavoo API:', JSON.stringify(response));

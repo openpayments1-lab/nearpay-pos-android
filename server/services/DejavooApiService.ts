@@ -447,7 +447,7 @@ export class DejavooApiService {
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PaymentType: "Credit",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      GetReceipt: options.getReceipt ? "Yes" : "No",
+      // GetReceipt field removed due to API validation errors
       MerchantNumber: null,
       InvoiceNumber: options.invoiceNumber || "",
       CaptureSignature: options.captureSignature || options.enableSignature || false,
@@ -537,7 +537,7 @@ export class DejavooApiService {
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PaymentType: "Credit",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      GetReceipt: options.getReceipt ? "Yes" : "No",
+      // GetReceipt field removed due to API validation errors
       MerchantNumber: null,
       InvoiceNumber: options.invoiceNumber || "",
       CaptureSignature: options.captureSignature || options.enableSignature || false,
@@ -629,7 +629,7 @@ export class DejavooApiService {
       ...this.createBasePayload(),
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      GetReceipt: options.getReceipt ? "Yes" : "No",
+      // GetReceipt field removed due to API validation errors
       CaptureSignature: options.captureSignature || false,
       PaymentType: "Credit", // Required field for Dejavoo API
       GetExtendedData: true
@@ -661,7 +661,7 @@ export class DejavooApiService {
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PaymentType: "Credit",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      GetReceipt: options.getReceipt ? "Yes" : "No",
+      // GetReceipt field removed due to API validation errors
       MerchantNumber: null,
       InvoiceNumber: options.invoiceNumber || "",
       CaptureSignature: options.captureSignature || options.enableSignature || false,
@@ -696,7 +696,7 @@ export class DejavooApiService {
       Amount: amount,
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      GetReceipt: options.getReceipt ? "Yes" : "No",
+      // GetReceipt field removed due to API validation errors
       InvoiceNumber: options.invoiceNumber || "",
       PaymentType: "Credit" // Required field for Dejavoo API
     };
@@ -868,7 +868,7 @@ export class DejavooApiService {
       ...this.createBasePayload(),
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      GetReceipt: options.getReceipt ? "Yes" : "No",
+      // GetReceipt field removed due to API validation errors
       PaymentType: "Credit", // Required field for Dejavoo API
       GetExtendedData: true
     };
