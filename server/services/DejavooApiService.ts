@@ -273,7 +273,7 @@ export class DejavooApiService {
           
           // For status checks, we want to return the error response as valid data
           // since it contains information about the terminal state
-          if (endpoint === 'Payment/Status' && error.response.data && error.response.data.GeneralResponse) {
+          if (endpoint === 'spin/status' && error.response.data && error.response.data.GeneralResponse) {
             console.log(`${endpoint} error response:`, JSON.stringify(error.response.data));
             return error.response.data as T;
           }
@@ -533,7 +533,7 @@ export class DejavooApiService {
     };
     
     // Process the refund
-    return this.makeApiRequest<DejavooTransactionResponse>('Payment/Refund', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('spin/refund', payload, {
       timeout: (options.transactionTimeout || 90) * 1000
     });
   }
@@ -557,7 +557,7 @@ export class DejavooApiService {
     };
     
     // Process the void
-    return this.makeApiRequest<DejavooTransactionResponse>('Payment/Void', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('spin/void', payload, {
       timeout: 30000
     });
   }
@@ -657,7 +657,7 @@ export class DejavooApiService {
     };
     
     // Process the pre-auth
-    return this.makeApiRequest<DejavooTransactionResponse>('Payment/PreAuth', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('spin/authonly', payload, {
       timeout: (options.transactionTimeout || 90) * 1000
     });
   }
@@ -690,7 +690,7 @@ export class DejavooApiService {
     };
     
     // Process the capture
-    return this.makeApiRequest<DejavooTransactionResponse>('Payment/PostAuth', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('spin/capture', payload, {
       timeout: 30000
     });
   }
@@ -738,7 +738,7 @@ export class DejavooApiService {
     };
     
     // Process tip adjustment
-    return this.makeApiRequest<DejavooTransactionResponse>('Payment/TipAdjust', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('spin/tipadjust', payload, {
       timeout: 30000
     });
   }
@@ -784,7 +784,7 @@ export class DejavooApiService {
     const payload = this.createBasePayload();
     
     // Get terminal info
-    return this.makeApiRequest<Record<string, any>>('Terminal/Info', payload, {
+    return this.makeApiRequest<Record<string, any>>('spin/connect', payload, {
       timeout: 30000
     });
   }
