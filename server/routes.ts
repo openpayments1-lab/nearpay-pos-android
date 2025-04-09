@@ -95,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         }
         
-        const result = await dejavooService.makeApiRequest<DejavooStatusResponse>('Payment/Status', statusPayload, {
+        const result = await dejavooService.makeApiRequest<DejavooStatusResponse>('status', statusPayload, {
           timeout: 10000
         });
         

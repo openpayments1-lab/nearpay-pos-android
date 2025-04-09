@@ -9,7 +9,7 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
 // Base API URL
-const API_BASE_URL = 'https://api.spinpos.net/';
+const API_BASE_URL = 'https://api.spinpos.net/spin/';
 
 /**
  * Interface for terminal configuration
@@ -318,7 +318,7 @@ export class DejavooApiService {
       };
       
       // Use the Status endpoint
-      const response = await this.makeApiRequest<any>('spin/status', payload, {
+      const response = await this.makeApiRequest<any>('status', payload, {
         timeout: 10000
       });
       
@@ -448,7 +448,7 @@ export class DejavooApiService {
     };
     
     // Process the payment
-    const response = await this.makeApiRequest<DejavooTransactionResponse>('spin/sale', payload, {
+    const response = await this.makeApiRequest<DejavooTransactionResponse>('sale', payload, {
       timeout: (options.transactionTimeout || 90) * 1000
     });
     
@@ -478,7 +478,7 @@ export class DejavooApiService {
         try {
           // Check transaction status using the same reference ID
           const statusResponse = await this.makeApiRequest<DejavooTransactionResponse>(
-            'spin/status', 
+            'status', 
             statusPayload, 
             { timeout: 10000 }
           );
