@@ -104,48 +104,44 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
           <TabsContent value="basic" className="space-y-4">
             <div>
               <Label htmlFor="terminal-ip" className="block text-sm font-medium text-gray-700 mb-1">
-                Terminal IP Address
+                Terminal IP Address (Optional)
               </Label>
               <Input
                 type="text"
                 id="terminal-ip"
-                placeholder="192.168.1.100"
+                placeholder="IP not needed for remote API"
                 value={terminalIp}
                 onChange={(e) => setTerminalIp(e.target.value)}
               />
-              <p className="mt-1 text-sm text-gray-500">IP address of your Dejavoo terminal</p>
-            </div>
-            
-            <div>
-              <Label htmlFor="api-key" className="block text-sm font-medium text-gray-700 mb-1">
-                API Key
-              </Label>
-              <Input
-                type="password"
-                id="api-key"
-                placeholder="Enter your Dejavoo API key"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-              <p className="mt-1 text-sm text-gray-500">Optional: Required for some Dejavoo services</p>
+              <p className="mt-1 text-sm text-gray-500">Not required when using Dejavoo remote API</p>
             </div>
             
             <div>
               <Label htmlFor="terminal-type" className="block text-sm font-medium text-gray-700 mb-1">
-                Terminal Type
+                Terminal ID (TPN)
               </Label>
-              <Select value={terminalType} onValueChange={setTerminalType}>
-                <SelectTrigger id="terminal-type">
-                  <SelectValue placeholder="Select terminal type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SPIN">Dejavoo Spin</SelectItem>
-                  <SelectItem value="Z8">Dejavoo Z8</SelectItem>
-                  <SelectItem value="Z11">Dejavoo Z11</SelectItem>
-                  <SelectItem value="OTHER">Other Model</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="mt-1 text-sm text-gray-500">Select your Dejavoo terminal model</p>
+              <Input
+                type="text"
+                id="terminal-type"
+                placeholder="z11invtest69"
+                value={terminalType}
+                onChange={(e) => setTerminalType(e.target.value)}
+              />
+              <p className="mt-1 text-sm text-gray-500">Your Terminal ID (TPN) from Dejavoo</p>
+            </div>
+            
+            <div>
+              <Label htmlFor="api-key" className="block text-sm font-medium text-gray-700 mb-1">
+                API Key (Auth Key)
+              </Label>
+              <Input
+                type="password"
+                id="api-key"
+                placeholder="JZiRUusizc"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+              <p className="mt-1 text-sm text-gray-500">Your Auth Key from Dejavoo</p>
             </div>
             
             <div className="flex items-center space-x-2 mt-4">

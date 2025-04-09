@@ -95,13 +95,13 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const checkTerminalConnection = useCallback(async (ip: string) => {
     setTerminalIp(ip);
-    updateStatus("Connecting to terminal...", "info");
+    updateStatus("Checking terminal connection...", "info");
     
     try {
-      // Pass terminal type and API key if available
+      // Pass terminal ID (TPN) and API key for the Dejavoo API
       const payload = { 
-        ip, 
-        terminalType: terminalConfig.terminalType,
+        ip, // This is optional now with the remote API
+        terminalType: terminalConfig.terminalType, // This is now used as TPN (Terminal ID)
         apiKey: terminalConfig.apiKey,
         testMode: terminalConfig.testMode
       };

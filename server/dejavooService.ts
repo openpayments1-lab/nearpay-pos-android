@@ -22,36 +22,37 @@ export async function checkTerminalConnection(
   options: TerminalCheckOptions = {}
 ): Promise<boolean> {
   try {
-    // Determine endpoint URL based on terminal type
-    let url = `http://${ipAddress}/spin/v1/status`;
+    // Use the Dejavoo API endpoint to check status
+    const url = 'https://api.spinpos.net/v2/Terminal/Status';
     
-    // If it's not a SPIN terminal, adjust the endpoint
-    if (options.terminalType && options.terminalType !== 'SPIN') {
-      url = `http://${ipAddress}/rest/v1/status`;
-    }
+    // Prepare request payload
+    const payload = {
+      Tpn: options.terminalType || "z11invtest69",  // Default to test TPN if not provided
+      Authkey: options.apiKey || "JZiRUusizc",      // Default to test key if not provided
+    };
     
-    // Prepare request headers with API key if provided
+    // Prepare request headers
     const headers: Record<string, string> = {
       "Content-Type": "application/json"
     };
     
-    if (options.apiKey) {
-      headers["X-API-Key"] = options.apiKey;
-    }
+    console.log('Checking terminal status with Dejavoo API:', JSON.stringify(payload));
     
-    // Add test mode param if specified
-    if (options.testMode) {
-      url += "?test=true";
-    }
-    
-    // Send request to check if terminal is reachable
-    const response = await axios.get(url, { 
+    // Send request to check terminal status
+    const response = await axios.post(url, payload, { 
       headers,
-      timeout: 5000 
+      timeout: 10000 
     });
     
-    // If we get a response, the terminal is connected
-    return response.status === 200;
+    console.log('Terminal status response:', JSON.stringify(response.data));
+    
+    // If Status field exists in the response, the API is connected
+    if (response.status === 200 && response.data && response.data.Status) {
+      // Check if the terminal is online
+      return response.data.Status === "Online" || response.data.Status === "Success";
+    }
+    
+    return false;
   } catch (error) {
     console.error("Terminal connection check failed:", error);
     return false;
@@ -65,82 +66,71 @@ export async function processCardPayment(
   options: CardPaymentOptions = {}
 ): Promise<DejavooTransactionResponse> {
   try {
-    // Format amount for Dejavoo (in cents)
-    const amountInCents = Math.round(amount * 100).toString();
+    // Use the Dejavoo API endpoint directly
+    const url = 'https://api.spinpos.net/v2/Payment/Sale';
     
-    // Determine endpoint URL based on terminal type
-    let url = `http://${ipAddress}/spin/v1/txn`;
-    
-    // If it's not a SPIN terminal, adjust the endpoint
-    if (options.terminalType && options.terminalType !== 'SPIN') {
-      url = `http://${ipAddress}/rest/v1/transaction`;
-    }
-    
-    // Prepare request headers with API key if provided
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json"
-    };
-    
-    if (options.apiKey) {
-      headers["X-API-Key"] = options.apiKey;
-    }
-    
-    // Add test mode param if specified
-    if (options.testMode) {
-      url += "?test=true";
-    }
+    // Generate a unique reference ID
+    const referenceId = generateUniqueId();
     
     // Create payment request payload
     const payload: any = {
-      TxnType: "Sale",
-      AmtInfo: {
-        TotAmt: amountInCents,
+      Amount: amount,
+      TipAmount: options.enableTipping ? null : 0, // Allow tipping if enabled
+      ExternalReceipt: "",
+      PaymentType: "Credit",
+      ReferenceId: referenceId,
+      PrintReceipt: "No",
+      GetReceipt: "No",
+      MerchantNumber: null,
+      InvoiceNumber: "",
+      CaptureSignature: options.enableSignature || false,
+      GetExtendedData: true,
+      CallbackInfo: {
+        Url: ""
       },
-      ClerkID: "1",
-      TrlNum: "1",
+      Tpn: options.terminalType || "z11invtest69",  // Default to test TPN if not provided
+      Authkey: options.apiKey || "JZiRUusizc",      // Default to test key if not provided
+      SPInProxyTimeout: options.transactionTimeout || null,
+      CustomFields: {}
     };
     
-    // Add tipping option if enabled
-    if (options.enableTipping) {
-      payload.TipInfo = {
-        TipEnable: true
-      };
-    }
-    
-    // Add signature option if enabled
-    if (options.enableSignature !== undefined) {
-      payload.SignCapture = options.enableSignature;
-    }
+    console.log('Sending payment request to Dejavoo API:', JSON.stringify(payload));
     
     // Determine timeout (default to 90 seconds if not specified)
     const timeout = options.transactionTimeout ? options.transactionTimeout * 1000 : 90000;
     
-    // Send request to terminal
+    // Prepare request headers
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+    
+    // Send request to Dejavoo API
     const response = await axios.post(url, payload, {
       headers,
       timeout
     });
     
     const data = response.data;
+    console.log('Received response from Dejavoo API:', JSON.stringify(data));
     
     // Parse the response
-    if (data.ApprovedDE38 === "APPROVED") {
+    if (data.Status === "Approved") {
       return {
         status: "approved",
-        transactionId: data.TxnId || "",
+        transactionId: data.TransactionId || referenceId,
         dateTime: new Date().toISOString(),
-        cardType: data.CardType || "Credit",
-        maskedPan: data.PAN || "**** **** **** ****",
-        authCode: data.AuthCode || "",
-        hostResponseCode: data.RespCode || "",
-        hostResponseMessage: data.ResponseDE44 || ""
+        cardType: data.CardBrand || "Credit",
+        maskedPan: data.CardNumber || "**** **** **** ****",
+        authCode: data.ApprovalCode || "",
+        hostResponseCode: data.ResponseCode || "",
+        hostResponseMessage: data.ResponseText || ""
       };
     } else {
       return {
         status: "declined",
-        message: data.ResponseDE44 || "Transaction declined",
-        hostResponseCode: data.RespCode || "",
-        hostResponseMessage: data.ResponseDE44 || ""
+        message: data.ResponseText || "Transaction declined",
+        hostResponseCode: data.ResponseCode || "",
+        hostResponseMessage: data.ResponseText || ""
       };
     }
   } catch (error) {
@@ -160,9 +150,14 @@ export async function processCardPayment(
     // Generic error
     return {
       status: "declined",
-      message: "Payment processing failed: Could not communicate with terminal"
+      message: "Payment processing failed: Could not communicate with Dejavoo API"
     };
   }
+}
+
+// Helper function to generate a unique reference ID
+function generateUniqueId(): string {
+  return Math.random().toString(16).slice(2);
 }
 
 // Void transaction (can be used to cancel or refund)
@@ -172,59 +167,65 @@ export async function voidTransaction(
   options: CardPaymentOptions = {}
 ): Promise<DejavooTransactionResponse> {
   try {
-    // Determine endpoint URL based on terminal type
-    let url = `http://${ipAddress}/spin/v1/txn`;
+    // Use the Dejavoo API endpoint directly
+    const url = 'https://api.spinpos.net/v2/Payment/Void';
     
-    // If it's not a SPIN terminal, adjust the endpoint
-    if (options.terminalType && options.terminalType !== 'SPIN') {
-      url = `http://${ipAddress}/rest/v1/transaction`;
-    }
+    // Generate a unique reference ID
+    const referenceId = generateUniqueId();
     
-    // Prepare request headers with API key if provided
+    // Prepare request payload
+    const payload = {
+      TransactionId: transactionId,
+      ReferenceId: referenceId,
+      Tpn: options.terminalType || "z11invtest69",  // Default to test TPN if not provided
+      Authkey: options.apiKey || "JZiRUusizc",      // Default to test key if not provided
+    };
+    
+    // Prepare request headers
     const headers: Record<string, string> = {
       "Content-Type": "application/json"
     };
     
-    if (options.apiKey) {
-      headers["X-API-Key"] = options.apiKey;
-    }
+    console.log('Sending void request to Dejavoo API:', JSON.stringify(payload));
     
-    // Add test mode param if specified
-    if (options.testMode) {
-      url += "?test=true";
-    }
-    
-    const payload = {
-      TxnType: "Void",
-      TxnId: transactionId,
-      ClerkID: "1",
-      TrlNum: "1",
-    };
-    
+    // Send request to Dejavoo API
     const response = await axios.post(url, payload, {
       headers,
       timeout: 30000,
     });
     
     const data = response.data;
+    console.log('Received void response from Dejavoo API:', JSON.stringify(data));
     
-    if (data.ApprovedDE38 === "APPROVED") {
+    if (data.Status === "Approved") {
       return {
         status: "approved",
         message: "Transaction voided successfully",
-        transactionId: data.TxnId || "",
+        transactionId: data.TransactionId || transactionId,
       };
     } else {
       return {
         status: "declined",
-        message: data.ResponseDE44 || "Void transaction declined",
+        message: data.ResponseText || "Void transaction declined",
       };
     }
   } catch (error) {
     console.error("Void transaction failed:", error);
+    
+    // Check if it's an Axios error with response data
+    if (axios.isAxiosError(error) && error.response) {
+      const responseData = error.response.data;
+      return {
+        status: "declined",
+        message: responseData.message || "Void failed",
+        hostResponseCode: responseData.code || "",
+        hostResponseMessage: responseData.message || ""
+      };
+    }
+    
     return {
       status: "declined",
-      message: "Void transaction failed: Could not communicate with terminal",
+      message: "Void transaction failed: Could not communicate with Dejavoo API",
     };
   }
 }
@@ -235,40 +236,36 @@ export async function settleBatch(
   options: CardPaymentOptions = {}
 ): Promise<DejavooTransactionResponse> {
   try {
-    // Determine endpoint URL based on terminal type
-    let url = `http://${ipAddress}/spin/v1/settle`;
+    // Use the Dejavoo API endpoint directly
+    const url = 'https://api.spinpos.net/v2/Payment/Settle';
     
-    // If it's not a SPIN terminal, adjust the endpoint
-    if (options.terminalType && options.terminalType !== 'SPIN') {
-      url = `http://${ipAddress}/rest/v1/settle`;
-    }
+    // Generate a unique reference ID
+    const referenceId = generateUniqueId();
     
-    // Prepare request headers with API key if provided
+    // Prepare request payload
+    const payload = {
+      ReferenceId: referenceId,
+      Tpn: options.terminalType || "z11invtest69",  // Default to test TPN if not provided
+      Authkey: options.apiKey || "JZiRUusizc",      // Default to test key if not provided
+    };
+    
+    // Prepare request headers
     const headers: Record<string, string> = {
       "Content-Type": "application/json"
     };
     
-    if (options.apiKey) {
-      headers["X-API-Key"] = options.apiKey;
-    }
+    console.log('Sending batch settlement request to Dejavoo API:', JSON.stringify(payload));
     
-    // Add test mode param if specified
-    if (options.testMode) {
-      url += "?test=true";
-    }
-    
-    const payload = {
-      ClerkID: "1",
-    };
-    
+    // Send request to Dejavoo API
     const response = await axios.post(url, payload, {
       headers,
       timeout: 60000,
     });
     
     const data = response.data;
+    console.log('Received batch settlement response from Dejavoo API:', JSON.stringify(data));
     
-    if (data.ApprovedDE38 === "APPROVED") {
+    if (data.Status === "Approved") {
       return {
         status: "approved",
         message: "Batch settled successfully",
@@ -276,14 +273,26 @@ export async function settleBatch(
     } else {
       return {
         status: "declined",
-        message: data.ResponseDE44 || "Batch settlement declined",
+        message: data.ResponseText || "Batch settlement declined",
       };
     }
   } catch (error) {
     console.error("Batch settlement failed:", error);
+    
+    // Check if it's an Axios error with response data
+    if (axios.isAxiosError(error) && error.response) {
+      const responseData = error.response.data;
+      return {
+        status: "declined",
+        message: responseData.message || "Batch settlement failed",
+        hostResponseCode: responseData.code || "",
+        hostResponseMessage: responseData.message || ""
+      };
+    }
+    
     return {
       status: "declined",
-      message: "Batch settlement failed: Could not communicate with terminal",
+      message: "Batch settlement failed: Could not communicate with Dejavoo API",
     };
   }
 }
