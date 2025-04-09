@@ -146,6 +146,7 @@ export interface DejavooFullResponse {
 // Simplified Dejavoo Transaction Response (for backward compatibility)
 // This interface represents our internal simplified transaction response
 export interface DejavooTransactionResponse {
+  // Our internal status fields (normalized)
   status: string;
   message?: string;
   transactionId?: string;
@@ -156,7 +157,7 @@ export interface DejavooTransactionResponse {
   hostResponseCode?: string;
   hostResponseMessage?: string;
   
-  // Add actual Dejavoo API response properties for better type compatibility
+  // Actual Dejavoo API response fields (PascalCase)
   GeneralResponse?: {
     HostResponseCode?: string;
     HostResponseMessage?: string;
@@ -164,6 +165,7 @@ export interface DejavooTransactionResponse {
     StatusCode?: string;
     Message?: string;
     DetailedMessage?: string;
+    DelayBeforeNextRequest?: number | null;
   };
   PaymentType?: string;
   TransactionType?: string;
@@ -171,9 +173,21 @@ export interface DejavooTransactionResponse {
     TotalAmount?: number | null;
     Amount?: number | null;
     TipAmount?: number | null;
+    FeeAmount?: number | null;
+    TaxAmount?: number | null;
   };
   AuthCode?: string;
   ReferenceId?: string;
+  InvoiceNumber?: string;
+  SerialNumber?: string;
+  BatchNumber?: string;
+  TransactionNumber?: string;
+  Voided?: boolean;
+  iPosToken?: string;
+  Token?: string;
+  RRN?: string;
+  
+  // Card data in PascalCase
   CardData?: {
     CardType?: string;
     EntryType?: string;
@@ -183,6 +197,48 @@ export interface DejavooTransactionResponse {
     ExpirationDate?: string;
     Name?: string;
   };
+  
+  // EMV data in PascalCase
+  EMVData?: {
+    ApplicationName?: string;
+    AID?: string;
+    TVR?: string;
+    TSI?: string;
+    IAD?: string;
+    ARC?: string;
+  };
+  
+  // Our duplicated interface fields (camelCase for backward compatibility)
+  generalResponse?: {
+    hostResponseCode?: string;
+    hostResponseMessage?: string;
+    resultCode?: string;
+    statusCode?: string;
+    message?: string;
+    detailedMessage?: string;
+  };
+  paymentType?: string;
+  transactionType?: string;
+  amounts?: {
+    totalAmount?: number | null;
+    amount?: number | null;
+    tipAmount?: number | null;
+  };
+  authcode?: string;
+  referenceId?: string;
+  transactionNumber?: string;
+  cardData?: {
+    cardType?: string;
+    entryType?: string;
+    last4?: string;
+    first4?: string;
+    bin?: string;
+    expirationDate?: string;
+    name?: string;
+  };
+  
+  // Allow any additional properties for future compatibility
+  [key: string]: any;
 }
 
 // Settings table to store application settings

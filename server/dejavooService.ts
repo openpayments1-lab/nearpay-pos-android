@@ -88,10 +88,13 @@ export async function processCardPayment(
     
     // Debug detailed response inspection
     console.log('Transaction Response Check:');
-    console.log('- StatusCode:', response.generalResponse?.statusCode);
-    console.log('- ResultCode:', response.generalResponse?.resultCode);
-    console.log('- HostResponseCode:', response.generalResponse?.hostResponseCode);
-    console.log('- Message:', response.generalResponse?.message);
+    // Check both camelCase and PascalCase field names in response
+    // Explicit type assertion to avoid TypeScript errors
+    const apiResponse = response as any;
+    console.log('- StatusCode:', apiResponse.GeneralResponse?.StatusCode || apiResponse.generalResponse?.statusCode);
+    console.log('- ResultCode:', apiResponse.GeneralResponse?.ResultCode || apiResponse.generalResponse?.resultCode);
+    console.log('- HostResponseCode:', apiResponse.GeneralResponse?.HostResponseCode || apiResponse.generalResponse?.hostResponseCode);
+    console.log('- Message:', apiResponse.GeneralResponse?.Message || apiResponse.generalResponse?.message);
     
     // Parse the response based on the structure
     // Check for multiple possible approval indicators:
@@ -99,34 +102,87 @@ export async function processCardPayment(
     // 2. ResultCode of "0" which means success
     // 3. HostResponseCode of "00" which is standard for approved transactions
     // 4. Message contains "Approved"
+    
+    // Type assertion to handle both PascalCase and camelCase properties
+    const resp = response as any;
+    
     const isApproved = 
-      (response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
-      (response.generalResponse?.resultCode === "0") ||
-      (response.generalResponse?.hostResponseCode === "00") ||
-      (response.generalResponse?.message && response.generalResponse.message.includes("Approved"));
+      // Check PascalCase fields (actual API response format from Dejavoo terminal)
+      (resp.GeneralResponse?.StatusCode && resp.GeneralResponse.StatusCode.includes("Approved")) ||
+      (resp.GeneralResponse?.ResultCode === "0") ||
+      (resp.GeneralResponse?.HostResponseCode === "00") ||
+      (resp.GeneralResponse?.Message && resp.GeneralResponse.Message.includes("Approved")) ||
+      // Also check camelCase fields (our interface format) for backward compatibility
+      (resp.generalResponse?.statusCode && resp.generalResponse.statusCode.includes("Approved")) ||
+      (resp.generalResponse?.resultCode === "0") ||
+      (resp.generalResponse?.hostResponseCode === "00") ||
+      (resp.generalResponse?.message && resp.generalResponse.message.includes("Approved"));
     
     console.log('Transaction approved?', isApproved);
     
     if (isApproved) {
+      // Successful transaction - create a response object that combines all possible field patterns
+      // Continue using the type assertion to avoid TypeScript errors
       const result = {
         status: "approved",
-        transactionId: response.transactionNumber || response.referenceId || referenceId,
+        // Use either PascalCase or camelCase transaction identifiers
+        transactionId: 
+          resp.TransactionNumber || 
+          resp.ReferenceId || 
+          resp.transactionNumber || 
+          resp.referenceId || 
+          referenceId,
         dateTime: new Date().toISOString(),
-        cardType: response.cardData?.cardType || "Credit",
-        maskedPan: response.cardData?.last4 ? `**** **** **** ${response.cardData.last4}` : "**** **** **** ****",
-        authCode: response.authCode || "",
-        hostResponseCode: response.generalResponse?.hostResponseCode || "",
-        hostResponseMessage: response.generalResponse?.hostResponseMessage || ""
+        // Extract card type using either PascalCase or camelCase
+        cardType: 
+          resp.CardData?.CardType || 
+          resp.cardData?.cardType || 
+          "Credit",
+        // Extract masked PAN using either PascalCase or camelCase
+        maskedPan: 
+          resp.CardData?.Last4 ? 
+            `**** **** **** ${resp.CardData.Last4}` : 
+          resp.cardData?.last4 ? 
+            `**** **** **** ${resp.cardData.last4}` : 
+            "**** **** **** ****",
+        // Extract authorization code using either PascalCase or camelCase
+        authCode: 
+          resp.AuthCode || 
+          resp.authCode || 
+          "",
+        // Extract host response code using either PascalCase or camelCase
+        hostResponseCode: 
+          resp.GeneralResponse?.HostResponseCode || 
+          resp.generalResponse?.hostResponseCode || 
+          "",
+        // Extract host response message using either PascalCase or camelCase
+        hostResponseMessage: 
+          resp.GeneralResponse?.HostResponseMessage || 
+          resp.generalResponse?.hostResponseMessage || 
+          ""
       };
+      
+      // Pass through the original API response for debugging and storage
+      (result as any).rawResponse = response;
+      
       return result;
     } else {
       return {
         status: "declined",
-        message: response.generalResponse?.detailedMessage || 
-                 response.generalResponse?.message || 
-                 "Transaction declined",
-        hostResponseCode: response.generalResponse?.hostResponseCode || "",
-        hostResponseMessage: response.generalResponse?.hostResponseMessage || ""
+        message: 
+          resp.GeneralResponse?.DetailedMessage || 
+          resp.GeneralResponse?.Message || 
+          resp.generalResponse?.detailedMessage || 
+          resp.generalResponse?.message || 
+          "Transaction declined",
+        hostResponseCode: 
+          resp.GeneralResponse?.HostResponseCode || 
+          resp.generalResponse?.hostResponseCode || 
+          "",
+        hostResponseMessage: 
+          resp.GeneralResponse?.HostResponseMessage || 
+          resp.generalResponse?.hostResponseMessage || 
+          ""
       };
     }
   } catch (error) {
@@ -183,22 +239,42 @@ export async function voidTransaction(
     
     console.log('Received void response from Dejavoo API:', JSON.stringify(response));
     
-    // Parse the response - using the same approval detection logic
-    if ((response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
-        (response.generalResponse?.resultCode === "0") ||
-        (response.generalResponse?.hostResponseCode === "00") ||
-        (response.generalResponse?.message && response.generalResponse.message.includes("Approved"))) {
+    // Type assertion to handle both PascalCase and camelCase properties
+    const resp = response as any;
+    
+    // Parse the response - using the same approval detection logic for both formats
+    const isApproved = 
+      // Check PascalCase fields (actual API response format from Dejavoo terminal)
+      (resp.GeneralResponse?.StatusCode && resp.GeneralResponse.StatusCode.includes("Approved")) ||
+      (resp.GeneralResponse?.ResultCode === "0") ||
+      (resp.GeneralResponse?.HostResponseCode === "00") ||
+      (resp.GeneralResponse?.Message && resp.GeneralResponse.Message.includes("Approved")) ||
+      // Also check camelCase fields (our interface format) for backward compatibility
+      (resp.generalResponse?.statusCode && resp.generalResponse.statusCode.includes("Approved")) ||
+      (resp.generalResponse?.resultCode === "0") ||
+      (resp.generalResponse?.hostResponseCode === "00") ||
+      (resp.generalResponse?.message && resp.generalResponse.message.includes("Approved"));
+    
+    if (isApproved) {
       return {
         status: "approved",
         message: "Transaction voided successfully",
-        transactionId: response.transactionNumber || response.referenceId || transactionId,
+        transactionId: 
+          resp.TransactionNumber || 
+          resp.ReferenceId || 
+          resp.transactionNumber || 
+          resp.referenceId || 
+          transactionId,
       };
     } else {
       return {
         status: "declined",
-        message: response.generalResponse?.detailedMessage || 
-                 response.generalResponse?.message || 
-                 "Void transaction declined",
+        message: 
+          resp.GeneralResponse?.DetailedMessage || 
+          resp.GeneralResponse?.Message || 
+          resp.generalResponse?.detailedMessage || 
+          resp.generalResponse?.message || 
+          "Void transaction declined",
       };
     }
   } catch (error) {
