@@ -86,17 +86,29 @@ export async function processCardPayment(
     
     console.log('Received response from Dejavoo API:', JSON.stringify(response));
     
+    // Debug detailed response inspection
+    console.log('Transaction Response Check:');
+    console.log('- StatusCode:', response.generalResponse?.statusCode);
+    console.log('- ResultCode:', response.generalResponse?.resultCode);
+    console.log('- HostResponseCode:', response.generalResponse?.hostResponseCode);
+    console.log('- Message:', response.generalResponse?.message);
+    
     // Parse the response based on the structure
     // Check for multiple possible approval indicators:
     // 1. StatusCode that includes "Approved" 
     // 2. ResultCode of "0" which means success
     // 3. HostResponseCode of "00" which is standard for approved transactions
     // 4. Message contains "Approved"
-    if ((response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
-        (response.generalResponse?.resultCode === "0") ||
-        (response.generalResponse?.hostResponseCode === "00") ||
-        (response.generalResponse?.message && response.generalResponse.message.includes("Approved"))) {
-      return {
+    const isApproved = 
+      (response.generalResponse?.statusCode && response.generalResponse.statusCode.includes("Approved")) ||
+      (response.generalResponse?.resultCode === "0") ||
+      (response.generalResponse?.hostResponseCode === "00") ||
+      (response.generalResponse?.message && response.generalResponse.message.includes("Approved"));
+    
+    console.log('Transaction approved?', isApproved);
+    
+    if (isApproved) {
+      const result = {
         status: "approved",
         transactionId: response.transactionNumber || response.referenceId || referenceId,
         dateTime: new Date().toISOString(),
@@ -106,6 +118,7 @@ export async function processCardPayment(
         hostResponseCode: response.generalResponse?.hostResponseCode || "",
         hostResponseMessage: response.generalResponse?.hostResponseMessage || ""
       };
+      return result;
     } else {
       return {
         status: "declined",

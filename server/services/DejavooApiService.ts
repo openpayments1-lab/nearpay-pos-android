@@ -192,6 +192,8 @@ export class DejavooApiService {
     return Math.random().toString(16).slice(2) + Date.now().toString(36);
   }
   
+  // We use PascalCase keys directly in our payloads as required by the Dejavoo API
+  
   /**
    * Create the standard request payload with authentication
    * @returns Base payload with TPN and Auth Key

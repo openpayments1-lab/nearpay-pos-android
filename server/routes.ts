@@ -221,6 +221,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     );
     
+    // Log transaction result for debugging
+    console.log('Transaction result from processCardPayment:', JSON.stringify(result));
+    
     // If transaction was approved, save it to the database
     if (result.status === 'approved') {
       try {
@@ -248,6 +251,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Error saving transaction:', error);
         // Continue even if saving fails - don't affect the response
       }
+    } else {
+      console.log('Transaction was not approved, status:', result.status);
     }
     
     res.json(result);
