@@ -269,6 +269,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Parse transaction data using type assertion to handle mixed case
         console.log("Extracting transaction data from response");
+        console.log("Raw response structure:", Object.keys(resp).join(', '));
+        if (resp.CardData) {
+          console.log("PascalCase CardData structure:", Object.keys(resp.CardData).join(', '));
+        }
+        if (resp.cardData) {
+          console.log("camelCase cardData structure:", Object.keys(resp.cardData).join(', '));
+        }
         
         // Get card information from various possible formats
         let cardType = "Credit";

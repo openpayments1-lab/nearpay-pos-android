@@ -202,10 +202,20 @@ export class PostgresStorage implements IStorage {
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
     try {
+      console.log("PostgresStorage - Creating transaction:", JSON.stringify(insertTransaction));
+      
       // Convert date string to Date object if necessary
       const dateTime = typeof insertTransaction.dateTime === 'string' 
         ? new Date(insertTransaction.dateTime) 
         : insertTransaction.dateTime;
+      
+      console.log("dateTime formatted:", dateTime);
+      
+      // Debug card details type
+      if (insertTransaction.cardDetails) {
+        console.log("Card details type:", typeof insertTransaction.cardDetails);
+        console.log("Card details content:", JSON.stringify(insertTransaction.cardDetails));
+      }
         
       // Convert card details to JSON string
       const cardDetailsJson = insertTransaction.cardDetails 
@@ -254,6 +264,25 @@ export class PostgresStorage implements IStorage {
       }
       
       const row = result.rows[0];
+      
+      // Handle card details with better error handling
+      let cardDetails = null;
+      if (row.card_details) {
+        try {
+          // Check if it's already an object (neon returns JSON objects directly)
+          if (typeof row.card_details === 'object' && row.card_details !== null) {
+            cardDetails = row.card_details;
+            console.log(`Transaction #${row.id} card details already an object:`, cardDetails);
+          } else if (typeof row.card_details === 'string') {
+            cardDetails = JSON.parse(row.card_details);
+            console.log(`Transaction #${row.id} card details parsed from string:`, cardDetails);
+          }
+        } catch (err) {
+          console.error(`Error handling card details for transaction #${row.id}:`, err);
+          cardDetails = null;
+        }
+      }
+      
       return {
         id: row.id,
         amount: row.amount,
@@ -261,7 +290,7 @@ export class PostgresStorage implements IStorage {
         status: row.status,
         dateTime: row.date_time,
         terminalIp: row.terminal_ip,
-        cardDetails: row.card_details ? JSON.parse(row.card_details) : null
+        cardDetails: cardDetails
       };
     } catch (error) {
       console.error("Failed to get transaction:", error);
@@ -283,12 +312,18 @@ export class PostgresStorage implements IStorage {
         let cardDetails = null;
         if (row.card_details) {
           try {
-            cardDetails = JSON.parse(row.card_details);
-            console.log(`Transaction #${row.id} card details parsed successfully:`, cardDetails);
+            // Check if it's already an object (neon returns JSON objects directly)
+            if (typeof row.card_details === 'object' && row.card_details !== null) {
+              cardDetails = row.card_details;
+              console.log(`Transaction #${row.id} card details already an object:`, cardDetails);
+            } else if (typeof row.card_details === 'string') {
+              cardDetails = JSON.parse(row.card_details);
+              console.log(`Transaction #${row.id} card details parsed from string:`, cardDetails);
+            }
           } catch (err) {
-            console.error(`Error parsing card details for transaction #${row.id}:`, err);
+            console.error(`Error handling card details for transaction #${row.id}:`, err);
             // If parsing fails, try to use the raw value
-            cardDetails = row.card_details;
+            cardDetails = null;
           }
         }
         
