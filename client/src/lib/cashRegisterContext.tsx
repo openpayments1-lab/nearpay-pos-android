@@ -110,6 +110,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const data = await res.json();
       
       if (data.connected) {
+        // Terminal is properly connected
         setTerminalStatus("connected");
         updateStatus("Terminal connected successfully", "success");
         
@@ -119,14 +120,49 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
           variant: "default",
         });
       } else {
+        // Terminal exists but is not connected or has an issue
         setTerminalStatus("failed");
-        updateStatus("Could not connect to terminal. Please check settings.", "error");
         
-        toast({
-          title: "Connection Failed",
-          description: "Could not connect to Dejavoo terminal. Please check the connection settings.",
-          variant: "destructive",
-        });
+        // Use the detailed message from the API if available
+        if (data.message) {
+          let statusType: StatusType = "error";
+          let toastVariant: "default" | "destructive" = "destructive";
+          let title = "Connection Failed";
+          
+          // Handle different terminal states
+          if (data.status === "success") {
+            // We have a response from the API but the terminal is not ready
+            if (data.message.includes("in use")) {
+              statusType = "warning";
+              toastVariant = "default";
+              title = "Terminal Busy";
+            } else if (data.message.includes("busy")) {
+              statusType = "warning";
+              toastVariant = "default";
+              title = "Service Busy";
+            } else if (data.message.includes("not found")) {
+              statusType = "error";
+              title = "Invalid Terminal ID";
+            }
+          }
+          
+          updateStatus(data.message, statusType);
+          
+          toast({
+            title: title,
+            description: data.message,
+            variant: toastVariant,
+          });
+        } else {
+          // Fallback to generic error message
+          updateStatus("Could not connect to terminal. Please check settings.", "error");
+          
+          toast({
+            title: "Connection Failed",
+            description: "Could not connect to Dejavoo terminal. Please check the connection settings.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       setTerminalStatus("failed");

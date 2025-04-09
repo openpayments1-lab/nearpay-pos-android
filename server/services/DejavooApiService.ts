@@ -265,16 +265,37 @@ export class DejavooApiService {
       // Handle axios errors
       if (axios.isAxiosError(error)) {
         console.error(`Dejavoo API ${endpoint} error:`, error.message);
+        
         if (error.response) {
           console.error('Response data:', error.response.data);
           console.error('Response status:', error.response.status);
+          
+          // For status checks, we want to return the error response as valid data
+          // since it contains information about the terminal state
+          if (endpoint === 'Payment/Status' && error.response.data && error.response.data.GeneralResponse) {
+            console.log(`${endpoint} error response:`, JSON.stringify(error.response.data));
+            return error.response.data as T;
+          }
+          
+          // For other endpoints, throw with detailed error message from API
+          const errorMsg = error.response.data?.GeneralResponse?.DetailedMessage || 
+                          error.response.data?.GeneralResponse?.Message ||
+                          error.message;
+          
+          throw new Error(`Dejavoo API error: ${errorMsg}`);
+        } else if (error.request) {
+          // Request was made but no response received (network/timeout error)
+          console.error('No response received, network error or timeout');
+          throw new Error(`Dejavoo API network error: No response received`);
+        } else {
+          // Something happened in setting up the request
+          throw new Error(`Dejavoo API error: ${error.message}`);
         }
-        throw new Error(`Dejavoo API error: ${error.message}`);
       }
       
       // Handle other errors
       console.error(`Dejavoo API ${endpoint} unexpected error:`, error);
-      throw new Error(`Unexpected error: ${error}`);
+      throw new Error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -302,14 +323,43 @@ export class DejavooApiService {
       
       // Check if terminal is online based on response format
       if (response.GeneralResponse) {
-        const isOnline = response.GeneralResponse.ResultCode === "Ok" || 
-                        (response.GeneralResponse.StatusCode && 
-                         response.GeneralResponse.StatusCode.includes("Approved"));
+        // Check if we got a valid response that indicates the terminal exists
+        const terminalExists = 
+          response.GeneralResponse.StatusCode === "2008" || // Terminal in use
+          response.GeneralResponse.StatusCode === "1000" || // Service busy
+          response.GeneralResponse.StatusCode === "1001" || // Transaction data not found
+          response.GeneralResponse.ResultCode === "Ok" ||
+          response.GeneralResponse.StatusCode?.includes("Approved");
+        
+        // Terminal is properly registered but unavailable
+        const terminalRegistered =
+          terminalExists || 
+          response.GeneralResponse.StatusCode === "2003"; // Register not found
+        
+        // Set a more descriptive message based on the status code
+        let message = "Terminal is not responding";
+        let online = false;
+        
+        if (terminalExists) {
+          if (response.GeneralResponse.StatusCode === "2008") {
+            message = "Terminal is online but currently in use";
+            online = true; // It's online, just busy
+          } else if (response.GeneralResponse.StatusCode === "1000") {
+            message = "Terminal is online but service is busy";
+            online = true; // It's online, just busy
+          } else if (response.GeneralResponse.StatusCode?.includes("Approved")) {
+            message = "Terminal is online and ready";
+            online = true;
+          }
+        } else if (response.GeneralResponse.StatusCode === "2003") {
+          message = "Terminal ID not found - please check your credentials";
+          online = false;
+        }
         
         return {
           success: true,
-          online: isOnline,
-          message: isOnline ? "Terminal is online" : "Terminal is not responding",
+          online: online,
+          message: message,
           details: response
         };
       }
@@ -333,6 +383,25 @@ export class DejavooApiService {
       };
     } catch (error) {
       console.error("Terminal status check failed:", error);
+      
+      // Check if it's an axios error with a response
+      if (error && typeof error === 'object' && 'response' in error && error.response) {
+        const axiosError = error as any; // Type assertion for axios error
+        
+        if (axiosError.response.data && axiosError.response.data.GeneralResponse) {
+          const response = axiosError.response.data;
+          
+          // Return a structured error with the API response details
+          return {
+            success: true, // We got a valid response from the API
+            online: false, // But the terminal is not available
+            message: response.GeneralResponse.DetailedMessage || response.GeneralResponse.Message || "Terminal error",
+            details: response
+          };
+        }
+      }
+      
+      // Default error response
       return {
         success: false,
         online: false,

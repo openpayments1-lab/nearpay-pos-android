@@ -60,13 +60,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/terminal/check', asyncHandler(async (req, res) => {
     const { ip, terminalType, apiKey, testMode } = req.body;
     
-    const connected = await checkTerminalConnection(ip, {
-      terminalType,
-      apiKey,
-      testMode
-    });
-    
-    res.json({ connected });
+    try {
+      // Create Dejavoo API Service to get detailed status
+      const dejavooService = new DejavooApiService({
+        tpn: terminalType || "2247257465", // 10-digit Test TPN (meets length requirement)
+        authKey: apiKey || "JEkE6S7jPk",   // Use valid API key
+        testMode: testMode || false
+      });
+      
+      // Get detailed terminal status
+      const statusResponse = await dejavooService.checkStatus();
+      console.log('Terminal detailed status:', JSON.stringify(statusResponse));
+      
+      // Return detailed status information
+      res.json({
+        connected: statusResponse.online,
+        status: statusResponse.success ? 'success' : 'error',
+        message: statusResponse.message,
+        details: statusResponse.details || {}
+      });
+    } catch (error) {
+      console.error("Terminal check error:", error);
+      // Use the original method as fallback
+      const connected = await checkTerminalConnection(ip, {
+        terminalType,
+        apiKey,
+        testMode
+      });
+      
+      res.json({ 
+        connected, 
+        status: 'error',
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
   }));
   
   // Process card payment

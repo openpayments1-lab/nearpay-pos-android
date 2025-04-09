@@ -66,7 +66,7 @@ export async function processCardPayment(
     
     // Create terminal configuration
     const config: DejavooTerminalConfig = {
-      tpn: options.terminalType || "224725746503", // Default to test TPN if not provided
+      tpn: options.terminalType || "2247257465", // Default to test TPN if not provided
       authKey: options.apiKey || "JEkE6S7jPk",     // Default to test key if not provided
       testMode: options.testMode
     };
@@ -149,7 +149,7 @@ export async function voidTransaction(
   try {
     // Create terminal configuration
     const config: DejavooTerminalConfig = {
-      tpn: options.terminalType || "224725746503", // Default to test TPN if not provided
+      tpn: options.terminalType || "2247257465", // Default to test TPN if not provided
       authKey: options.apiKey || "JEkE6S7jPk",     // Default to test key if not provided
       testMode: options.testMode
     };
@@ -210,7 +210,7 @@ export async function settleBatch(
   try {
     // Create terminal configuration
     const config: DejavooTerminalConfig = {
-      tpn: options.terminalType || "224725746503", // Default to test TPN if not provided
+      tpn: options.terminalType || "2247257465", // Default to test TPN if not provided
       authKey: options.apiKey || "JEkE6S7jPk",     // Default to test key if not provided
       testMode: options.testMode
     };
@@ -272,7 +272,7 @@ export async function processRefund(
   try {
     // Create terminal configuration
     const config: DejavooTerminalConfig = {
-      tpn: options.terminalType || "224725746503", // Default to test TPN if not provided
+      tpn: options.terminalType || "2247257465", // Default to test TPN if not provided
       authKey: options.apiKey || "JEkE6S7jPk",     // Default to test key if not provided
       testMode: options.testMode
     };
@@ -344,7 +344,7 @@ export async function getBatchDetails(
   try {
     // Create terminal configuration
     const config: DejavooTerminalConfig = {
-      tpn: options.terminalType || "224725746503", // Default to test TPN if not provided
+      tpn: options.terminalType || "2247257465", // Default to test TPN if not provided
       authKey: options.apiKey || "JEkE6S7jPk",     // Default to test key if not provided
       testMode: options.testMode
     };
@@ -385,7 +385,7 @@ export async function getTerminalInfo(
   try {
     // Create terminal configuration
     const config: DejavooTerminalConfig = {
-      tpn: options.terminalType || "224725746503", // Default to test TPN if not provided
+      tpn: options.terminalType || "2247257465", // Default to test TPN if not provided
       authKey: options.apiKey || "JEkE6S7jPk",     // Default to test key if not provided
       testMode: options.testMode
     };
