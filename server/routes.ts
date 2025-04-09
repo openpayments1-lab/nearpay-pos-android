@@ -250,6 +250,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     console.log("Transaction approval check result:", isApproved);
     
+    // If the response is from the raw Dejavoo API, it might not have our expected 'status' field
+    // Let's ensure the response has the correct status for the client
+    if (isApproved && !result.status) {
+      resp.status = 'approved';
+    }
+    
     if (isApproved) {
       try {
         console.log("Transaction approved, saving to database");
@@ -413,6 +419,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     console.log("Refund approval check result:", isApproved);
     
+    // If the response is from the raw Dejavoo API, it might not have our expected 'status' field
+    // Let's ensure the response has the correct status for the client
+    if (isApproved && !result.status) {
+      resp.status = 'approved';
+    }
+    
     if (isApproved) {
       try {
         console.log("Refund approved, saving to database");
@@ -497,6 +509,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     );
     
+    console.log('Void transaction result:', JSON.stringify(result));
+    
+    // Type assertion to safely handle mixed case properties
+    const resp = result as any;
+    
+    // Check if void was successful using the same logic as approvals
+    const isSuccessful = 
+      // Check simplified format from our service
+      result.status === 'approved' || 
+      
+      // Check PascalCase properties directly from Dejavoo API
+      (resp.GeneralResponse?.StatusCode === "0000" || 
+       resp.GeneralResponse?.StatusCode?.includes("Approved")) ||
+      (resp.GeneralResponse?.ResultCode === "0") ||
+      (resp.GeneralResponse?.HostResponseCode === "00") ||
+      (resp.GeneralResponse?.Message?.includes("Approved")) ||
+      
+      // Check camelCase properties from our interface
+      (resp.generalResponse?.statusCode === "0000" || 
+       resp.generalResponse?.statusCode?.includes("Approved")) ||
+      (resp.generalResponse?.resultCode === "0") ||
+      (resp.generalResponse?.hostResponseCode === "00") ||
+      (resp.generalResponse?.message?.includes("Approved"));
+    
+    // If the response is from the raw Dejavoo API, it might not have our expected 'status' field
+    // Let's ensure the response has the correct status for the client
+    if (isSuccessful && !result.status) {
+      resp.status = 'approved';
+    }
+    
     res.json(result);
   }));
   
@@ -512,6 +554,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         testMode: terminalConfig.testMode
       }
     );
+    
+    console.log('Settle batch result:', JSON.stringify(result));
+    
+    // Type assertion to safely handle mixed case properties
+    const resp = result as any;
+    
+    // Check if settle was successful using the same logic as approvals
+    const isSuccessful = 
+      // Check simplified format from our service
+      result.status === 'approved' || 
+      
+      // Check PascalCase properties directly from Dejavoo API
+      (resp.GeneralResponse?.StatusCode === "0000" || 
+       resp.GeneralResponse?.StatusCode?.includes("Approved")) ||
+      (resp.GeneralResponse?.ResultCode === "0") ||
+      (resp.GeneralResponse?.HostResponseCode === "00") ||
+      (resp.GeneralResponse?.Message?.includes("Approved")) ||
+      
+      // Check camelCase properties from our interface
+      (resp.generalResponse?.statusCode === "0000" || 
+       resp.generalResponse?.statusCode?.includes("Approved")) ||
+      (resp.generalResponse?.resultCode === "0") ||
+      (resp.generalResponse?.hostResponseCode === "00") ||
+      (resp.generalResponse?.message?.includes("Approved"));
+    
+    // If the response is from the raw Dejavoo API, it might not have our expected 'status' field
+    // Let's ensure the response has the correct status for the client
+    if (isSuccessful && !result.status) {
+      resp.status = 'approved';
+    }
     
     res.json(result);
   }));
