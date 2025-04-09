@@ -268,7 +268,10 @@ export class DejavooApiService {
    */
   public async checkStatus(): Promise<StatusResponse> {
     try {
-      const payload = this.createBasePayload();
+      const payload = {
+        ...this.createBasePayload(),
+        PaymentType: "Credit" // Required field for Dejavoo API
+      };
       
       // Use the Status endpoint
       const response = await this.makeApiRequest<any>('/Payment/Status', payload, {
@@ -400,7 +403,8 @@ export class DejavooApiService {
     // Create payload
     const payload = {
       ...this.createBasePayload(),
-      TransactionId: transactionId
+      TransactionId: transactionId,
+      PaymentType: "Credit" // Required field for Dejavoo API
     };
     
     // Process the void
@@ -417,8 +421,11 @@ export class DejavooApiService {
    * @returns Promise with settle response
    */
   public async settleBatch(): Promise<DejavooTransactionResponse> {
-    // Create payload with just the auth info
-    const payload = this.createBasePayload();
+    // Create payload with auth info and required fields
+    const payload = {
+      ...this.createBasePayload(),
+      PaymentType: "Credit" // Required field for Dejavoo API
+    };
     
     // Process the batch settlement
     return this.makeApiRequest<DejavooTransactionResponse>('/Payment/Settle', payload, {
@@ -461,6 +468,7 @@ export class DejavooApiService {
       PrintReceipt: options.printReceipt ? "Yes" : "No",
       GetReceipt: options.getReceipt ? "Yes" : "No",
       CaptureSignature: options.captureSignature || false,
+      PaymentType: "Credit", // Required field for Dejavoo API
       GetExtendedData: true
     };
     
@@ -526,7 +534,8 @@ export class DejavooApiService {
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
       GetReceipt: options.getReceipt ? "Yes" : "No",
-      InvoiceNumber: options.invoiceNumber || ""
+      InvoiceNumber: options.invoiceNumber || "",
+      PaymentType: "Credit" // Required field for Dejavoo API
     };
     
     // Process the capture
@@ -573,7 +582,8 @@ export class DejavooApiService {
     const payload = {
       ...this.createBasePayload(),
       TransactionId: transactionId,
-      TipAmount: tipAmount
+      TipAmount: tipAmount,
+      PaymentType: "Credit" // Required field for Dejavoo API
     };
     
     // Process tip adjustment
@@ -601,7 +611,8 @@ export class DejavooApiService {
       Amount: amount,
       TipAmount: options.tipAmount || 0,
       InvoiceNumber: options.invoiceNumber || "",
-      PrintReceipt: options.printReceipt ? "Yes" : "No"
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      PaymentType: "Cash" // Use "Cash" for cash transactions
     };
     
     // Process cash transaction
@@ -695,6 +706,7 @@ export class DejavooApiService {
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
       GetReceipt: options.getReceipt ? "Yes" : "No",
+      PaymentType: "Credit", // Required field for Dejavoo API
       GetExtendedData: true
     };
     
