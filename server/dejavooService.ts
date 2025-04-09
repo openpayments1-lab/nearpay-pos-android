@@ -46,10 +46,17 @@ export async function checkTerminalConnection(
     
     console.log('Terminal status response:', JSON.stringify(response.data));
     
-    // If Status field exists in the response, the API is connected
-    if (response.status === 200 && response.data && response.data.Status) {
-      // Check if the terminal is online
-      return response.data.Status === "Online" || response.data.Status === "Success";
+    // Handle the Dejavoo API response format
+    if (response.status === 200 && response.data) {
+      // Check if the terminal is online based on GeneralResponse if it exists
+      if (response.data.GeneralResponse) {
+        return response.data.GeneralResponse.ResultCode === "Ok" || 
+               (response.data.GeneralResponse.StatusCode && response.data.GeneralResponse.StatusCode.includes("Approved"));
+      }
+      // Fallback to the old Status field if GeneralResponse doesn't exist
+      if (response.data.Status) {
+        return response.data.Status === "Online" || response.data.Status === "Success";
+      }
     }
     
     return false;
@@ -113,24 +120,24 @@ export async function processCardPayment(
     const data = response.data;
     console.log('Received response from Dejavoo API:', JSON.stringify(data));
     
-    // Parse the response
-    if (data.Status === "Approved") {
+    // Parse the response based on the structure you provided
+    if (data.GeneralResponse && data.GeneralResponse.StatusCode && data.GeneralResponse.StatusCode.startsWith("Approved")) {
       return {
         status: "approved",
-        transactionId: data.TransactionId || referenceId,
+        transactionId: data.TransactionNumber || data.ReferenceId || referenceId,
         dateTime: new Date().toISOString(),
-        cardType: data.CardBrand || "Credit",
-        maskedPan: data.CardNumber || "**** **** **** ****",
-        authCode: data.ApprovalCode || "",
-        hostResponseCode: data.ResponseCode || "",
-        hostResponseMessage: data.ResponseText || ""
+        cardType: data.CardData?.CardType || "Credit",
+        maskedPan: data.CardData?.Last4 ? `**** **** **** ${data.CardData.Last4}` : "**** **** **** ****",
+        authCode: data.AuthCode || "",
+        hostResponseCode: data.GeneralResponse.HostResponseCode || "",
+        hostResponseMessage: data.GeneralResponse.HostResponseMessage || ""
       };
     } else {
       return {
         status: "declined",
-        message: data.ResponseText || "Transaction declined",
-        hostResponseCode: data.ResponseCode || "",
-        hostResponseMessage: data.ResponseText || ""
+        message: data.GeneralResponse?.DetailedMessage || data.GeneralResponse?.Message || "Transaction declined",
+        hostResponseCode: data.GeneralResponse?.HostResponseCode || "",
+        hostResponseMessage: data.GeneralResponse?.HostResponseMessage || ""
       };
     }
   } catch (error) {
@@ -197,16 +204,16 @@ export async function voidTransaction(
     const data = response.data;
     console.log('Received void response from Dejavoo API:', JSON.stringify(data));
     
-    if (data.Status === "Approved") {
+    if (data.GeneralResponse && data.GeneralResponse.StatusCode && data.GeneralResponse.StatusCode.startsWith("Approved")) {
       return {
         status: "approved",
         message: "Transaction voided successfully",
-        transactionId: data.TransactionId || transactionId,
+        transactionId: data.TransactionNumber || data.ReferenceId || transactionId,
       };
     } else {
       return {
         status: "declined",
-        message: data.ResponseText || "Void transaction declined",
+        message: data.GeneralResponse?.DetailedMessage || data.GeneralResponse?.Message || "Void transaction declined",
       };
     }
   } catch (error) {
@@ -265,7 +272,7 @@ export async function settleBatch(
     const data = response.data;
     console.log('Received batch settlement response from Dejavoo API:', JSON.stringify(data));
     
-    if (data.Status === "Approved") {
+    if (data.GeneralResponse && data.GeneralResponse.StatusCode && data.GeneralResponse.StatusCode.startsWith("Approved")) {
       return {
         status: "approved",
         message: "Batch settled successfully",
@@ -273,7 +280,7 @@ export async function settleBatch(
     } else {
       return {
         status: "declined",
-        message: data.ResponseText || "Batch settlement declined",
+        message: data.GeneralResponse?.DetailedMessage || data.GeneralResponse?.Message || "Batch settlement declined",
       };
     }
   } catch (error) {
