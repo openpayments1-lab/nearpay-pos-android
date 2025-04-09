@@ -19,7 +19,7 @@ interface CashRegisterContextType {
   terminalStatus: TerminalStatus;
   terminalIp: string;
   terminalConfig: TerminalConfig;
-  checkTerminalConnection: (ip: string) => void;
+  checkTerminalConnection: (ip: string, forceCheck?: boolean) => void;
   updateTerminalConfig: (config: TerminalConfig) => void;
   isTransactionInProgress: boolean;
   isProcessing: boolean;
@@ -116,8 +116,22 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   }, [toast]);
 
-  const checkTerminalConnection = useCallback(async (ip: string) => {
+  const checkTerminalConnection = useCallback(async (ip: string, forceCheck = false) => {
+    // First, check if we already have a connected state with this IP
+    const currentConnectionStatus = localStorage.getItem('terminalConnectionStatus');
+    const currentIp = localStorage.getItem('terminalIp');
+    
+    if (!forceCheck && 
+        currentConnectionStatus === 'connected' && 
+        currentIp === ip && 
+        terminalStatus === 'connected') {
+      console.log(`Terminal already connected to ${ip} - skipping check`);
+      return true;
+    }
+    
+    // If we're not already connected or forcing a check, proceed as normal
     setTerminalIp(ip);
+    localStorage.setItem('terminalIp', ip);
     updateStatus("Checking terminal connection...", "info");
     
     try {
@@ -140,6 +154,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Store the terminal connection status in local storage
         try {
           localStorage.setItem('terminalConnectionStatus', 'connected');
+          localStorage.setItem('terminalIp', ip);
         } catch (e) {
           // Ignore local storage errors
         }

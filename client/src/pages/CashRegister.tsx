@@ -45,10 +45,17 @@ export default function CashRegister() {
         variant: "default",
       });
       
-      // If terminal IP is provided, make sure we check the connection
+      // If terminal IP is provided, ensure connection while respecting cached status
       if (terminalIp) {
         console.log(`Refund mode - checking terminal connection for IP: ${terminalIp}`);
-        checkTerminalConnection(terminalIp);
+        
+        // Get current connection state
+        const connectionStatus = localStorage.getItem('terminalConnectionStatus');
+        const currentIp = localStorage.getItem('terminalIp');
+        
+        // Only force a terminal check if not already connected or IP changed
+        const forceCheck = connectionStatus !== 'connected' || currentIp !== terminalIp;
+        checkTerminalConnection(terminalIp, forceCheck);
       }
     }
   }, [location, setAmount, setRefundMode, setSelectedPaymentMethod, checkTerminalConnection, toast]);
@@ -56,8 +63,12 @@ export default function CashRegister() {
   useEffect(() => {
     // Check terminal connection on component mount if IP is stored
     const savedTerminalIp = localStorage.getItem('terminalIp');
+    const connectionStatus = localStorage.getItem('terminalConnectionStatus');
+    
     if (savedTerminalIp) {
-      checkTerminalConnection(savedTerminalIp);
+      // Only force a check if not already connected, otherwise use cache
+      const forceCheck = connectionStatus !== 'connected';
+      checkTerminalConnection(savedTerminalIp, forceCheck);
     }
   }, [checkTerminalConnection]);
 
