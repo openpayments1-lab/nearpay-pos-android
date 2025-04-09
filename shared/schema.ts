@@ -51,7 +51,16 @@ export const insertTransactionSchema2 = z.object({
 });
 
 export type InsertTransaction = z.infer<typeof insertTransactionSchema2>;
-export type Transaction = typeof transactions.$inferSelect;
+// Modified to handle string or Date for dateTime
+export type Transaction = {
+  id: number;
+  amount: number;
+  paymentMethod: string;
+  status: string;
+  dateTime: Date;
+  terminalIp: string | null;
+  cardDetails: CardDetails | null;
+};
 
 // Terminal configuration type
 export interface TerminalConfig {
