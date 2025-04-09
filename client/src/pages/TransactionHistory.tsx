@@ -29,29 +29,32 @@ export default function TransactionHistory() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        setLoading(true);
-        const response = await apiRequest('GET', '/api/transactions');
-        const data = await response.json();
-        setTransactions(data);
-        setError(null);
-      } catch (err) {
-        console.error('Failed to fetch transactions:', err);
-        setError('Failed to load transactions. Please try again.');
-        toast({
-          title: 'Error',
-          description: 'Failed to load transaction history.',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching transactions from API...');
+      const response = await apiRequest('GET', '/api/transactions');
+      const data = await response.json();
+      console.log('Transactions received:', data);
+      setTransactions(data);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch transactions:', err);
+      setError('Failed to load transactions. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to load transaction history.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Fetch transactions when the component mounts
+  useEffect(() => {
     fetchTransactions();
-  }, [toast]);
+  }, []);
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -61,7 +64,12 @@ export default function TransactionHistory() {
   };
 
   const formatDate = (dateString: Date) => {
-    return new Date(dateString).toLocaleString();
+    try {
+      return new Date(dateString).toLocaleString();
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return String(dateString);
+    }
   };
 
   const handleViewReceipt = (transaction: Transaction) => {
@@ -199,10 +207,28 @@ export default function TransactionHistory() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Transaction List</CardTitle>
-              <CardDescription>
-                View and manage your recent transactions
-              </CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Transaction List</CardTitle>
+                  <CardDescription>
+                    View and manage your recent transactions
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={fetchTransactions}
+                  disabled={loading}
+                  className="flex items-center gap-1"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12a9 9 0 0 1-9 9c-4.97 0-9-4.03-9-9s4.03-9 9-9h9"></path>
+                    <path d="M21 3v4.5"></path>
+                    <path d="M16.5 3H21"></path>
+                  </svg>
+                  Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {transactions.length === 0 ? (

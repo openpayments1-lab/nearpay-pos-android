@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { useCashRegister } from "@/lib/cashRegisterContext";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function Receipt() {
   const { receipt, isReceiptVisible, setRefundMode, resetTransaction } = useCashRegister();
   const { toast } = useToast();
+  const [_, setLocation] = useLocation();
 
   if (!isReceiptVisible || !receipt) {
     return null;
@@ -117,6 +119,20 @@ export default function Receipt() {
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
             Close
+          </Button>
+          <Button
+            variant="outline" 
+            className="flex items-center"
+            onClick={() => {
+              setLocation('/history');
+              resetTransaction();
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            View Transactions
           </Button>
           <Button
             variant="outline"

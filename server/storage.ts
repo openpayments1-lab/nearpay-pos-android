@@ -271,19 +271,44 @@ export class PostgresStorage implements IStorage {
 
   async getTransactions(): Promise<Transaction[]> {
     try {
+      console.log("PostgresStorage - Fetching all transactions from database");
       const result = await this.pool.query(
         'SELECT * FROM transactions ORDER BY date_time DESC'
       );
       
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        amount: row.amount,
-        paymentMethod: row.payment_method,
-        status: row.status,
-        dateTime: row.date_time,
-        terminalIp: row.terminal_ip,
-        cardDetails: row.card_details ? JSON.parse(row.card_details) : null
-      }));
+      console.log(`PostgresStorage - Found ${result.rows.length} transactions`);
+      
+      const transactions = result.rows.map((row: any) => {
+        // Parse card details if present
+        let cardDetails = null;
+        if (row.card_details) {
+          try {
+            cardDetails = JSON.parse(row.card_details);
+            console.log(`Transaction #${row.id} card details parsed successfully:`, cardDetails);
+          } catch (err) {
+            console.error(`Error parsing card details for transaction #${row.id}:`, err);
+            // If parsing fails, try to use the raw value
+            cardDetails = row.card_details;
+          }
+        }
+        
+        return {
+          id: row.id,
+          amount: row.amount,
+          paymentMethod: row.payment_method,
+          status: row.status,
+          dateTime: row.date_time,
+          terminalIp: row.terminal_ip,
+          cardDetails: cardDetails
+        };
+      });
+      
+      // Log a sample transaction for debugging
+      if (transactions.length > 0) {
+        console.log("Sample transaction:", JSON.stringify(transactions[0]));
+      }
+      
+      return transactions;
     } catch (error) {
       console.error("Failed to get transactions:", error);
       return [];

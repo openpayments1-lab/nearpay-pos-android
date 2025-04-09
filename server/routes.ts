@@ -40,8 +40,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get all transactions
   app.get('/api/transactions', asyncHandler(async (req, res) => {
-    const transactions = await storage.getTransactions();
-    res.json(transactions);
+    console.log('Fetching all transactions');
+    try {
+      const transactions = await storage.getTransactions();
+      console.log('Transactions retrieved successfully:', JSON.stringify(transactions));
+      res.json(transactions);
+    } catch (error) {
+      console.error('Error retrieving transactions:', error);
+      throw error;
+    }
   }));
   
   // Get terminal settings
