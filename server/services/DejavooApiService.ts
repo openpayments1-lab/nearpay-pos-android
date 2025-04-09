@@ -9,7 +9,7 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
 // Base API URL
-const API_BASE_URL = 'https://api.spinpos.net/';
+const API_BASE_URL = 'https://api.spinpos.net/v2/';
 
 /**
  * Interface for terminal configuration
@@ -273,7 +273,7 @@ export class DejavooApiService {
           
           // For status checks, we want to return the error response as valid data
           // since it contains information about the terminal state
-          if (endpoint === 'spin/status' && error.response.data && error.response.data.GeneralResponse) {
+          if (endpoint === 'Payment/Status' && error.response.data && error.response.data.GeneralResponse) {
             console.log(`${endpoint} error response:`, JSON.stringify(error.response.data));
             return error.response.data as T;
           }
@@ -309,16 +309,16 @@ export class DejavooApiService {
    */
   public async checkStatus(): Promise<StatusResponse> {
     try {
-      // Create explicit payload with required fields (in order shown in example)
+      // Create explicit payload with required fields
       const payload = {
-        PaymentType: "Credit",
-        ReferenceId: this.generateReferenceId(),
         Tpn: this.config.tpn,
-        Authkey: this.config.authKey
+        Authkey: this.config.authKey,
+        ReferenceId: this.generateReferenceId(),
+        PaymentType: "Credit" // Required field explicitly added
       };
       
       // Use the Status endpoint
-      const response = await this.makeApiRequest<any>('spin/status', payload, {
+      const response = await this.makeApiRequest<any>('Payment/Status', payload, {
         timeout: 10000
       });
       
@@ -437,18 +437,30 @@ export class DejavooApiService {
     const referenceId = options.referenceId || this.generateReferenceId();
     console.log(`Using ReferenceId for transaction: ${referenceId}`);
     
-    // Create simplified payload based on provided example format
+    // Create base payload with our specific referenceId
     const payload = {
-      PaymentType: "Credit",
-      TransactionType: "Sale",
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey,
       ReferenceId: referenceId,
       Amount: amount,
-      Tpn: this.config.tpn,
-      Authkey: this.config.authKey
+      TipAmount: options.enableTipping ? null : (options.tipAmount || 0),
+      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
+      PaymentType: "Credit",
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      GetReceipt: options.getReceipt ? "Yes" : "No",
+      MerchantNumber: null,
+      InvoiceNumber: options.invoiceNumber || "",
+      CaptureSignature: options.captureSignature || options.enableSignature || false,
+      GetExtendedData: true,
+      CallbackInfo: {
+        Url: options.callbackUrl || ""
+      },
+      SPInProxyTimeout: options.transactionTimeout || null,
+      CustomFields: options.customFields || {}
     };
     
     // Process the payment
-    const response = await this.makeApiRequest<DejavooTransactionResponse>('spin/sale', payload, {
+    const response = await this.makeApiRequest<DejavooTransactionResponse>('Payment/Sale', payload, {
       timeout: (options.transactionTimeout || 90) * 1000
     });
     
@@ -469,16 +481,16 @@ export class DejavooApiService {
         
         // Create a status check payload with the same reference ID
         const statusPayload = {
-          PaymentType: "Credit",
-          ReferenceId: referenceId,
           Tpn: this.config.tpn,
-          Authkey: this.config.authKey
+          Authkey: this.config.authKey,
+          ReferenceId: referenceId,
+          PaymentType: "Credit"
         };
         
         try {
           // Check transaction status using the same reference ID
           const statusResponse = await this.makeApiRequest<DejavooTransactionResponse>(
-            'spin/status', 
+            'Payment/Status', 
             statusPayload, 
             { timeout: 10000 }
           );
@@ -525,7 +537,7 @@ export class DejavooApiService {
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PaymentType: "Credit",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      // GetReceipt field removed due to API validation errors
+      GetReceipt: options.getReceipt ? "Yes" : "No",
       MerchantNumber: null,
       InvoiceNumber: options.invoiceNumber || "",
       CaptureSignature: options.captureSignature || options.enableSignature || false,
@@ -533,7 +545,7 @@ export class DejavooApiService {
     };
     
     // Process the refund
-    return this.makeApiRequest<DejavooTransactionResponse>('spin/refund', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('Payment/Refund', payload, {
       timeout: (options.transactionTimeout || 90) * 1000
     });
   }
@@ -557,7 +569,7 @@ export class DejavooApiService {
     };
     
     // Process the void
-    return this.makeApiRequest<DejavooTransactionResponse>('spin/void', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('Payment/Void', payload, {
       timeout: 30000
     });
   }
@@ -617,7 +629,7 @@ export class DejavooApiService {
       ...this.createBasePayload(),
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      // GetReceipt field removed due to API validation errors
+      GetReceipt: options.getReceipt ? "Yes" : "No",
       CaptureSignature: options.captureSignature || false,
       PaymentType: "Credit", // Required field for Dejavoo API
       GetExtendedData: true
@@ -649,7 +661,7 @@ export class DejavooApiService {
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PaymentType: "Credit",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      // GetReceipt field removed due to API validation errors
+      GetReceipt: options.getReceipt ? "Yes" : "No",
       MerchantNumber: null,
       InvoiceNumber: options.invoiceNumber || "",
       CaptureSignature: options.captureSignature || options.enableSignature || false,
@@ -657,7 +669,7 @@ export class DejavooApiService {
     };
     
     // Process the pre-auth
-    return this.makeApiRequest<DejavooTransactionResponse>('spin/authonly', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('Payment/PreAuth', payload, {
       timeout: (options.transactionTimeout || 90) * 1000
     });
   }
@@ -684,13 +696,13 @@ export class DejavooApiService {
       Amount: amount,
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      // GetReceipt field removed due to API validation errors
+      GetReceipt: options.getReceipt ? "Yes" : "No",
       InvoiceNumber: options.invoiceNumber || "",
       PaymentType: "Credit" // Required field for Dejavoo API
     };
     
     // Process the capture
-    return this.makeApiRequest<DejavooTransactionResponse>('spin/capture', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('Payment/PostAuth', payload, {
       timeout: 30000
     });
   }
@@ -738,7 +750,7 @@ export class DejavooApiService {
     };
     
     // Process tip adjustment
-    return this.makeApiRequest<DejavooTransactionResponse>('spin/tipadjust', payload, {
+    return this.makeApiRequest<DejavooTransactionResponse>('Payment/TipAdjust', payload, {
       timeout: 30000
     });
   }
@@ -784,7 +796,7 @@ export class DejavooApiService {
     const payload = this.createBasePayload();
     
     // Get terminal info
-    return this.makeApiRequest<Record<string, any>>('spin/connect', payload, {
+    return this.makeApiRequest<Record<string, any>>('Terminal/Info', payload, {
       timeout: 30000
     });
   }
@@ -856,7 +868,7 @@ export class DejavooApiService {
       ...this.createBasePayload(),
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
       PrintReceipt: options.printReceipt ? "Yes" : "No",
-      // GetReceipt field removed due to API validation errors
+      GetReceipt: options.getReceipt ? "Yes" : "No",
       PaymentType: "Credit", // Required field for Dejavoo API
       GetExtendedData: true
     };

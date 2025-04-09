@@ -131,26 +131,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
           
           // Handle different terminal states
           if (data.status === "success") {
-            // Special case: We have a response from the API but the terminal might not be ready
-            // This happens with status code 1001 with SerialNumber - we should show connected
-            if (data.details?.SerialNumber && 
-                data.details?.GeneralResponse?.StatusCode === "1001") {
-              // This is actually a success case - terminal is connected!
-              setTerminalStatus("connected");
-              statusType = "success";
-              toastVariant = "default";
-              title = "Terminal Connected";
-              updateStatus("Terminal connected successfully", "success");
-              
-              toast({
-                title: "Terminal Connected",
-                description: "Successfully connected to Dejavoo terminal.",
-                variant: "default",
-              });
-              return; // Return early since we've handled this special case
-            }
-            
-            // Handle other specific states
+            // We have a response from the API but the terminal is not ready
             if (data.message.includes("in use")) {
               statusType = "warning";
               toastVariant = "default";
@@ -159,7 +140,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
               statusType = "warning";
               toastVariant = "default";
               title = "Service Busy";
-            } else if (data.message.includes("not found") && !data.details?.SerialNumber) {
+            } else if (data.message.includes("not found")) {
               statusType = "error";
               title = "Invalid Terminal ID";
             }
