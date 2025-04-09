@@ -30,6 +30,7 @@ export interface CardPaymentOptions {
   enableSignature?: boolean;        // Require customer signature
   transactionTimeout?: number;      // Timeout in seconds
   invoiceNumber?: string;           // Optional invoice number reference
+  referenceId?: string;             // Custom reference ID for consistent tracking
   
   // Terminal configuration
   terminalType?: string;            // Terminal identifier (TPN)
@@ -414,6 +415,7 @@ export class DejavooApiService {
    * Process a credit/debit card sale
    * 
    * Sends a payment request to the terminal and processes a card payment
+   * Uses the recommended flow: send request with a consistent ReferenceId and poll for status
    * 
    * @param amount Payment amount
    * @param options Additional payment options
@@ -423,9 +425,15 @@ export class DejavooApiService {
     amount: number,
     options: CardPaymentOptions = {}
   ): Promise<DejavooTransactionResponse> {
-    // Create base payload
+    // Generate a unique reference ID or use one provided in options
+    const referenceId = options.referenceId || this.generateReferenceId();
+    console.log(`Using ReferenceId for transaction: ${referenceId}`);
+    
+    // Create base payload with our specific referenceId
     const payload = {
-      ...this.createBasePayload(),
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey,
+      ReferenceId: referenceId,
       Amount: amount,
       TipAmount: options.enableTipping ? null : (options.tipAmount || 0),
       ExternalReceipt: options.externalReceipt ? "Yes" : "No",
@@ -444,9 +452,61 @@ export class DejavooApiService {
     };
     
     // Process the payment
-    return this.makeApiRequest<DejavooTransactionResponse>('Payment/Sale', payload, {
+    const response = await this.makeApiRequest<DejavooTransactionResponse>('Payment/Sale', payload, {
       timeout: (options.transactionTimeout || 90) * 1000
     });
+    
+    // If the response indicates that the service is busy, we should poll for status
+    if (response.generalResponse?.statusCode === "1000") { // Service Busy
+      console.log(`Transaction initiated with ReferenceId: ${referenceId}, service busy, polling for status`);
+      
+      // Poll for transaction status up to 5 times with 2-second intervals
+      let attempts = 0;
+      const maxAttempts = 5;
+      
+      while (attempts < maxAttempts) {
+        attempts++;
+        console.log(`Polling attempt ${attempts}/${maxAttempts} for transaction status...`);
+        
+        // Wait 2 seconds before polling (avoid overloading the API)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Create a status check payload with the same reference ID
+        const statusPayload = {
+          Tpn: this.config.tpn,
+          Authkey: this.config.authKey,
+          ReferenceId: referenceId,
+          PaymentType: "Credit"
+        };
+        
+        try {
+          // Check transaction status using the same reference ID
+          const statusResponse = await this.makeApiRequest<DejavooTransactionResponse>(
+            'Payment/Status', 
+            statusPayload, 
+            { timeout: 10000 }
+          );
+          
+          console.log(`Status poll attempt ${attempts} response:`, 
+            statusResponse.generalResponse?.statusCode);
+          
+          // If we have a conclusive result, return it
+          if (statusResponse.generalResponse?.statusCode !== "1000" && 
+              statusResponse.generalResponse?.statusCode !== "1001") {
+            console.log(`Final status received after ${attempts} attempts:`, 
+              statusResponse.generalResponse?.statusCode);
+            return statusResponse;
+          }
+        } catch (err) {
+          console.error(`Error during status polling attempt ${attempts}:`, err);
+        }
+      }
+      
+      console.log(`Reached maximum polling attempts (${maxAttempts}), returning last known state`);
+    }
+    
+    // Return the original response if polling wasn't needed or didn't complete
+    return response;
   }
   
   /**
