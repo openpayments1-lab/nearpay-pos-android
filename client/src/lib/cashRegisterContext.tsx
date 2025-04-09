@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useCallback } from "react";
+import React, { createContext, useState, useContext, useCallback, useEffect } from "react";
 import { apiRequest } from "./queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -37,7 +37,7 @@ interface CashRegisterContextType {
 const defaultTerminalConfig: TerminalConfig = {
   terminalIp: "",
   apiKey: "",
-  terminalType: "SPIN",
+  terminalType: "2247257465", // Must be at least 10 characters
   enableTipping: false,
   enableSignature: true,
   testMode: false,
@@ -88,10 +88,23 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setStatusType(type);
   }, []);
 
-  const updateTerminalConfig = useCallback((config: TerminalConfig) => {
+  const updateTerminalConfig = useCallback(async (config: TerminalConfig) => {
     setTerminalConfig(config);
     setTerminalIp(config.terminalIp);
-  }, []);
+    
+    try {
+      // Save terminal configuration to database
+      await apiRequest("POST", "/api/settings/terminal", config);
+      console.log("Terminal configuration saved to database");
+    } catch (error) {
+      console.error("Failed to save terminal configuration:", error);
+      toast({
+        title: "Save Error",
+        description: "Failed to save terminal configuration to the database",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   const checkTerminalConnection = useCallback(async (ip: string) => {
     setTerminalIp(ip);
@@ -321,6 +334,34 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setProcessingDetails("");
     updateStatus("Ready for transaction", "info");
   }, [updateStatus]);
+  
+  // Load terminal configuration from database on initialization
+  useEffect(() => {
+    const loadTerminalConfig = async () => {
+      try {
+        console.log("Loading terminal configuration from database...");
+        const res = await apiRequest("GET", "/api/settings/terminal");
+        const data = await res.json();
+        
+        // Only update if we have valid data
+        if (data && data.terminalIp) {
+          console.log("Terminal configuration loaded:", data);
+          setTerminalConfig(data);
+          setTerminalIp(data.terminalIp);
+          
+          // Auto-check connection if we have terminal config
+          if (data.terminalIp && data.apiKey && data.terminalType) {
+            console.log("Auto-checking terminal connection...");
+            checkTerminalConnection(data.terminalIp);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load terminal configuration:", error);
+      }
+    };
+    
+    loadTerminalConfig();
+  }, [checkTerminalConnection]);
 
   const value = {
     amount,

@@ -44,6 +44,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(transactions);
   }));
   
+  // Get terminal settings
+  app.get('/api/settings/terminal', asyncHandler(async (req, res) => {
+    try {
+      const terminalConfig = await storage.getSetting('terminalConfig');
+      res.json(terminalConfig || {});
+    } catch (error) {
+      console.error("Error loading terminal settings:", error);
+      res.status(500).json({ error: "Failed to load terminal settings" });
+    }
+  }));
+  
+  // Save terminal settings
+  app.post('/api/settings/terminal', asyncHandler(async (req, res) => {
+    try {
+      const terminalConfig = req.body;
+      await storage.saveSetting('terminalConfig', terminalConfig);
+      res.json({ success: true, message: "Terminal settings saved successfully" });
+    } catch (error) {
+      console.error("Error saving terminal settings:", error);
+      res.status(500).json({ error: "Failed to save terminal settings" });
+    }
+  }));
+  
   // Get single transaction by ID
   app.get('/api/transactions/:id', asyncHandler(async (req, res) => {
     const id = parseInt(req.params.id);

@@ -1,7 +1,7 @@
-import { users, transactions, type User, type InsertUser, type Transaction, type InsertTransaction } from "@shared/schema";
+import { users, transactions, settings, type User, type InsertUser, type Transaction, type InsertTransaction, type InsertSettings, type Settings } from "@shared/schema";
 import pg from "pg";
 
-// Modify the interface with CRUD methods for transactions
+// Modify the interface with CRUD methods for transactions and settings
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -9,18 +9,24 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   getTransaction(id: number): Promise<Transaction | undefined>;
   getTransactions(): Promise<Transaction[]>;
+  
+  // Settings methods
+  getSetting(key: string): Promise<any>;
+  saveSetting(key: string, value: any): Promise<void>;
 }
 
 // Memory storage implementation for fallback
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private transactions: Map<number, Transaction>;
+  private settings: Map<string, any>;
   currentUserId: number;
   currentTransactionId: number;
 
   constructor() {
     this.users = new Map();
     this.transactions = new Map();
+    this.settings = new Map();
     this.currentUserId = 1;
     this.currentTransactionId = 1;
   }
@@ -69,6 +75,14 @@ export class MemStorage implements IStorage {
   async getTransactions(): Promise<Transaction[]> {
     return Array.from(this.transactions.values());
   }
+
+  async getSetting(key: string): Promise<any> {
+    return this.settings.get(key);
+  }
+
+  async saveSetting(key: string, value: any): Promise<void> {
+    this.settings.set(key, value);
+  }
 }
 
 // PostgreSQL storage implementation
@@ -105,6 +119,16 @@ export class PostgresStorage implements IStorage {
           date_time TIMESTAMP NOT NULL,
           terminal_ip TEXT,
           card_details JSONB
+        )
+      `);
+      
+      // Create settings table if it doesn't exist
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS settings (
+          id SERIAL PRIMARY KEY,
+          key TEXT NOT NULL UNIQUE,
+          value JSONB NOT NULL,
+          updated_at TIMESTAMP NOT NULL DEFAULT NOW()
         )
       `);
       
@@ -263,6 +287,42 @@ export class PostgresStorage implements IStorage {
     } catch (error) {
       console.error("Failed to get transactions:", error);
       return [];
+    }
+  }
+
+  async getSetting(key: string): Promise<any> {
+    try {
+      const result = await this.pool.query(
+        'SELECT value FROM settings WHERE key = $1',
+        [key]
+      );
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+      
+      return result.rows[0].value;
+    } catch (error) {
+      console.error(`Failed to get setting ${key}:`, error);
+      return undefined;
+    }
+  }
+
+  async saveSetting(key: string, value: any): Promise<void> {
+    try {
+      // Use upsert (insert or update) with ON CONFLICT
+      await this.pool.query(
+        `INSERT INTO settings (key, value, updated_at) 
+         VALUES ($1, $2, NOW()) 
+         ON CONFLICT (key) 
+         DO UPDATE SET value = $2, updated_at = NOW()`,
+        [key, JSON.stringify(value)]
+      );
+      
+      console.log(`Setting ${key} saved successfully`);
+    } catch (error) {
+      console.error(`Failed to save setting ${key}:`, error);
+      throw error;
     }
   }
 }
