@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useCashRegister } from "@/lib/cashRegisterContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,15 +15,34 @@ interface TerminalConfigProps {
 
 export default function TerminalConfig({ onClose }: TerminalConfigProps) {
   const [terminalIp, setTerminalIp] = useState('');
-  const { checkTerminalConnection } = useCashRegister();
+  const [apiKey, setApiKey] = useState('');
+  const [terminalType, setTerminalType] = useState('SPIN');
+  const [enableTipping, setEnableTipping] = useState(false);
+  const [enableSignature, setEnableSignature] = useState(true);
+  const [testMode, setTestMode] = useState(false);
+  const [transactionTimeout, setTransactionTimeout] = useState('90');
+  const [activeTab, setActiveTab] = useState('basic');
+  
+  const { checkTerminalConnection, updateTerminalConfig } = useCashRegister();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load saved terminal IP from localStorage if available
+    // Load saved settings from localStorage
     const savedIp = localStorage.getItem('terminalIp');
-    if (savedIp) {
-      setTerminalIp(savedIp);
-    }
+    const savedApiKey = localStorage.getItem('apiKey');
+    const savedTerminalType = localStorage.getItem('terminalType');
+    const savedEnableTipping = localStorage.getItem('enableTipping');
+    const savedEnableSignature = localStorage.getItem('enableSignature');
+    const savedTestMode = localStorage.getItem('testMode');
+    const savedTransactionTimeout = localStorage.getItem('transactionTimeout');
+    
+    if (savedIp) setTerminalIp(savedIp);
+    if (savedApiKey) setApiKey(savedApiKey);
+    if (savedTerminalType) setTerminalType(savedTerminalType);
+    if (savedEnableTipping) setEnableTipping(savedEnableTipping === 'true');
+    if (savedEnableSignature) setEnableSignature(savedEnableSignature === 'true');
+    if (savedTestMode) setTestMode(savedTestMode === 'true');
+    if (savedTransactionTimeout) setTransactionTimeout(savedTransactionTimeout);
   }, []);
 
   const handleSave = () => {
@@ -32,29 +56,151 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
       return;
     }
 
-    // Save to localStorage and check connection
+    // Save all settings to localStorage
     localStorage.setItem('terminalIp', terminalIp);
+    localStorage.setItem('apiKey', apiKey);
+    localStorage.setItem('terminalType', terminalType);
+    localStorage.setItem('enableTipping', enableTipping.toString());
+    localStorage.setItem('enableSignature', enableSignature.toString());
+    localStorage.setItem('testMode', testMode.toString());
+    localStorage.setItem('transactionTimeout', transactionTimeout);
+    
+    // Create config object to pass to the context
+    const config = {
+      terminalIp,
+      apiKey,
+      terminalType,
+      enableTipping,
+      enableSignature,
+      testMode,
+      transactionTimeout: parseInt(transactionTimeout)
+    };
+    
+    // Update terminal configuration in context
+    updateTerminalConfig(config);
+    
+    // Check terminal connection
     checkTerminalConnection(terminalIp);
+    
     onClose();
+    
+    toast({
+      title: "Configuration Saved",
+      description: "Dejavoo terminal settings have been updated.",
+    });
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Terminal Configuration</h2>
-        <div className="mb-4">
-          <label htmlFor="terminal-ip" className="block text-sm font-medium text-gray-700 mb-1">
-            Dejavoo Terminal IP Address
-          </label>
-          <Input
-            type="text"
-            id="terminal-ip"
-            placeholder="192.168.1.100"
-            value={terminalIp}
-            onChange={(e) => setTerminalIp(e.target.value)}
-          />
-          <p className="mt-1 text-sm text-gray-500">Enter the IP address of your Dejavoo terminal</p>
-        </div>
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Dejavoo Terminal Settings</h2>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="basic">Basic Settings</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced Settings</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="basic" className="space-y-4">
+            <div>
+              <Label htmlFor="terminal-ip" className="block text-sm font-medium text-gray-700 mb-1">
+                Terminal IP Address
+              </Label>
+              <Input
+                type="text"
+                id="terminal-ip"
+                placeholder="192.168.1.100"
+                value={terminalIp}
+                onChange={(e) => setTerminalIp(e.target.value)}
+              />
+              <p className="mt-1 text-sm text-gray-500">IP address of your Dejavoo terminal</p>
+            </div>
+            
+            <div>
+              <Label htmlFor="api-key" className="block text-sm font-medium text-gray-700 mb-1">
+                API Key
+              </Label>
+              <Input
+                type="password"
+                id="api-key"
+                placeholder="Enter your Dejavoo API key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+              <p className="mt-1 text-sm text-gray-500">Optional: Required for some Dejavoo services</p>
+            </div>
+            
+            <div>
+              <Label htmlFor="terminal-type" className="block text-sm font-medium text-gray-700 mb-1">
+                Terminal Type
+              </Label>
+              <Select value={terminalType} onValueChange={setTerminalType}>
+                <SelectTrigger id="terminal-type">
+                  <SelectValue placeholder="Select terminal type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SPIN">Dejavoo Spin</SelectItem>
+                  <SelectItem value="Z8">Dejavoo Z8</SelectItem>
+                  <SelectItem value="Z11">Dejavoo Z11</SelectItem>
+                  <SelectItem value="OTHER">Other Model</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-sm text-gray-500">Select your Dejavoo terminal model</p>
+            </div>
+            
+            <div className="flex items-center space-x-2 mt-4">
+              <Switch 
+                id="test-mode"
+                checked={testMode}
+                onCheckedChange={setTestMode}
+              />
+              <Label htmlFor="test-mode" className="text-sm font-medium text-gray-700">
+                Enable Test Mode
+              </Label>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="advanced" className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="enable-tipping"
+                checked={enableTipping}
+                onCheckedChange={setEnableTipping}
+              />
+              <Label htmlFor="enable-tipping" className="text-sm font-medium text-gray-700">
+                Enable Tipping
+              </Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="enable-signature"
+                checked={enableSignature}
+                onCheckedChange={setEnableSignature}
+              />
+              <Label htmlFor="enable-signature" className="text-sm font-medium text-gray-700">
+                Require Signature
+              </Label>
+            </div>
+            
+            <div>
+              <Label htmlFor="transaction-timeout" className="block text-sm font-medium text-gray-700 mb-1">
+                Transaction Timeout (seconds)
+              </Label>
+              <Input
+                type="number"
+                id="transaction-timeout"
+                placeholder="90"
+                value={transactionTimeout}
+                onChange={(e) => setTransactionTimeout(e.target.value)}
+                min="30"
+                max="300"
+              />
+              <p className="mt-1 text-sm text-gray-500">Time before a transaction is automatically canceled</p>
+            </div>
+          </TabsContent>
+        </Tabs>
+        
         <div className="mt-6 flex justify-end space-x-3">
           <Button variant="outline" onClick={onClose}>
             Cancel

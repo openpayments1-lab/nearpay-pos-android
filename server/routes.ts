@@ -7,13 +7,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Terminal connection check endpoint
   app.post("/api/terminal/check", async (req, res) => {
     try {
-      const { ip } = req.body;
+      const { ip, terminalType, apiKey, testMode } = req.body;
       
       if (!ip) {
         return res.status(400).json({ error: "Terminal IP address is required" });
       }
       
-      const connected = await checkTerminalConnection(ip);
+      // Pass additional configuration for terminal check
+      const connected = await checkTerminalConnection(ip, {
+        terminalType,
+        apiKey,
+        testMode
+      });
+      
       return res.json({ connected });
     } catch (error) {
       console.error("Terminal check error:", error);
@@ -55,25 +61,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Card payment endpoint
   app.post("/api/payment/card", async (req, res) => {
     try {
-      const { amount, terminalIp } = req.body;
+      const { amount, terminalConfig } = req.body;
       
       if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
         return res.status(400).json({ error: "Valid amount is required" });
       }
       
-      if (!terminalIp) {
-        return res.status(400).json({ error: "Terminal IP address is required" });
+      if (!terminalConfig || !terminalConfig.terminalIp) {
+        return res.status(400).json({ error: "Terminal configuration is required" });
       }
       
-      // Process payment through Dejavoo terminal
-      const result = await processCardPayment(terminalIp, parseFloat(amount));
+      // Extract terminal configuration from the request
+      const config = terminalConfig;
+      
+      // Process payment through Dejavoo terminal with full configuration
+      const result = await processCardPayment(
+        config.terminalIp, 
+        parseFloat(amount), 
+        {
+          terminalType: config.terminalType,
+          apiKey: config.apiKey,
+          enableTipping: config.enableTipping,
+          enableSignature: config.enableSignature,
+          testMode: config.testMode,
+          transactionTimeout: config.transactionTimeout
+        }
+      );
       
       // Store transaction in database
       const transaction = await storage.createTransaction({
         amount: parseFloat(amount),
         paymentMethod: "card",
         status: result.status,
-        terminalIp,
+        terminalIp: config.terminalIp,
         cardDetails: result.status === "approved" ? {
           type: result.cardType || "Credit",
           number: result.maskedPan || "**** **** **** ****",
@@ -89,7 +109,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateTime: transaction.dateTime,
         cardType: result.cardType,
         maskedPan: result.maskedPan,
-        authCode: result.authCode
+        authCode: result.authCode,
+        message: result.message
       });
     } catch (error) {
       console.error("Card payment error:", error);

@@ -40,8 +40,29 @@ export const cardDetailsSchema = z.object({
 
 export type CardDetails = z.infer<typeof cardDetailsSchema>;
 
-export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+// Allow using string (ISO format) for dates in the backend
+export const insertTransactionSchema2 = z.object({
+  amount: z.number(),
+  paymentMethod: z.string(),
+  status: z.string(),
+  dateTime: z.string().or(z.date()),
+  terminalIp: z.string().nullable(),
+  cardDetails: cardDetailsSchema.nullable(),
+});
+
+export type InsertTransaction = z.infer<typeof insertTransactionSchema2>;
 export type Transaction = typeof transactions.$inferSelect;
+
+// Terminal configuration type
+export interface TerminalConfig {
+  terminalIp: string;
+  apiKey: string;
+  terminalType: string;
+  enableTipping: boolean;
+  enableSignature: boolean;
+  testMode: boolean;
+  transactionTimeout: number;
+}
 
 // Dejavoo Transaction Response
 export interface DejavooTransactionResponse {

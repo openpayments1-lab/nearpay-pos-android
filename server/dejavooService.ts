@@ -1,12 +1,54 @@
 import axios from "axios";
 import { DejavooTransactionResponse } from "@shared/schema";
 
+interface TerminalCheckOptions {
+  terminalType?: string;
+  apiKey?: string;
+  testMode?: boolean;
+}
+
+interface CardPaymentOptions {
+  terminalType?: string;
+  apiKey?: string;
+  enableTipping?: boolean;
+  enableSignature?: boolean;
+  testMode?: boolean;
+  transactionTimeout?: number;
+}
+
 // Check if the terminal is reachable
-export async function checkTerminalConnection(ipAddress: string): Promise<boolean> {
+export async function checkTerminalConnection(
+  ipAddress: string, 
+  options: TerminalCheckOptions = {}
+): Promise<boolean> {
   try {
-    // Try to connect to the terminal using the Dejavoo Spin API
-    const url = `http://${ipAddress}/spin/v1/status`;
-    const response = await axios.get(url, { timeout: 5000 });
+    // Determine endpoint URL based on terminal type
+    let url = `http://${ipAddress}/spin/v1/status`;
+    
+    // If it's not a SPIN terminal, adjust the endpoint
+    if (options.terminalType && options.terminalType !== 'SPIN') {
+      url = `http://${ipAddress}/rest/v1/status`;
+    }
+    
+    // Prepare request headers with API key if provided
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+    
+    if (options.apiKey) {
+      headers["X-API-Key"] = options.apiKey;
+    }
+    
+    // Add test mode param if specified
+    if (options.testMode) {
+      url += "?test=true";
+    }
+    
+    // Send request to check if terminal is reachable
+    const response = await axios.get(url, { 
+      headers,
+      timeout: 5000 
+    });
     
     // If we get a response, the terminal is connected
     return response.status === 200;
@@ -19,15 +61,37 @@ export async function checkTerminalConnection(ipAddress: string): Promise<boolea
 // Process card payment with Dejavoo terminal
 export async function processCardPayment(
   ipAddress: string, 
-  amount: number
+  amount: number,
+  options: CardPaymentOptions = {}
 ): Promise<DejavooTransactionResponse> {
   try {
     // Format amount for Dejavoo (in cents)
     const amountInCents = Math.round(amount * 100).toString();
     
-    // Create Dejavoo Spin API payment request
-    const url = `http://${ipAddress}/spin/v1/txn`;
-    const payload = {
+    // Determine endpoint URL based on terminal type
+    let url = `http://${ipAddress}/spin/v1/txn`;
+    
+    // If it's not a SPIN terminal, adjust the endpoint
+    if (options.terminalType && options.terminalType !== 'SPIN') {
+      url = `http://${ipAddress}/rest/v1/transaction`;
+    }
+    
+    // Prepare request headers with API key if provided
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+    
+    if (options.apiKey) {
+      headers["X-API-Key"] = options.apiKey;
+    }
+    
+    // Add test mode param if specified
+    if (options.testMode) {
+      url += "?test=true";
+    }
+    
+    // Create payment request payload
+    const payload: any = {
       TxnType: "Sale",
       AmtInfo: {
         TotAmt: amountInCents,
@@ -36,12 +100,25 @@ export async function processCardPayment(
       TrlNum: "1",
     };
     
+    // Add tipping option if enabled
+    if (options.enableTipping) {
+      payload.TipInfo = {
+        TipEnable: true
+      };
+    }
+    
+    // Add signature option if enabled
+    if (options.enableSignature !== undefined) {
+      payload.SignCapture = options.enableSignature;
+    }
+    
+    // Determine timeout (default to 90 seconds if not specified)
+    const timeout = options.transactionTimeout ? options.transactionTimeout * 1000 : 90000;
+    
     // Send request to terminal
     const response = await axios.post(url, payload, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      timeout: 90000, // 90 second timeout to allow for card processing
+      headers,
+      timeout
     });
     
     const data = response.data;
@@ -91,10 +168,32 @@ export async function processCardPayment(
 // Void transaction (can be used to cancel or refund)
 export async function voidTransaction(
   ipAddress: string,
-  transactionId: string
+  transactionId: string,
+  options: CardPaymentOptions = {}
 ): Promise<DejavooTransactionResponse> {
   try {
-    const url = `http://${ipAddress}/spin/v1/txn`;
+    // Determine endpoint URL based on terminal type
+    let url = `http://${ipAddress}/spin/v1/txn`;
+    
+    // If it's not a SPIN terminal, adjust the endpoint
+    if (options.terminalType && options.terminalType !== 'SPIN') {
+      url = `http://${ipAddress}/rest/v1/transaction`;
+    }
+    
+    // Prepare request headers with API key if provided
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+    
+    if (options.apiKey) {
+      headers["X-API-Key"] = options.apiKey;
+    }
+    
+    // Add test mode param if specified
+    if (options.testMode) {
+      url += "?test=true";
+    }
+    
     const payload = {
       TxnType: "Void",
       TxnId: transactionId,
@@ -103,9 +202,7 @@ export async function voidTransaction(
     };
     
     const response = await axios.post(url, payload, {
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       timeout: 30000,
     });
     
@@ -133,17 +230,39 @@ export async function voidTransaction(
 }
 
 // Settle batch (end of day)
-export async function settleBatch(ipAddress: string): Promise<DejavooTransactionResponse> {
+export async function settleBatch(
+  ipAddress: string,
+  options: CardPaymentOptions = {}
+): Promise<DejavooTransactionResponse> {
   try {
-    const url = `http://${ipAddress}/spin/v1/settle`;
+    // Determine endpoint URL based on terminal type
+    let url = `http://${ipAddress}/spin/v1/settle`;
+    
+    // If it's not a SPIN terminal, adjust the endpoint
+    if (options.terminalType && options.terminalType !== 'SPIN') {
+      url = `http://${ipAddress}/rest/v1/settle`;
+    }
+    
+    // Prepare request headers with API key if provided
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+    
+    if (options.apiKey) {
+      headers["X-API-Key"] = options.apiKey;
+    }
+    
+    // Add test mode param if specified
+    if (options.testMode) {
+      url += "?test=true";
+    }
+    
     const payload = {
       ClerkID: "1",
     };
     
     const response = await axios.post(url, payload, {
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       timeout: 60000,
     });
     

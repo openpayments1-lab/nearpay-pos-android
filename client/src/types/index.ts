@@ -7,6 +7,17 @@ export type TerminalStatus = 'not-configured' | 'connected' | 'failed';
 // Status message type for transaction status
 export type StatusType = 'info' | 'success' | 'error' | 'warning';
 
+// Terminal configuration
+export interface TerminalConfig {
+  terminalIp: string;
+  apiKey: string;
+  terminalType: string;
+  enableTipping: boolean;
+  enableSignature: boolean;
+  testMode: boolean;
+  transactionTimeout: number;
+}
+
 // Card details for receipt
 export interface CardDetails {
   type: string;

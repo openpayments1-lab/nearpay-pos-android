@@ -6,7 +6,8 @@ import {
   TerminalStatus, 
   StatusType, 
   Receipt,
-  CardDetails 
+  CardDetails,
+  TerminalConfig
 } from "@/types";
 import { generateTransactionId } from "./utils";
 
@@ -17,7 +18,9 @@ interface CashRegisterContextType {
   setSelectedPaymentMethod: (method: PaymentMethod | null) => void;
   terminalStatus: TerminalStatus;
   terminalIp: string;
+  terminalConfig: TerminalConfig;
   checkTerminalConnection: (ip: string) => void;
+  updateTerminalConfig: (config: TerminalConfig) => void;
   isTransactionInProgress: boolean;
   isProcessing: boolean;
   statusMessage: string;
@@ -30,6 +33,17 @@ interface CashRegisterContextType {
   resetTransaction: () => void;
 }
 
+// Default terminal configuration
+const defaultTerminalConfig: TerminalConfig = {
+  terminalIp: "",
+  apiKey: "",
+  terminalType: "SPIN",
+  enableTipping: false,
+  enableSignature: true,
+  testMode: false,
+  transactionTimeout: 90
+};
+
 const CashRegisterContext = createContext<CashRegisterContextType>({
   amount: "0.00",
   setAmount: () => {},
@@ -37,7 +51,9 @@ const CashRegisterContext = createContext<CashRegisterContextType>({
   setSelectedPaymentMethod: () => {},
   terminalStatus: "not-configured",
   terminalIp: "",
+  terminalConfig: defaultTerminalConfig,
   checkTerminalConnection: () => {},
+  updateTerminalConfig: () => {},
   isTransactionInProgress: false,
   isProcessing: false,
   statusMessage: "Ready for transaction",
@@ -55,6 +71,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
   const [terminalStatus, setTerminalStatus] = useState<TerminalStatus>("not-configured");
   const [terminalIp, setTerminalIp] = useState("");
+  const [terminalConfig, setTerminalConfig] = useState<TerminalConfig>(defaultTerminalConfig);
   const [isTransactionInProgress, setIsTransactionInProgress] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Ready for transaction");
@@ -71,12 +88,25 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setStatusType(type);
   }, []);
 
+  const updateTerminalConfig = useCallback((config: TerminalConfig) => {
+    setTerminalConfig(config);
+    setTerminalIp(config.terminalIp);
+  }, []);
+
   const checkTerminalConnection = useCallback(async (ip: string) => {
     setTerminalIp(ip);
     updateStatus("Connecting to terminal...", "info");
     
     try {
-      const res = await apiRequest("POST", "/api/terminal/check", { ip });
+      // Pass terminal type and API key if available
+      const payload = { 
+        ip, 
+        terminalType: terminalConfig.terminalType,
+        apiKey: terminalConfig.apiKey,
+        testMode: terminalConfig.testMode
+      };
+      
+      const res = await apiRequest("POST", "/api/terminal/check", payload);
       const data = await res.json();
       
       if (data.connected) {
@@ -90,11 +120,11 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
         });
       } else {
         setTerminalStatus("failed");
-        updateStatus("Could not connect to terminal. Please check IP address.", "error");
+        updateStatus("Could not connect to terminal. Please check settings.", "error");
         
         toast({
           title: "Connection Failed",
-          description: "Could not connect to Dejavoo terminal. Please check the IP address.",
+          description: "Could not connect to Dejavoo terminal. Please check the connection settings.",
           variant: "destructive",
         });
       }
@@ -108,7 +138,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
         variant: "destructive",
       });
     }
-  }, [updateStatus, toast]);
+  }, [terminalConfig, updateStatus, toast]);
 
   const processCashPayment = useCallback(async (amount: string) => {
     updateStatus("Processing cash payment...", "info");
@@ -164,10 +194,10 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     updateStatus("Sending transaction to terminal...", "info");
     
     try {
-      // Send transaction to Dejavoo terminal
+      // Send transaction to Dejavoo terminal with all terminal config settings
       const res = await apiRequest("POST", "/api/payment/card", { 
         amount,
-        terminalIp 
+        terminalConfig
       });
       
       const data = await res.json();
@@ -213,7 +243,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         toast({
           title: "Payment Declined",
-          description: "Card payment was declined. Please try another method.",
+          description: data.message || "Card payment was declined. Please try another method.",
           variant: "destructive",
         });
       }
@@ -227,7 +257,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
         variant: "destructive",
       });
     }
-  }, [terminalStatus, terminalIp, updateStatus, toast]);
+  }, [terminalStatus, terminalConfig, updateStatus, toast]);
 
   const processTransaction = useCallback(() => {
     if (!selectedPaymentMethod) return;
@@ -263,7 +293,9 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setSelectedPaymentMethod,
     terminalStatus,
     terminalIp,
+    terminalConfig,
     checkTerminalConnection,
+    updateTerminalConfig,
     isTransactionInProgress,
     isProcessing,
     statusMessage,
