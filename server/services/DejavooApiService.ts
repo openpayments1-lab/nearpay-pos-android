@@ -9,7 +9,7 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
 // Base API URL
-const API_BASE_URL = 'https://api.spinpos.net/v2/';
+const API_BASE_URL = 'https://api.spinpos.net/';
 
 /**
  * Interface for terminal configuration
@@ -309,16 +309,16 @@ export class DejavooApiService {
    */
   public async checkStatus(): Promise<StatusResponse> {
     try {
-      // Create explicit payload with required fields
+      // Create explicit payload with required fields (in order shown in example)
       const payload = {
-        Tpn: this.config.tpn,
-        Authkey: this.config.authKey,
+        PaymentType: "Credit",
         ReferenceId: this.generateReferenceId(),
-        PaymentType: "Credit" // Required field explicitly added
+        Tpn: this.config.tpn,
+        Authkey: this.config.authKey
       };
       
       // Use the Status endpoint
-      const response = await this.makeApiRequest<any>('Payment/Status', payload, {
+      const response = await this.makeApiRequest<any>('spin/status', payload, {
         timeout: 10000
       });
       
@@ -437,30 +437,18 @@ export class DejavooApiService {
     const referenceId = options.referenceId || this.generateReferenceId();
     console.log(`Using ReferenceId for transaction: ${referenceId}`);
     
-    // Create base payload with our specific referenceId
+    // Create simplified payload based on provided example format
     const payload = {
-      Tpn: this.config.tpn,
-      Authkey: this.config.authKey,
+      PaymentType: "Credit",
+      TransactionType: "Sale",
       ReferenceId: referenceId,
       Amount: amount,
-      TipAmount: options.enableTipping ? null : (options.tipAmount || 0),
-      ExternalReceipt: options.externalReceipt ? "Yes" : "No",
-      PaymentType: "Credit",
-      PrintReceipt: options.printReceipt ? "Yes" : "No",
-      // GetReceipt field removed due to API validation errors
-      MerchantNumber: null,
-      InvoiceNumber: options.invoiceNumber || "",
-      CaptureSignature: options.captureSignature || options.enableSignature || false,
-      GetExtendedData: true,
-      CallbackInfo: {
-        Url: options.callbackUrl || ""
-      },
-      SPInProxyTimeout: options.transactionTimeout || null,
-      CustomFields: options.customFields || {}
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey
     };
     
     // Process the payment
-    const response = await this.makeApiRequest<DejavooTransactionResponse>('Payment/Sale', payload, {
+    const response = await this.makeApiRequest<DejavooTransactionResponse>('spin/sale', payload, {
       timeout: (options.transactionTimeout || 90) * 1000
     });
     
@@ -481,16 +469,16 @@ export class DejavooApiService {
         
         // Create a status check payload with the same reference ID
         const statusPayload = {
-          Tpn: this.config.tpn,
-          Authkey: this.config.authKey,
+          PaymentType: "Credit",
           ReferenceId: referenceId,
-          PaymentType: "Credit"
+          Tpn: this.config.tpn,
+          Authkey: this.config.authKey
         };
         
         try {
           // Check transaction status using the same reference ID
           const statusResponse = await this.makeApiRequest<DejavooTransactionResponse>(
-            'Payment/Status', 
+            'spin/status', 
             statusPayload, 
             { timeout: 10000 }
           );
