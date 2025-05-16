@@ -1,0 +1,286 @@
+Return
+Return is an independent operation and it does not relate to any Sale transaction. Please use a unique ReferenceID for Return request. You may do return on any amount. For a terminal app Return operation is not related to any Sale that you did in the past. Return does charge back and behaves as Sale only vice-versa and add money on card balance.
+
+Body ParametersExpand all
+Amount
+number (double)
+Required
+Total amount of the transaction.
+
+PaymentType
+string
+Required
+Indicates electronic data capture (EDC) type.
+
+Enum values:
+Credit
+Debit
+EBT_Food
+EBT_Cash
+Card
+Cash
+Check
+Gift
+ReferenceId
+string
+Required
+Alphanumeric SPIn transaction identifier. Has to be unique within one batch.
+
+Min length
+1
+Max length
+50
+PrintReceipt
+string
+Indicates if any of receipt copies should be printed after the transaction.
+
+Enum values:
+No
+Both
+Merchant
+Customer
+GetReceipt
+string
+Indicates if any of receipt copies should be returned in response.
+
+Enum values:
+No
+Both
+Merchant
+Customer
+MerchantNumber
+integer (int32)
+Merchant number for multi-merchant environment. If not present in multi-merchant environment, transaction will be cancelled.
+
+Minimum
+1
+Maximum
+5
+InvoiceNumber
+string
+Unique alphanumeric invoice number.
+
+Max length
+50
+CaptureSignature
+boolean
+Indicates whether customer signature should be captured or not in course of transaction.
+
+GetExtendedData
+boolean
+Indicates whether extended transaction data should be returned or not.
+
+CallbackInfo
+object
+Information for callback with transaction result.
+
+Show child attributes
+
+Tpn
+string
+Required
+Terminal profile number. Can be used to identify the terminal in SPIn Proxy environment.
+
+Min length
+10
+Max length
+12
+Authkey
+string
+Merchant's authorization password. Required if no SPInToken.
+
+Min length
+10
+Max length
+10
+SPInProxyTimeout
+integer (int32)
+Timeout for processing transaction with SPIn proxy. If null, the default timeout will be used.
+
+Minimum
+1
+Maximum
+720
+CustomFields
+object
+A collection of custom fields in key-value format.
+
+ResponseExpand all
+200
+Object
+OK
+Response Attributes
+GeneralResponse
+object
+General response for payment request
+
+Show child attributes
+
+PaymentType
+string
+Indicates electronic data capture ['Credit', 'Debit', 'EBT', 'Card'].
+
+Enum values:
+Credit
+Debit
+EBT_Food
+EBT_Cash
+Card
+Cash
+Check
+Gift
+TransactionType
+string
+Indicates Transaction Type (Sale, Void, Auth, etc).
+
+Amounts
+object
+Show child attributes
+
+AuthCode
+string
+Authorization code provided by payment processor.
+
+ReferenceId
+string
+Alphanumeric unique SPin transaction identifier.
+
+InvoiceNumber
+string
+Unique invoice number.
+
+SerialNumber
+string
+Device Serial Number.
+
+BatchNumber
+string
+Current batch number.
+
+TransactionNumber
+string
+Transaction number within batch.
+
+Voided
+boolean
+Indicates whether transaction was voided or not.
+
+Signature
+string
+Indicates customer signature if it was captured.
+
+IPosToken
+string
+Using the token obtained in sale response POS can perform new authorisation using "Transact"”" api of iPosPays. This sale request will not require any card interaction at the payment device.
+
+Token
+string
+This token could be required for future transactions using the same card
+
+RRN
+string
+Reference Retrieval Number provided by iPOSPay Gateway. Uses for iPos gateway Api.
+
+ExtendedDataByApplication
+object
+CardData
+object
+Show child attributes
+
+EMVData
+object
+Show child attributes
+
+Receipts
+object
+Show child attributes
+
+DvPay
+Object
+DvPay and AURA response example
+Response Attributes
+Amounts
+object
+Show child attributes
+
+GeneralResponse
+object
+General response for any request
+
+Show child attributes
+
+PaymentType
+string
+TransactionType
+string
+AuthCode
+string
+ReferenceId
+string
+InvoiceNumber
+string
+SerialNumber
+string
+BatchNumber
+string
+TransactionNumber
+string
+Voided
+boolean
+ExtendedDataByApplication
+object
+Show child attributes
+
+CardData
+object
+Show child attributes
+
+EMVData
+object
+Show child attributes
+
+DvPay Lite
+Object
+DvPay Lite response example
+Response Attributes
+Amounts
+object
+Show child attributes
+
+GeneralResponse
+object
+Show child attributes
+
+PaymentType
+string
+TransactionType
+string
+AuthCode
+string
+ReferenceId
+string
+InvoiceNumber
+string
+SerialNumber
+string
+BatchNumber
+string
+TransactionNumber
+string
+Voided
+boolean
+IPosToken
+string
+RRN
+string
+ExtendedDataByApplication
+object
+Show child attributes
+
+CardData
+object
+Show child attributes
+
+EMVData
+object
+Show child attributes
