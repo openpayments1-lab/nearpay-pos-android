@@ -509,6 +509,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(result);
   }));
   
+  // Process a direct refund (exactly matching provided format)
+  app.post('/api/payment/refund-direct', asyncHandler(async (req, res) => {
+    const { amount, referenceId, invoiceNumber, terminalConfig } = req.body;
+    
+    if (!amount || isNaN(amount)) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+    
+    // Use the direct JSON format as shown in the example
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    
+    const payload = {
+      "Amount": amount,
+      "PaymentType": "Credit",
+      "ReferenceId": referenceId || Math.random().toString(16).slice(2, 14),
+      "PrintReceipt": "No",
+      "GetReceipt": "No",
+      "MerchantNumber": null,
+      "InvoiceNumber": invoiceNumber || "",
+      "CaptureSignature": false,
+      "GetExtendedData": true,
+      "CallbackInfo": {
+        "Url": ""
+      },
+      "Tpn": terminalConfig.terminalType || "z11invtest69",
+      "Authkey": terminalConfig.apiKey || "JZiRUusizc",
+      "SPInProxyTimeout": terminalConfig.transactionTimeout || 90,
+      "CustomFields": {}
+    };
+    
+    console.log(`Processing direct refund with payload:`, JSON.stringify(payload));
+    
+    // Use our existing refund function to process the request
+    const result = await processRefund(
+      terminalConfig.terminalIp, 
+      amount, 
+      {
+        terminalType: terminalConfig.terminalType || "z11invtest69",
+        apiKey: terminalConfig.apiKey || "JZiRUusizc",
+        enableSignature: false,
+        testMode: terminalConfig.testMode,
+        transactionTimeout: terminalConfig.transactionTimeout,
+        referenceId: referenceId,
+        invoiceNumber: invoiceNumber
+      }
+    );
+    
+    // Log the response for debugging
+    console.log('Direct refund result:', JSON.stringify(result));
+    
+    // Return the full response to match the format in the example
+    res.json(result);
+  }));
+  
   // Void a transaction
   app.post('/api/payment/void', asyncHandler(async (req, res) => {
     const { transactionId, terminalConfig } = req.body;

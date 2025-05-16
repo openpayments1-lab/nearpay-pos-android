@@ -15,8 +15,8 @@ interface TerminalConfigProps {
 
 export default function TerminalConfig({ onClose }: TerminalConfigProps) {
   const [terminalIp, setTerminalIp] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [terminalType, setTerminalType] = useState('2247257465'); // Must be 10-12 chars
+  const [apiKey, setApiKey] = useState('JZiRUusizc');
+  const [terminalType, setTerminalType] = useState('z11invtest69'); // Must be 10-12 chars
   const [enableTipping, setEnableTipping] = useState(false);
   const [enableSignature, setEnableSignature] = useState(true);
   const [testMode, setTestMode] = useState(false);
