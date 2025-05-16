@@ -40,8 +40,8 @@ interface CashRegisterContextType {
 // Default terminal configuration
 const defaultTerminalConfig: TerminalConfig = {
   terminalIp: "",
-  apiKey: "",
-  terminalType: "2247257465", // Must be at least 10 characters
+  apiKey: "JZiRUusizc",
+  terminalType: "z11invtest69", // Must be at least 10 characters
   enableTipping: false,
   enableSignature: true,
   testMode: false,

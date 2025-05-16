@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import CashRegister from "@/pages/CashRegister";
 import TransactionHistory from "@/pages/TransactionHistory";
+import RefundTest from "@/pages/RefundTest";
 import { CashRegisterProvider } from "@/lib/cashRegisterContext";
 
 function Router() {
@@ -12,6 +13,7 @@ function Router() {
     <Switch>
       <Route path="/" component={CashRegister} />
       <Route path="/history" component={TransactionHistory} />
+      <Route path="/refund-test" component={RefundTest} />
       <Route component={NotFound} />
     </Switch>
   );
