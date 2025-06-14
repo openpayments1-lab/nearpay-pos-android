@@ -46,11 +46,11 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
   }, []);
 
   const handleSave = () => {
-    // Basic IP address validation
-    if (!terminalIp || !/^(\d{1,3}\.){3}\d{1,3}$/.test(terminalIp)) {
+    // Validate required fields - IP is not required for SPIN API
+    if (!terminalType || !apiKey) {
       toast({
-        title: "Invalid IP Address",
-        description: "Please enter a valid IP address.",
+        title: "Missing Required Fields",
+        description: "Please enter both Terminal ID (TPN) and API Key.",
         variant: "destructive"
       });
       return;
@@ -104,16 +104,18 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
           <TabsContent value="basic" className="space-y-4">
             <div>
               <Label htmlFor="terminal-ip" className="block text-sm font-medium text-gray-700 mb-1">
-                Terminal IP Address (Optional)
+                Terminal IP Address (Not Required)
               </Label>
               <Input
                 type="text"
                 id="terminal-ip"
-                placeholder="IP not needed for remote API"
+                placeholder="Not needed for SPIN API"
                 value={terminalIp}
                 onChange={(e) => setTerminalIp(e.target.value)}
+                disabled
+                className="bg-gray-100"
               />
-              <p className="mt-1 text-sm text-gray-500">Not required when using Dejavoo remote API</p>
+              <p className="mt-1 text-sm text-gray-500">Dejavoo SPIN API communicates through cloud service - IP not needed</p>
             </div>
             
             <div>
