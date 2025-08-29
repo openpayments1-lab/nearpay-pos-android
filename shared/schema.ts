@@ -50,6 +50,7 @@ export const insertTransactionSchema2 = z.object({
   dateTime: z.string().or(z.date()),
   terminalIp: z.string().nullable(),
   cardDetails: cardDetailsSchema.nullable(),
+  customerId: z.string().optional().nullable(),
 });
 
 export type InsertTransaction = z.infer<typeof insertTransactionSchema2>;
@@ -62,6 +63,7 @@ export type Transaction = {
   dateTime: Date;
   terminalIp: string | null;
   cardDetails: CardDetails | null;
+  customerId?: string | null;
 };
 
 // Terminal configuration type

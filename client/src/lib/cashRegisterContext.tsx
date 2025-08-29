@@ -11,11 +11,24 @@ import {
 } from "@/types";
 import { generateTransactionId } from "./utils";
 
+interface CustomerProfile {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  iPosToken: string | null;
+  tokenStatus: string | null;
+  cardType: string | null;
+  cardLast4: string | null;
+}
+
 interface CashRegisterContextType {
   amount: string;
   setAmount: (amount: string) => void;
   selectedPaymentMethod: PaymentMethod | null;
   setSelectedPaymentMethod: (method: PaymentMethod | null) => void;
+  selectedCustomer: CustomerProfile | null;
+  setSelectedCustomer: (customer: CustomerProfile | null) => void;
   terminalStatus: TerminalStatus;
   terminalIp: string;
   terminalConfig: TerminalConfig;
@@ -53,6 +66,8 @@ const CashRegisterContext = createContext<CashRegisterContextType>({
   setAmount: () => {},
   selectedPaymentMethod: null,
   setSelectedPaymentMethod: () => {},
+  selectedCustomer: null,
+  setSelectedCustomer: () => {},
   terminalStatus: "not-configured",
   terminalIp: "",
   terminalConfig: defaultTerminalConfig,
@@ -77,6 +92,7 @@ const CashRegisterContext = createContext<CashRegisterContextType>({
 export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [amount, setAmount] = useState("0.00");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerProfile | null>(null);
   const [terminalStatus, setTerminalStatus] = useState<TerminalStatus>("not-configured");
   const [terminalIp, setTerminalIp] = useState("");
   const [terminalConfig, setTerminalConfig] = useState<TerminalConfig>(defaultTerminalConfig);
@@ -259,7 +275,10 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     
     try {
       // Process cash payment through API
-      const res = await apiRequest("POST", "/api/payment/cash", { amount });
+      const res = await apiRequest("POST", "/api/payment/cash", { 
+        amount,
+        customerId: selectedCustomer?.id || null
+      });
       const data = await res.json();
       
       setIsProcessing(false);
@@ -291,7 +310,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
         variant: "destructive",
       });
     }
-  }, [updateStatus, toast]);
+  }, [selectedCustomer, updateStatus, toast]);
 
   const processCardPayment = useCallback(async (amount: string) => {
     if (terminalStatus !== "connected") {
@@ -308,7 +327,8 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // Send transaction to Dejavoo terminal with all terminal config settings
       const res = await apiRequest("POST", "/api/payment/card", { 
         amount,
-        terminalConfig
+        terminalConfig,
+        customerId: selectedCustomer?.id || null
       });
       
       const data = await res.json();
@@ -368,7 +388,7 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
         variant: "destructive",
       });
     }
-  }, [terminalStatus, terminalConfig, updateStatus, toast]);
+  }, [terminalStatus, terminalConfig, selectedCustomer, updateStatus, toast]);
 
   const processTransaction = useCallback(() => {
     if (!selectedPaymentMethod) return;
@@ -535,6 +555,8 @@ export const CashRegisterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setAmount,
     selectedPaymentMethod,
     setSelectedPaymentMethod,
+    selectedCustomer,
+    setSelectedCustomer,
     terminalStatus,
     terminalIp,
     terminalConfig,

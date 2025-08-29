@@ -204,7 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Process card payment
   app.post('/api/payment/card', asyncHandler(async (req, res) => {
-    const { amount, terminalConfig } = req.body;
+    const { amount, terminalConfig, customerId } = req.body;
     
     // Validate amount
     const numericAmount = parseFloat(amount);
@@ -312,6 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: 'approved',
           dateTime: new Date(),
           terminalIp: terminalConfig.terminalIp,
+          customerId: customerId || null,
           cardDetails: {
             type: cardType,
             number: `**** **** **** ${cardLast4}`,
@@ -325,6 +326,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Save transaction to database
         const savedTransaction = await storage.createTransaction(validatedData);
         console.log('Transaction saved:', savedTransaction);
+        
+        // Automatic token capture for customer profiles
+        if (customerId && isApproved) {
+          try {
+            console.log(`Processing automatic token capture for customer: ${customerId}`);
+            
+            // Get customer profile to check if token already exists
+            const customer = await storage.getCustomerProfile(customerId);
+            if (customer && !customer.iPosToken) {
+              console.log(`Customer ${customerId} doesn't have a token, attempting token capture`);
+              
+              // Extract iPOS token from the original transaction response
+              let iPosToken = null;
+              
+              // Check for iPOS token in the response
+              if (resp.ExtendedDataByApplication?.['0']?.iposToken) {
+                iPosToken = resp.ExtendedDataByApplication['0'].iposToken;
+              } else if (resp.extendedDataByApplication?.['0']?.iposToken) {
+                iPosToken = resp.extendedDataByApplication['0'].iposToken;
+              }
+              
+              // If no token in response, try to perform token capture using SPIn API
+              if (!iPosToken && resp.ReferenceId) {
+                console.log(`No iPOS token in response, attempting token capture via SPIn API`);
+                
+                try {
+                  // Import the token capture service
+                  const { DejavooApiService } = await import('./services/DejavooApiService');
+                  
+                  // Create service instance
+                  const dejavooService = new DejavooApiService({
+                    terminalType: terminalConfig.terminalType,
+                    apiKey: terminalConfig.apiKey,
+                    testMode: terminalConfig.testMode
+                  });
+                  
+                  // Attempt token capture using the transaction reference
+                  const tokenResponse = await dejavooService.tokenizeCard({
+                    referenceId: resp.ReferenceId,
+                    amount: numericAmount,
+                    enableExtendedData: true
+                  });
+                  
+                  console.log('Token capture response:', JSON.stringify(tokenResponse));
+                  
+                  // Extract iPOS token from token capture response
+                  if (tokenResponse?.ExtendedDataByApplication?.['0']?.iposToken) {
+                    iPosToken = tokenResponse.ExtendedDataByApplication['0'].iposToken;
+                  }
+                  
+                } catch (tokenError) {
+                  console.error('Error during token capture:', tokenError);
+                }
+              }
+              
+              // Save token to customer profile if found
+              if (iPosToken) {
+                console.log(`Successfully captured iPOS token for customer ${customerId}: ${iPosToken.substring(0, 10)}...`);
+                
+                await storage.updateCustomerProfile(customerId, {
+                  iPosToken: iPosToken,
+                  tokenCreatedAt: new Date(),
+                  tokenStatus: 'active',
+                  cardType: cardType,
+                  cardLast4: cardLast4,
+                  cardExpiry: resp.CardData?.ExpirationDate || null
+                });
+                
+                console.log(`iPOS token saved to customer profile ${customerId}`);
+              } else {
+                console.log(`No iPOS token could be captured for customer ${customerId}`);
+              }
+            } else if (customer?.iPosToken) {
+              console.log(`Customer ${customerId} already has an iPOS token`);
+            }
+          } catch (tokenCaptureError) {
+            console.error('Error during automatic token capture:', tokenCaptureError);
+            // Don't fail the transaction if token capture fails
+          }
+        }
       } catch (error) {
         console.error('Error saving transaction:', error);
         // Continue even if saving fails - don't affect the response
@@ -338,7 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Process cash payment
   app.post('/api/payment/cash', asyncHandler(async (req, res) => {
-    const { amount } = req.body;
+    const { amount, customerId } = req.body;
     
     // Validate amount
     const numericAmount = parseFloat(amount);
@@ -357,6 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'completed',
         dateTime: new Date(),
         terminalIp: null,
+        customerId: customerId || null,
         cardDetails: null
       };
       

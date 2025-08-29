@@ -10,6 +10,7 @@ import TransactionStatus from "@/components/TransactionStatus";
 import Receipt from "@/components/Receipt";
 import TerminalConfig from "@/components/TerminalConfig";
 import ProcessingOverlay from "@/components/ProcessingOverlay";
+import { CustomerSelector } from "@/components/CustomerSelector";
 import { useCashRegister } from "@/lib/cashRegisterContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -166,8 +167,9 @@ export default function CashRegister() {
               <AmountInput />
             </div>
             
-            {/* Right column: Payment methods and status */}
+            {/* Right column: Customer selection, payment methods and status */}
             <div className="w-full md:w-5/12 p-6">
+              <CustomerSelector />
               <PaymentMethod />
               <TransactionStatus />
             </div>
