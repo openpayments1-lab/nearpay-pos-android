@@ -20,7 +20,19 @@ A robust payment processing application integrating Dejavoo SPIN credit card ter
 
 ## Recent Changes (January 2025)
 
-### Customer Management System Implementation
+### iPOS Auth Token System Configuration
+- **Date**: January 29, 2025
+- **Change**: Implemented centralized iPOS Auth Token storage in terminal settings for automated recurring payments
+- **Details**:
+  - **System-Wide Token Storage**: Added iPOS Auth Token field to terminal configuration interface
+  - **Automated Token Retrieval**: Customer charge functionality now automatically uses stored system token
+  - **Eliminated Manual Entry**: Removed need to enter iPOS token for each recurring charge transaction
+  - **Enhanced Validation**: Added proper validation to ensure token is configured before processing charges
+  - **Secure Storage**: Token securely stored in both localStorage and database through terminal settings
+  - **Streamlined Workflow**: "Charge Stored Card" button seamlessly uses saved authentication token
+  - **Perfect Integration**: Full compatibility with existing customer profiles and recurring billing system
+
+### Customer Management System Implementation  
 - **Date**: January 29, 2025
 - **Change**: Implemented comprehensive customer profile management system with stored payment tokens for SaaS recurring billing
 - **Details**:
