@@ -9,8 +9,10 @@ export interface iPosChargeRequest {
   amount: number;
   description?: string;
   iPosToken: string;
-  iPosAuthToken: string;
+  apiKey: string;
+  secretKey: string;
   terminalId?: string; // TPN from terminal config
+  isProduction?: boolean;
 }
 
 export interface iPosChargeResponse {
@@ -25,6 +27,36 @@ export interface iPosChargeResponse {
 export class iPosTransactService {
   private sandboxUrl = 'https://payment.ipospays.tech/api/v3/iposTransact';
   private productionUrl = 'https://payment.ipospays.com/api/v3/iposTransact';
+  private authSandboxUrl = 'https://auth.ipospays.tech/v1/authenticate-token';
+  private authProductionUrl = 'https://auth.ipospays.com/v1/authenticate-token';
+
+  /**
+   * Get authentication token using API Key and Secret Key
+   */
+  private async getAuthToken(apiKey: string, secretKey: string, isProduction = false): Promise<string> {
+    const authUrl = isProduction ? this.authProductionUrl : this.authSandboxUrl;
+    
+    const payload = {
+      apiKey: apiKey,
+      secretKey: secretKey,
+      scope: "PaymentTokenization"
+    };
+
+    console.log('Getting iPOS auth token from:', authUrl);
+    
+    const response = await axios.post(authUrl, payload, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.data.responseCode === "00") {
+      console.log('iPOS auth token obtained successfully');
+      return response.data.token;
+    } else {
+      throw new Error(`Failed to get auth token: ${response.data.responseMessage || 'Unknown error'}`);
+    }
+  }
 
   /**
    * Process a recurring charge using a stored iPOS token
@@ -35,14 +67,17 @@ export class iPosTransactService {
         amount: request.amount,
         description: request.description,
         tokenPresent: !!request.iPosToken,
-        authTokenPresent: !!request.iPosAuthToken
+        apiKeyPresent: !!request.apiKey,
+        secretKeyPresent: !!request.secretKey
       });
 
-      // Use TPN from auth token - it must match what's encoded in the JWT
-      const decodedToken = this.decodeJWT(request.iPosAuthToken);
-      const tpn = decodedToken?.tpn || request.terminalId || "224725231775";
+      // Get proper authentication token using API Key and Secret Key
+      const authToken = await this.getAuthToken(request.apiKey, request.secretKey, request.isProduction);
       
-      console.log('Using TPN from JWT token:', tpn, 'decoded from:', decodedToken);
+      // Use the terminal ID provided
+      const tpn = request.terminalId || "224725575584";
+      
+      console.log('Using TPN:', tpn, 'with proper iPOS auth token');
       
       // Generate unique transaction reference ID (must be 20 chars or fewer, alphanumeric)
       const transactionReferenceId = `${Date.now()}${Math.random().toString(36).substr(2, 7)}`.substr(0, 20);
@@ -69,12 +104,12 @@ export class iPosTransactService {
       console.log('iPOS Transact API V3 payload:', JSON.stringify(payload, null, 2));
 
       // Use sandbox endpoint since tokens are coming from Dejavoo test environment
-      const apiUrl = this.sandboxUrl;
+      const apiUrl = request.isProduction ? this.productionUrl : this.sandboxUrl;
       
       const response = await axios.post(apiUrl, payload, {
         headers: {
           'Content-Type': 'application/json',
-          'token': request.iPosAuthToken
+          'token': authToken
         },
         timeout: 30000
       });
@@ -127,33 +162,18 @@ export class iPosTransactService {
   }
 
   /**
-   * Decode JWT token to get TPN and other details
-   */
-  private decodeJWT(token: string): any {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      console.error('Error decoding JWT token:', error);
-      return null;
-    }
-  }
-
-  /**
    * Validate an iPOS token using a test transaction
    */
-  async validateToken(iPosToken: string, iPosAuthToken: string): Promise<boolean> {
+  async validateToken(iPosToken: string, apiKey: string, secretKey: string, terminalId?: string): Promise<boolean> {
     try {
       // Test with a minimal amount (1 cent) to validate the token
       const testResponse = await this.processRecurringCharge({
         amount: 0.01,
         description: 'Token validation test',
         iPosToken: iPosToken,
-        iPosAuthToken: iPosAuthToken
+        apiKey: apiKey,
+        secretKey: secretKey,
+        terminalId: terminalId
       });
 
       return testResponse.success;
