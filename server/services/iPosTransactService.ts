@@ -10,6 +10,7 @@ export interface iPosChargeRequest {
   description?: string;
   iPosToken: string;
   iPosAuthToken: string;
+  terminalId?: string; // TPN from terminal config
 }
 
 export interface iPosChargeResponse {
@@ -37,9 +38,9 @@ export class iPosTransactService {
         authTokenPresent: !!request.iPosAuthToken
       });
 
-      // Decode the auth token to get TPN
+      // Use TPN from request or decode from auth token
       const decodedToken = this.decodeJWT(request.iPosAuthToken);
-      const tpn = decodedToken?.tpn || "224725231775"; // Default TPN from token
+      const tpn = request.terminalId || decodedToken?.tpn || "224725575584";
       
       // Generate unique transaction reference ID (must be 20 chars or fewer, alphanumeric)
       const transactionReferenceId = `${Date.now()}${Math.random().toString(36).substr(2, 7)}`.substr(0, 20);

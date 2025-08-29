@@ -1219,7 +1219,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: amount,
         description: description || 'Recurring payment',
         iPosToken: customer.iPosToken,
-        iPosAuthToken: iPosAuthToken
+        iPosAuthToken: iPosAuthToken,
+        terminalId: terminalConfig.terminalType || "224725575584" // Use TPN from terminal config
       });
       
       console.log('iPOS recurring charge response:', JSON.stringify(response));
