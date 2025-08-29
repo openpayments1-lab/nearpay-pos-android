@@ -61,8 +61,7 @@ export default function CustomerManagement() {
   });
   const [chargeData, setChargeData] = useState({
     amount: '',
-    description: '',
-    iPosAuthToken: ''
+    description: ''
   });
 
   // Fetch all customers
@@ -119,8 +118,7 @@ export default function CustomerManagement() {
       setIsChargeDialogOpen(false);
       setChargeData({
         amount: '',
-        description: '',
-        iPosAuthToken: ''
+        description: ''
       });
       
       if (result.success) {
@@ -164,11 +162,24 @@ export default function CustomerManagement() {
       return;
     }
 
+    // Get iPOS auth token from local storage (saved in terminal settings)
+    const iPosAuthToken = localStorage.getItem('iPosAuthToken');
+    
+    if (!iPosAuthToken) {
+      toast({
+        title: "Missing iPOS Token",
+        description: "Please configure the iPOS Auth Token in Terminal Settings first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     chargeCustomerMutation.mutate({
       customerId: selectedCustomer.id,
       chargeData: {
         ...chargeData,
-        amount
+        amount,
+        iPosAuthToken
       }
     });
   };
@@ -590,19 +601,7 @@ export default function CustomerManagement() {
                               />
                             </div>
                             
-                            <div>
-                              <Label htmlFor="iPosAuthToken">iPOS Auth Token</Label>
-                              <Input
-                                id="iPosAuthToken"
-                                required
-                                value={chargeData.iPosAuthToken}
-                                onChange={(e) => setChargeData(prev => ({ ...prev, iPosAuthToken: e.target.value }))}
-                                placeholder="Enter iPOS authentication token"
-                              />
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Get this token from the iPOS portal under API settings
-                              </p>
-                            </div>
+
                             
                             <div className="bg-muted p-3 rounded-lg">
                               <div className="flex items-center gap-2 text-sm">

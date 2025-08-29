@@ -21,6 +21,7 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
   const [enableSignature, setEnableSignature] = useState(true);
   const [testMode, setTestMode] = useState(false);
   const [transactionTimeout, setTransactionTimeout] = useState('90');
+  const [iPosAuthToken, setIPosAuthToken] = useState('');
   const [activeTab, setActiveTab] = useState('basic');
   
   const { checkTerminalConnection, updateTerminalConfig } = useCashRegister();
@@ -35,6 +36,7 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
     const savedEnableSignature = localStorage.getItem('enableSignature');
     const savedTestMode = localStorage.getItem('testMode');
     const savedTransactionTimeout = localStorage.getItem('transactionTimeout');
+    const savedIPosAuthToken = localStorage.getItem('iPosAuthToken');
     
     if (savedIp) setTerminalIp(savedIp);
     if (savedApiKey) setApiKey(savedApiKey);
@@ -43,6 +45,7 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
     if (savedEnableSignature) setEnableSignature(savedEnableSignature === 'true');
     if (savedTestMode) setTestMode(savedTestMode === 'true');
     if (savedTransactionTimeout) setTransactionTimeout(savedTransactionTimeout);
+    if (savedIPosAuthToken) setIPosAuthToken(savedIPosAuthToken);
   }, []);
 
   const handleSave = () => {
@@ -64,6 +67,7 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
     localStorage.setItem('enableSignature', enableSignature.toString());
     localStorage.setItem('testMode', testMode.toString());
     localStorage.setItem('transactionTimeout', transactionTimeout);
+    localStorage.setItem('iPosAuthToken', iPosAuthToken);
     
     // Create config object to pass to the context
     const config = {
@@ -73,6 +77,7 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
       enableTipping,
       enableSignature,
       testMode,
+      iPosAuthToken,
       transactionTimeout: parseInt(transactionTimeout)
     };
     
@@ -144,6 +149,20 @@ export default function TerminalConfig({ onClose }: TerminalConfigProps) {
                 onChange={(e) => setApiKey(e.target.value)}
               />
               <p className="mt-1 text-sm text-gray-500">Your Auth Key from Dejavoo</p>
+            </div>
+            
+            <div>
+              <Label htmlFor="ipos-auth-token" className="block text-sm font-medium text-gray-700 mb-1">
+                iPOS Auth Token
+              </Label>
+              <Input
+                type="password"
+                id="ipos-auth-token"
+                placeholder="Enter iPOS authentication token"
+                value={iPosAuthToken}
+                onChange={(e) => setIPosAuthToken(e.target.value)}
+              />
+              <p className="mt-1 text-sm text-gray-500">Required for recurring payments using stored tokens</p>
             </div>
             
             <div className="flex items-center space-x-2 mt-4">

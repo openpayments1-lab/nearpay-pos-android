@@ -73,6 +73,7 @@ export interface TerminalConfig {
   terminalType: string;
   enableTipping: boolean;
   enableSignature: boolean;
+  iPosAuthToken?: string; // Authentication token for iPOS Transact API
   testMode: boolean;
   transactionTimeout: number;
 }

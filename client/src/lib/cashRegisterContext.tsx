@@ -58,7 +58,8 @@ const defaultTerminalConfig: TerminalConfig = {
   enableTipping: false,
   enableSignature: true,
   testMode: false,
-  transactionTimeout: 90
+  transactionTimeout: 90,
+  iPosAuthToken: ""
 };
 
 const CashRegisterContext = createContext<CashRegisterContextType>({
