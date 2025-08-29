@@ -334,8 +334,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Get customer profile to check if token already exists
             const customer = await storage.getCustomerProfile(customerId);
-            if (customer && !customer.iPosToken) {
-              console.log(`Customer ${customerId} doesn't have a token, attempting token capture`);
+            if (customer) {
+              console.log(`Customer ${customerId} ${customer.iPosToken ? 'already has an iPOS token' : 'needs token capture'}`);
               
               // Extract iPOS token from the original transaction response
               let iPosToken = null;
