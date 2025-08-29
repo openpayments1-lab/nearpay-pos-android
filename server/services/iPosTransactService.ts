@@ -38,9 +38,11 @@ export class iPosTransactService {
         authTokenPresent: !!request.iPosAuthToken
       });
 
-      // Use TPN from request or decode from auth token
+      // Use TPN from auth token - it must match what's encoded in the JWT
       const decodedToken = this.decodeJWT(request.iPosAuthToken);
-      const tpn = request.terminalId || decodedToken?.tpn || "224725575584";
+      const tpn = decodedToken?.tpn || request.terminalId || "224725231775";
+      
+      console.log('Using TPN from JWT token:', tpn, 'decoded from:', decodedToken);
       
       // Generate unique transaction reference ID (must be 20 chars or fewer, alphanumeric)
       const transactionReferenceId = `${Date.now()}${Math.random().toString(36).substr(2, 7)}`.substr(0, 20);
