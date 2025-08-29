@@ -22,15 +22,17 @@ A robust payment processing application integrating Dejavoo SPIN credit card ter
 
 ### iPOS Token Capture Implementation
 - **Date**: January 16, 2025
-- **Change**: Added comprehensive token capture functionality for SaaS recurring payments
+- **Change**: Added comprehensive iPOS token capture functionality for SaaS recurring payments using proper API flow
 - **Details**:
-  - Created `TokenCapture` component for testing token capture and reuse
-  - Added `/api/payment/token-capture` endpoint for initial token generation
-  - Added `/api/payment/token-reuse` endpoint for subsequent payments using stored tokens
-  - Implemented `TokenCaptureTest` page with comprehensive testing interface
-  - Added navigation link to token capture testing from main cash register
-  - Enhanced Dejavoo API service with `processSaleWithTokenCapture()` and `processTokenPayment()` methods
-  - Perfect for SaaS membership, subscription, and recurring payment scenarios
+  - **Two-Step Process**: SPIn API token capture → iPOS Transact API token reuse
+  - Created `iPosTransactService` for proper iPOS Transact API integration
+  - Updated `/api/payment/token-capture` to use SPIn API and extract iPOS tokens
+  - Updated `/api/payment/token-reuse` to use iPOS Transact API for recurring payments
+  - Added `TokenCapture` component with iPOS authentication token configuration
+  - Implemented `TokenCaptureTest` page with comprehensive workflow documentation
+  - Added navigation link from main cash register to token testing
+  - **Authentication**: Requires both SPIn credentials (TPN/Auth Key) and iPOS Auth Token from portal
+  - Perfect for SaaS membership, subscription, and automated recurring payment scenarios
 
 ### Terminal Configuration Updates
 - **Date**: January 16, 2025

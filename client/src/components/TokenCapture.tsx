@@ -15,6 +15,7 @@ export default function TokenCapture() {
   const [amount, setAmount] = useState('1.00');
   const [customerId, setCustomerId] = useState('');
   const [subscriptionId, setSubscriptionId] = useState('');
+  const [iPosAuthToken, setIPosAuthToken] = useState('');
   const [captureToken, setCaptureToken] = useState(true);
   const [saveCustomer, setSaveCustomer] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -61,20 +62,20 @@ export default function TokenCapture() {
       const data = await response.json();
       setResult(data);
       
-      // Extract token from response if available
+      // Extract iPOS token from SPIn response if available
       if (data.iPosToken || data.IPosToken || data.Token || data.token) {
         const token = data.iPosToken || data.IPosToken || data.Token || data.token;
         setCapturedToken(token);
         
         toast({
-          title: "Token Captured Successfully",
-          description: `Payment token saved for recurring transactions`,
+          title: "iPOS Token Captured via SPIn",
+          description: `Token ready for iPOS Transact recurring payments`,
           variant: "default",
         });
       } else if (data.status === 'approved') {
         toast({
           title: "Payment Approved",
-          description: `Transaction successful for $${amount}`,
+          description: `Transaction successful for $${amount}. Check response for iPOS token.`,
           variant: "default",
         });
       } else {
@@ -99,8 +100,17 @@ export default function TokenCapture() {
   async function testTokenReuse() {
     if (!capturedToken) {
       toast({
-        title: "No Token Available",
-        description: "Please capture a token first",
+        title: "No iPOS Token Available",
+        description: "Please capture an iPOS token first using SPIn API",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!iPosAuthToken) {
+      toast({
+        title: "iPOS Auth Token Required",
+        description: "Please enter your iPOS authentication token for recurring payments",
         variant: "destructive",
       });
       return;
@@ -113,7 +123,8 @@ export default function TokenCapture() {
         amount: parseFloat(amount),
         token: capturedToken,
         customerId: customerId,
-        terminalConfig: terminalConfig
+        terminalConfig: terminalConfig,
+        iPosAuthToken: iPosAuthToken
       };
       
       const response = await fetch('/api/payment/token-reuse', {
@@ -129,14 +140,14 @@ export default function TokenCapture() {
       
       if (data.status === 'approved') {
         toast({
-          title: "Token Reuse Successful",
-          description: `Charged $${amount} using stored token`,
+          title: "iPOS Transact Token Reuse Successful",
+          description: `Charged $${amount} using stored iPOS token via iPOS Transact API`,
           variant: "default",
         });
       } else {
         toast({
-          title: "Token Reuse Failed",
-          description: data.message || "Failed to process using stored token",
+          title: "iPOS Transact Token Reuse Failed",
+          description: data.message || "Failed to process using stored iPOS token",
           variant: "destructive",
         });
       }
@@ -189,6 +200,19 @@ export default function TokenCapture() {
             onChange={(e) => setSubscriptionId(e.target.value)}
             placeholder="Auto-generated if empty"
           />
+        </div>
+        
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">iPOS Auth Token (for token reuse)</Label>
+          <Input
+            type="password"
+            value={iPosAuthToken}
+            onChange={(e) => setIPosAuthToken(e.target.value)}
+            placeholder="Get from iPOSpays portal settings"
+          />
+          <p className="text-xs text-gray-500">
+            Required for token reuse. Get from iPOSpays portal → Settings → Generate Ecom/TOP Merchant Keys
+          </p>
         </div>
         
         <div className="flex items-center space-x-2">

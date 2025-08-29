@@ -564,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(result);
   }));
   
-  // Process token capture for recurring payments
+  // Process token capture for recurring payments using SPIn API
   app.post('/api/payment/token-capture', asyncHandler(async (req, res) => {
     const { amount, referenceId, customerId, subscriptionId, captureToken, saveCustomer, terminalConfig } = req.body;
     
@@ -572,11 +572,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: 'Valid amount is required' });
     }
     
-    console.log(`Processing token capture for amount: $${amount.toFixed(2)}`);
+    console.log(`Processing SPIn token capture for amount: $${amount.toFixed(2)}`);
     console.log(`Customer ID: ${customerId}, Subscription ID: ${subscriptionId}`);
     
     try {
-      // Create Dejavoo API service instance
+      // Step 1: Use SPIn API to process payment and capture iPOS token
       const config = {
         tpn: terminalConfig.terminalType || "z11invtest69",
         authKey: terminalConfig.apiKey || "JZiRUusizc",
@@ -585,17 +585,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const dejavooService = new DejavooApiService(config);
       
-      // Process sale with token capture
-      const response = await dejavooService.processSaleWithTokenCapture(amount, {
+      // Process regular sale to get iPOS token in response
+      const response = await dejavooService.processCardPayment(amount, {
         referenceId: referenceId,
-        customerId: customerId,
-        subscriptionId: subscriptionId,
-        saveCustomer: saveCustomer,
         enableSignature: terminalConfig.enableSignature,
-        transactionTimeout: terminalConfig.transactionTimeout
+        transactionTimeout: terminalConfig.transactionTimeout,
+        getReceipt: true,
+        printReceipt: false
       });
       
-      console.log('Token capture response:', JSON.stringify(response));
+      console.log('SPIn token capture response:', JSON.stringify(response));
       
       // Check if transaction was approved and extract token
       const resp = response as any;
@@ -606,7 +605,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (resp.GeneralResponse?.Message && resp.GeneralResponse.Message.includes("Approved"));
       
       if (isApproved) {
-        // Extract token and create response
+        // Extract iPOS token from SPIn response
+        const iPosToken = resp.IPosToken || resp.iPosToken || resp.Token || 
+                         resp.ExtendedData?.IPosToken || resp.ExtendedData?.iPosToken;
+        
         const result = {
           status: "approved",
           transactionId: resp.TransactionNumber || resp.ReferenceId || referenceId,
@@ -617,9 +619,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hostResponseCode: resp.GeneralResponse?.HostResponseCode || "",
           hostResponseMessage: resp.GeneralResponse?.HostResponseMessage || "",
           // Token capture specific fields
-          iPosToken: resp.IPosToken || resp.iPosToken || resp.Token || null,
+          iPosToken: iPosToken,
+          rrn: resp.RRN || resp.RetrievalReferenceNumber,
           customerId: customerId,
           subscriptionId: subscriptionId,
+          // For future iPOS Transact usage
+          tokenCaptureMethod: "SPIn",
+          note: "Use this iPOS token with iPOS Transact API for recurring payments",
           // Raw response for debugging
           rawResponse: response
         };
@@ -636,7 +642,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: result.cardType,
               number: result.maskedPan,
               authCode: result.authCode,
-              token: result.iPosToken // Store token for future use
+              token: result.iPosToken, // Store iPOS token for future use
+              rrn: result.rrn
             }
           });
         } catch (dbError) {
@@ -654,7 +661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error) {
-      console.error("Token capture processing failed:", error);
+      console.error("SPIn token capture processing failed:", error);
       res.status(500).json({
         status: "error",
         message: error instanceof Error ? error.message : "Unknown error occurred"
@@ -662,60 +669,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
   
-  // Process payment using stored token
+  // Process payment using stored iPOS token with iPOS Transact API
   app.post('/api/payment/token-reuse', asyncHandler(async (req, res) => {
-    const { amount, token, customerId, terminalConfig } = req.body;
+    const { amount, token, customerId, terminalConfig, iPosAuthToken } = req.body;
     
     if (!amount || isNaN(amount)) {
       return res.status(400).json({ error: 'Valid amount is required' });
     }
     
     if (!token) {
-      return res.status(400).json({ error: 'Payment token is required' });
+      return res.status(400).json({ error: 'iPOS token is required' });
     }
     
-    console.log(`Processing token reuse for amount: $${amount.toFixed(2)}`);
-    console.log(`Using token: ${token.substring(0, 8)}...`);
+    console.log(`Processing iPOS Transact token reuse for amount: $${amount.toFixed(2)}`);
+    console.log(`Using iPOS token: ${token.substring(0, 12)}...`);
     
     try {
-      // Create Dejavoo API service instance
-      const config = {
+      // Import iPOS Transact service
+      const { iPosTransactService } = await import('../services/iPosTransactService');
+      
+      // Create iPOS Transact service instance
+      const iPosConfig = {
+        authToken: iPosAuthToken || terminalConfig.iPosAuthToken || "default_auth_token", // From portal
         tpn: terminalConfig.terminalType || "z11invtest69",
-        authKey: terminalConfig.apiKey || "JZiRUusizc",
-        testMode: terminalConfig.testMode || false
+        testMode: terminalConfig.testMode !== false // Default to test mode
       };
       
-      const dejavooService = new DejavooApiService(config);
+      const iPosService = new iPosTransactService(iPosConfig);
       
-      // Process payment using token
-      const response = await dejavooService.processTokenPayment(amount, token, {
-        customerId: customerId,
-        transactionTimeout: terminalConfig.transactionTimeout
+      // Process payment using iPOS token
+      const response = await iPosService.processSale(amount, token, {
+        customerName: customerId ? `Customer ${customerId}` : undefined,
+        customerEmail: terminalConfig.customerEmail,
+        sendReceipt: false
       });
       
-      console.log('Token reuse response:', JSON.stringify(response));
+      console.log('iPOS Transact token reuse response:', JSON.stringify(response));
       
       // Check if transaction was approved
-      const resp = response as any;
       const isApproved = 
-        (resp.GeneralResponse?.StatusCode === "0000") ||
-        (resp.GeneralResponse?.ResultCode === "0") ||
-        (resp.GeneralResponse?.HostResponseCode === "00") ||
-        (resp.GeneralResponse?.Message && resp.GeneralResponse.Message.includes("Approved"));
+        (response.transactResponse.responseCode === "00") ||
+        (response.transactResponse.responseCode === "0") ||
+        (response.transactResponse.responseDescription?.toLowerCase().includes("approved"));
       
       if (isApproved) {
         const result = {
           status: "approved",
-          transactionId: resp.TransactionNumber || resp.ReferenceId || generateUniqueId(),
-          dateTime: new Date().toISOString(),
-          cardType: resp.CardData?.CardType || "Credit",
-          maskedPan: resp.CardData?.Last4 ? `**** **** **** ${resp.CardData.Last4}` : "**** **** **** ****",
-          authCode: resp.AuthCode || "",
-          hostResponseCode: resp.GeneralResponse?.HostResponseCode || "",
-          hostResponseMessage: resp.GeneralResponse?.HostResponseMessage || "",
+          transactionId: response.merchantAuthentication.transactionReferenceId,
+          dateTime: response.transactResponse.transactionDateTime,
+          cardType: response.transactResponse.cardType || "Credit",
+          maskedPan: response.transactResponse.cardLast4 ? 
+            `**** **** **** ${response.transactResponse.cardLast4}` : "**** **** **** ****",
+          authCode: response.transactResponse.authorizationCode || "",
+          responseCode: response.transactResponse.responseCode,
+          responseDescription: response.transactResponse.responseDescription,
+          rrn: response.transactResponse.RRN,
           // Token reuse specific fields
-          tokenUsed: token.substring(0, 8) + "...", // Masked token for security
+          tokenUsed: token.substring(0, 12) + "...", // Masked token for security
           customerId: customerId,
+          method: "iPOS Transact API",
           rawResponse: response
         };
         
@@ -725,35 +737,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
             amount: Math.round(amount * 100), // Convert to cents
             paymentMethod: "card",
             status: "approved",
-            dateTime: new Date().toISOString(),
+            dateTime: result.dateTime,
             terminalIp: terminalConfig.terminalIp,
             cardDetails: {
               type: result.cardType,
               number: result.maskedPan,
               authCode: result.authCode,
-              tokenUsed: true
+              tokenUsed: true,
+              rrn: result.rrn
             }
           });
         } catch (dbError) {
-          console.error('Error saving token reuse transaction:', dbError);
+          console.error('Error saving iPOS token reuse transaction:', dbError);
         }
         
         res.json(result);
       } else {
         res.json({
           status: "declined",
-          message: resp.GeneralResponse?.DetailedMessage || 
-                   resp.GeneralResponse?.Message || 
-                   "Token payment declined",
+          message: response.transactResponse.responseDescription || "Token payment declined",
+          responseCode: response.transactResponse.responseCode,
           rawResponse: response
         });
       }
     } catch (error) {
-      console.error("Token reuse processing failed:", error);
-      res.status(500).json({
-        status: "error",
-        message: error instanceof Error ? error.message : "Unknown error occurred"
-      });
+      console.error("iPOS Transact token reuse processing failed:", error);
+      
+      // Fallback error handling for missing auth token or configuration
+      if (error.message && error.message.includes("auth")) {
+        res.status(400).json({
+          status: "error",
+          message: "iPOS authentication token required. Please configure your iPOS Transact auth token.",
+          note: "Get your auth token from iPOSpays portal Settings > Generate Ecom/TOP Merchant Keys"
+        });
+      } else {
+        res.status(500).json({
+          status: "error",
+          message: error instanceof Error ? error.message : "Unknown error occurred"
+        });
+      }
     }
   }));
 
