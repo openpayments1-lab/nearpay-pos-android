@@ -35,6 +35,7 @@ A robust payment processing application integrating Dejavoo SPIN credit card ter
 ### Customer Management System Implementation  
 - **Date**: January 29, 2025
 - **Change**: Implemented comprehensive customer profile management system with stored payment tokens for SaaS recurring billing
+- **Updated**: January 29, 2025 - Modified automatic token capture to ALWAYS update customer tokens from new transactions, even if customer already has a token
 - **Details**:
   - **Customer Database Schema**: Added `customerProfiles` table with complete customer information and iPOS token storage
   - **Storage Layer**: Implemented `DatabaseStorage` class using Drizzle ORM for customer CRUD operations

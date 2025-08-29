@@ -332,10 +332,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             console.log(`Processing automatic token capture for customer: ${customerId}`);
             
-            // Get customer profile to check if token already exists
+            // Get customer profile - always attempt token capture for selected customers
             const customer = await storage.getCustomerProfile(customerId);
             if (customer) {
-              console.log(`Customer ${customerId} ${customer.iPosToken ? 'already has an iPOS token' : 'needs token capture'}`);
+              console.log(`Customer ${customerId} selected - attempting token capture from transaction`);
               
               // Extract iPOS token from the original transaction response
               let iPosToken = null;
@@ -403,9 +403,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
               
-              // Save token to customer profile if found
+              // Always save/update token to customer profile if found
               if (iPosToken) {
-                console.log(`Successfully captured iPOS token for customer ${customerId}: ${iPosToken.substring(0, 10)}...`);
+                console.log(`Successfully captured iPOS token for customer ${customerId}: ${iPosToken.substring(0, 10)}... (Card: ${cardType} ****${cardLast4})`);
                 
                 await storage.updateCustomerProfile(customerId, {
                   iPosToken: iPosToken,
@@ -416,12 +416,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   cardExpiry: resp.CardData?.ExpirationDate || null
                 });
                 
-                console.log(`iPOS token saved to customer profile ${customerId}`);
+                console.log(`iPOS token ${customer.iPosToken ? 'updated' : 'saved'} to customer profile ${customerId}`);
               } else {
-                console.log(`No iPOS token could be captured for customer ${customerId}`);
+                console.log(`No iPOS token could be captured from transaction for customer ${customerId}`);
               }
-            } else if (customer?.iPosToken) {
-              console.log(`Customer ${customerId} already has an iPOS token`);
             }
           } catch (tokenCaptureError) {
             console.error('Error during automatic token capture:', tokenCaptureError);
