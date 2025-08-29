@@ -1199,12 +1199,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import iPOS Transact service
       const { iPosService } = await import('./services/iPosTransactService');
       
-      // Use terminal config from settings or defaults
-      const terminalSettings = await storage.getSettings('terminal');
-      const terminalConfig = terminalSettings?.value || {
-        terminalType: "z11invtest69",
-        apiKey: "JZiRUusizc",
-        testMode: true
+      // Get the terminal config that has the numeric TPN for iPOS
+      const terminalSettings = await storage.getSetting('terminalConfig');
+      const terminalConfig = terminalSettings || {
+        terminalType: "224725575584", // iPOS uses numeric TPN, not Dejavoo's alphanumeric
+        apiKey: "JEkE6S7jPk",
+        testMode: false
       };
       
       // Create iPOS Transact service instance
