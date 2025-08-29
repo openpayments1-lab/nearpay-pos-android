@@ -340,11 +340,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Extract iPOS token from the original transaction response
               let iPosToken = null;
               
-              // Check for iPOS token in the response
-              if (resp.ExtendedDataByApplication?.['0']?.iposToken) {
+              console.log('Searching for iPOS token in response...');
+              console.log('Response structure:', Object.keys(resp));
+              if (resp.rawResponse) {
+                console.log('Raw response structure:', Object.keys(resp.rawResponse));
+              }
+              
+              // Check for iPOS token in various possible locations in the response
+              if (resp.rawResponse?.IPosToken) {
+                iPosToken = resp.rawResponse.IPosToken;
+                console.log('Found iPOS token in rawResponse.IPosToken');
+              } else if (resp.rawResponse?.iposToken) {
+                iPosToken = resp.rawResponse.iposToken;
+                console.log('Found iPOS token in rawResponse.iposToken');
+              } else if (resp.IPosToken) {
+                iPosToken = resp.IPosToken;
+                console.log('Found iPOS token in resp.IPosToken');
+              } else if (resp.iposToken) {
+                iPosToken = resp.iposToken;
+                console.log('Found iPOS token in resp.iposToken');
+              } else if (resp.ExtendedDataByApplication?.['0']?.iposToken) {
                 iPosToken = resp.ExtendedDataByApplication['0'].iposToken;
+                console.log('Found iPOS token in ExtendedDataByApplication');
               } else if (resp.extendedDataByApplication?.['0']?.iposToken) {
                 iPosToken = resp.extendedDataByApplication['0'].iposToken;
+                console.log('Found iPOS token in extendedDataByApplication');
+              } else {
+                console.log('No iPOS token found in expected locations');
               }
               
               // If no token in response, try to perform token capture using SPIn API
