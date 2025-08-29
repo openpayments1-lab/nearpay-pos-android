@@ -128,3 +128,6 @@ A robust payment processing application integrating Dejavoo SPIN credit card ter
 - Refund functionality implemented and testable
 - Database integration working with PostgreSQL
 - Real-time transaction processing active
+- iPOS Transact V3 API integration successfully configured for production
+- TPN validation resolved - now using correct production TPN 224725575584
+- Card token validation issue identified - requires production token capture
