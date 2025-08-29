@@ -68,8 +68,8 @@ export class iPosTransactService {
 
       console.log('iPOS Transact API V3 payload:', JSON.stringify(payload, null, 2));
 
-      // Try production endpoint since TPN 224725575584 might be production-only
-      const apiUrl = this.productionUrl;
+      // Use sandbox endpoint since tokens are coming from Dejavoo test environment
+      const apiUrl = this.sandboxUrl;
       
       const response = await axios.post(apiUrl, payload, {
         headers: {
