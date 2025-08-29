@@ -546,6 +546,87 @@ export default function CustomerManagement() {
                       <p className="text-sm text-muted-foreground mt-1">{selectedCustomer.notes}</p>
                     </div>
                   )}
+                  
+                  {/* Recurring Charge Button */}
+                  {selectedCustomer.iPosToken && selectedCustomer.tokenStatus === 'active' && (
+                    <div className="mt-4 pt-4 border-t">
+                      <Dialog open={isChargeDialogOpen} onOpenChange={setIsChargeDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="w-full" variant="default">
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Charge Stored Card
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Charge Customer</DialogTitle>
+                            <DialogDescription>
+                              Process a recurring charge using the stored payment method for {selectedCustomer.firstName} {selectedCustomer.lastName}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <form onSubmit={handleChargeCustomer} className="space-y-4">
+                            <div>
+                              <Label htmlFor="amount">Amount ($)</Label>
+                              <Input
+                                id="amount"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                required
+                                value={chargeData.amount}
+                                onChange={(e) => setChargeData(prev => ({ ...prev, amount: e.target.value }))}
+                                placeholder="10.00"
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="description">Description</Label>
+                              <Input
+                                id="description"
+                                required
+                                value={chargeData.description}
+                                onChange={(e) => setChargeData(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="Monthly subscription fee"
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="iPosAuthToken">iPOS Auth Token</Label>
+                              <Input
+                                id="iPosAuthToken"
+                                required
+                                value={chargeData.iPosAuthToken}
+                                onChange={(e) => setChargeData(prev => ({ ...prev, iPosAuthToken: e.target.value }))}
+                                placeholder="Enter iPOS authentication token"
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Get this token from the iPOS portal under API settings
+                              </p>
+                            </div>
+                            
+                            <div className="bg-muted p-3 rounded-lg">
+                              <div className="flex items-center gap-2 text-sm">
+                                <CreditCard className="h-4 w-4" />
+                                <span className="font-medium">
+                                  {selectedCustomer.cardType} •••• {selectedCustomer.cardLast4}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <DialogFooter>
+                              <Button 
+                                type="submit" 
+                                disabled={chargeCustomerMutation.isPending}
+                                className="w-full"
+                              >
+                                {chargeCustomerMutation.isPending ? "Processing..." : "Process Charge"}
+                              </Button>
+                            </DialogFooter>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
