@@ -1,4 +1,4 @@
-import { users, transactions, settings, type User, type InsertUser, type Transaction, type InsertTransaction, type InsertSettings, type Settings } from "@shared/schema";
+import { users, transactions, settings, customerProfiles, type User, type InsertUser, type Transaction, type InsertTransaction, type InsertSettings, type Settings, type CustomerProfile, type InsertCustomerProfile } from "@shared/schema";
 import pg from "pg";
 
 // Modify the interface with CRUD methods for transactions and settings
@@ -9,10 +9,18 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   getTransaction(id: number): Promise<Transaction | undefined>;
   getTransactions(): Promise<Transaction[]>;
+  getTransactionsByCustomer(customerId: string): Promise<Transaction[]>;
   
   // Settings methods
   getSetting(key: string): Promise<any>;
   saveSetting(key: string, value: any): Promise<void>;
+  getSettings(key: string): Promise<Settings | undefined>;
+  
+  // Customer management methods
+  getCustomerProfiles(): Promise<CustomerProfile[]>;
+  getCustomerProfile(id: string): Promise<CustomerProfile | undefined>;
+  createCustomerProfile(profile: InsertCustomerProfile): Promise<CustomerProfile>;
+  updateCustomerProfile(id: string, updates: Partial<InsertCustomerProfile>): Promise<CustomerProfile | undefined>;
 }
 
 // Memory storage implementation for fallback
@@ -83,312 +91,164 @@ export class MemStorage implements IStorage {
   async saveSetting(key: string, value: any): Promise<void> {
     this.settings.set(key, value);
   }
+
+  async getSettings(key: string): Promise<Settings | undefined> {
+    const value = this.settings.get(key);
+    if (!value) return undefined;
+    
+    return {
+      id: 1,
+      key,
+      value,
+      updatedAt: new Date()
+    };
+  }
+
+  async getTransactionsByCustomer(customerId: string): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      t => (t as any).customerId === customerId
+    );
+  }
+
+  // Customer management methods (basic in-memory implementation)
+  async getCustomerProfiles(): Promise<CustomerProfile[]> {
+    // This would be empty in MemStorage, database implementation handles this
+    return [];
+  }
+
+  async getCustomerProfile(id: string): Promise<CustomerProfile | undefined> {
+    return undefined;
+  }
+
+  async createCustomerProfile(profile: InsertCustomerProfile): Promise<CustomerProfile> {
+    const customer: CustomerProfile = {
+      id: `customer_${Date.now()}`,
+      email: profile.email,
+      firstName: profile.firstName || null,
+      lastName: profile.lastName || null,
+      phone: profile.phone || null,
+      company: profile.company || null,
+      iPosToken: profile.iPosToken || null,
+      tokenCreatedAt: profile.tokenCreatedAt || null,
+      tokenStatus: profile.tokenStatus || null,
+      cardType: profile.cardType || null,
+      cardLast4: profile.cardLast4 || null,
+      cardExpiry: profile.cardExpiry || null,
+      subscriptionStatus: profile.subscriptionStatus || null,
+      subscriptionPlan: profile.subscriptionPlan || null,
+      subscriptionStartDate: profile.subscriptionStartDate || null,
+      subscriptionEndDate: profile.subscriptionEndDate || null,
+      notes: profile.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    return customer;
+  }
+
+  async updateCustomerProfile(id: string, updates: Partial<InsertCustomerProfile>): Promise<CustomerProfile | undefined> {
+    return undefined;
+  }
 }
 
-// PostgreSQL storage implementation
-export class PostgresStorage implements IStorage {
-  private pool: any;
-  
-  constructor() {
-    this.pool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
-    
-    // Initialize database tables if they don't exist
-    this.initDatabase();
-  }
-  
-  private async initDatabase() {
-    try {
-      // Create users table if it doesn't exist
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-          id SERIAL PRIMARY KEY,
-          username TEXT NOT NULL UNIQUE,
-          password TEXT NOT NULL
-        )
-      `);
-      
-      // Create transactions table if it doesn't exist
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS transactions (
-          id SERIAL PRIMARY KEY,
-          amount INTEGER NOT NULL,
-          payment_method TEXT NOT NULL,
-          status TEXT NOT NULL,
-          date_time TIMESTAMP NOT NULL,
-          terminal_ip TEXT,
-          card_details JSONB
-        )
-      `);
-      
-      // Create settings table if it doesn't exist
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS settings (
-          id SERIAL PRIMARY KEY,
-          key TEXT NOT NULL UNIQUE,
-          value JSONB NOT NULL,
-          updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-        )
-      `);
-      
-      console.log("Database initialized successfully");
-    } catch (error) {
-      console.error("Failed to initialize database:", error);
-    }
-  }
+// Import drizzle components
+import { db } from './db';
+import { eq } from 'drizzle-orm';
 
+// Database storage implementation using Drizzle ORM
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    try {
-      const result = await this.pool.query(
-        'SELECT * FROM users WHERE id = $1',
-        [id]
-      );
-      
-      if (result.rows.length === 0) {
-        return undefined;
-      }
-      
-      return {
-        id: result.rows[0].id,
-        username: result.rows[0].username,
-        password: result.rows[0].password
-      };
-    } catch (error) {
-      console.error("Failed to get user:", error);
-      return undefined;
-    }
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    try {
-      const result = await this.pool.query(
-        'SELECT * FROM users WHERE username = $1',
-        [username]
-      );
-      
-      if (result.rows.length === 0) {
-        return undefined;
-      }
-      
-      return {
-        id: result.rows[0].id,
-        username: result.rows[0].username,
-        password: result.rows[0].password
-      };
-    } catch (error) {
-      console.error("Failed to get user by username:", error);
-      return undefined;
-    }
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    try {
-      const result = await this.pool.query(
-        'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id',
-        [insertUser.username, insertUser.password]
-      );
-      
-      return {
-        id: result.rows[0].id,
-        username: insertUser.username,
-        password: insertUser.password
-      };
-    } catch (error) {
-      console.error("Failed to create user:", error);
-      throw error;
-    }
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
   }
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    try {
-      console.log("PostgresStorage - Creating transaction:", JSON.stringify(insertTransaction));
-      
-      // Convert date string to Date object if necessary
-      const dateTime = typeof insertTransaction.dateTime === 'string' 
-        ? new Date(insertTransaction.dateTime) 
-        : insertTransaction.dateTime;
-      
-      console.log("dateTime formatted:", dateTime);
-      
-      // Debug card details type
-      if (insertTransaction.cardDetails) {
-        console.log("Card details type:", typeof insertTransaction.cardDetails);
-        console.log("Card details content:", JSON.stringify(insertTransaction.cardDetails));
-      }
-        
-      // Convert card details to JSON string
-      const cardDetailsJson = insertTransaction.cardDetails 
-        ? JSON.stringify(insertTransaction.cardDetails) 
-        : null;
-      
-      const result = await this.pool.query(
-        `INSERT INTO transactions 
-         (amount, payment_method, status, date_time, terminal_ip, card_details) 
-         VALUES ($1, $2, $3, $4, $5, $6) 
-         RETURNING id`,
-        [
-          insertTransaction.amount,
-          insertTransaction.paymentMethod,
-          insertTransaction.status,
-          dateTime,
-          insertTransaction.terminalIp,
-          cardDetailsJson
-        ]
-      );
-      
-      return {
-        id: result.rows[0].id,
-        amount: insertTransaction.amount,
-        paymentMethod: insertTransaction.paymentMethod,
-        status: insertTransaction.status,
-        dateTime: dateTime,
-        terminalIp: insertTransaction.terminalIp,
-        cardDetails: insertTransaction.cardDetails
-      };
-    } catch (error) {
-      console.error("Failed to create transaction:", error);
-      throw error;
-    }
+    const [transaction] = await db
+      .insert(transactions)
+      .values({
+        ...insertTransaction,
+        dateTime: typeof insertTransaction.dateTime === 'string'
+          ? new Date(insertTransaction.dateTime)
+          : insertTransaction.dateTime
+      })
+      .returning();
+    return transaction;
   }
 
   async getTransaction(id: number): Promise<Transaction | undefined> {
-    try {
-      const result = await this.pool.query(
-        'SELECT * FROM transactions WHERE id = $1',
-        [id]
-      );
-      
-      if (result.rows.length === 0) {
-        return undefined;
-      }
-      
-      const row = result.rows[0];
-      
-      // Handle card details with better error handling
-      let cardDetails = null;
-      if (row.card_details) {
-        try {
-          // Check if it's already an object (neon returns JSON objects directly)
-          if (typeof row.card_details === 'object' && row.card_details !== null) {
-            cardDetails = row.card_details;
-            console.log(`Transaction #${row.id} card details already an object:`, cardDetails);
-          } else if (typeof row.card_details === 'string') {
-            cardDetails = JSON.parse(row.card_details);
-            console.log(`Transaction #${row.id} card details parsed from string:`, cardDetails);
-          }
-        } catch (err) {
-          console.error(`Error handling card details for transaction #${row.id}:`, err);
-          cardDetails = null;
-        }
-      }
-      
-      return {
-        id: row.id,
-        amount: row.amount,
-        paymentMethod: row.payment_method,
-        status: row.status,
-        dateTime: row.date_time,
-        terminalIp: row.terminal_ip,
-        cardDetails: cardDetails
-      };
-    } catch (error) {
-      console.error("Failed to get transaction:", error);
-      return undefined;
-    }
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
+    return transaction || undefined;
   }
 
   async getTransactions(): Promise<Transaction[]> {
-    try {
-      console.log("PostgresStorage - Fetching all transactions from database");
-      const result = await this.pool.query(
-        'SELECT * FROM transactions ORDER BY date_time DESC'
-      );
-      
-      console.log(`PostgresStorage - Found ${result.rows.length} transactions`);
-      
-      const transactions = result.rows.map((row: any) => {
-        // Parse card details if present
-        let cardDetails = null;
-        if (row.card_details) {
-          try {
-            // Check if it's already an object (neon returns JSON objects directly)
-            if (typeof row.card_details === 'object' && row.card_details !== null) {
-              cardDetails = row.card_details;
-              console.log(`Transaction #${row.id} card details already an object:`, cardDetails);
-            } else if (typeof row.card_details === 'string') {
-              cardDetails = JSON.parse(row.card_details);
-              console.log(`Transaction #${row.id} card details parsed from string:`, cardDetails);
-            }
-          } catch (err) {
-            console.error(`Error handling card details for transaction #${row.id}:`, err);
-            // If parsing fails, try to use the raw value
-            cardDetails = null;
-          }
-        }
-        
-        return {
-          id: row.id,
-          amount: row.amount,
-          paymentMethod: row.payment_method,
-          status: row.status,
-          dateTime: row.date_time,
-          terminalIp: row.terminal_ip,
-          cardDetails: cardDetails
-        };
-      });
-      
-      // Log a sample transaction for debugging
-      if (transactions.length > 0) {
-        console.log("Sample transaction:", JSON.stringify(transactions[0]));
-      }
-      
-      return transactions;
-    } catch (error) {
-      console.error("Failed to get transactions:", error);
-      return [];
-    }
+    return await db.select().from(transactions).orderBy(transactions.dateTime);
+  }
+
+  async getTransactionsByCustomer(customerId: string): Promise<Transaction[]> {
+    return await db.select().from(transactions)
+      .where(eq(transactions.customerId, customerId))
+      .orderBy(transactions.dateTime);
   }
 
   async getSetting(key: string): Promise<any> {
-    try {
-      const result = await this.pool.query(
-        'SELECT value FROM settings WHERE key = $1',
-        [key]
-      );
-      
-      if (result.rows.length === 0) {
-        return undefined;
-      }
-      
-      return result.rows[0].value;
-    } catch (error) {
-      console.error(`Failed to get setting ${key}:`, error);
-      return undefined;
-    }
+    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+    return setting?.value;
   }
 
   async saveSetting(key: string, value: any): Promise<void> {
-    try {
-      // Use upsert (insert or update) with ON CONFLICT
-      await this.pool.query(
-        `INSERT INTO settings (key, value, updated_at) 
-         VALUES ($1, $2, NOW()) 
-         ON CONFLICT (key) 
-         DO UPDATE SET value = $2, updated_at = NOW()`,
-        [key, JSON.stringify(value)]
-      );
-      
-      console.log(`Setting ${key} saved successfully`);
-    } catch (error) {
-      console.error(`Failed to save setting ${key}:`, error);
-      throw error;
-    }
+    await db
+      .insert(settings)
+      .values({ key, value })
+      .onConflictDoUpdate({
+        target: settings.key,
+        set: { value, updatedAt: new Date() }
+      });
+  }
+
+  async getSettings(key: string): Promise<Settings | undefined> {
+    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+    return setting || undefined;
+  }
+
+  // Customer management methods
+  async getCustomerProfiles(): Promise<CustomerProfile[]> {
+    return await db.select().from(customerProfiles).orderBy(customerProfiles.createdAt);
+  }
+
+  async getCustomerProfile(id: string): Promise<CustomerProfile | undefined> {
+    const [customer] = await db.select().from(customerProfiles).where(eq(customerProfiles.id, id));
+    return customer || undefined;
+  }
+
+  async createCustomerProfile(profile: InsertCustomerProfile): Promise<CustomerProfile> {
+    const [customer] = await db
+      .insert(customerProfiles)
+      .values(profile)
+      .returning();
+    return customer;
+  }
+
+  async updateCustomerProfile(id: string, updates: Partial<InsertCustomerProfile>): Promise<CustomerProfile | undefined> {
+    const [customer] = await db
+      .update(customerProfiles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(customerProfiles.id, id))
+      .returning();
+    return customer || undefined;
   }
 }
 
-// Create and export the appropriate storage implementation
-// Use PostgresStorage if DATABASE_URL is available, otherwise fall back to MemStorage
-export const storage = process.env.DATABASE_URL 
-  ? new PostgresStorage() 
-  : new MemStorage();
+// Create a storage instance - use DatabaseStorage for production
+export const storage = new DatabaseStorage();

@@ -1,5 +1,6 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { relations, sql } from "drizzle-orm";
 import { z } from "zod";
 
 // User schema (keeping it from the original)
@@ -26,6 +27,7 @@ export const transactions = pgTable("transactions", {
   dateTime: timestamp("date_time").notNull(),
   terminalIp: text("terminal_ip"),
   cardDetails: jsonb("card_details"), // Store card type, masked number, auth code, etc.
+  customerId: varchar("customer_id"), // Reference to customer profile
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
@@ -259,3 +261,55 @@ export const insertSettingsSchema = createInsertSchema(settings).omit({
 
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
 export type Settings = typeof settings.$inferSelect;
+
+// Customer profiles table for storing client information and payment tokens
+export const customerProfiles = pgTable("customer_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  phone: varchar("phone"),
+  company: varchar("company"),
+  
+  // Payment token information
+  iPosToken: varchar("ipos_token"), // Stored token for recurring payments
+  tokenCreatedAt: timestamp("token_created_at"),
+  tokenStatus: varchar("token_status").default("active"), // active, expired, revoked
+  
+  // Subscription information
+  subscriptionId: varchar("subscription_id"),
+  subscriptionStatus: varchar("subscription_status"), // active, paused, cancelled
+  billingCycle: varchar("billing_cycle"), // monthly, yearly, etc.
+  nextBillingDate: timestamp("next_billing_date"),
+  
+  // Card information (masked for security)
+  cardLast4: varchar("card_last4"),
+  cardType: varchar("card_type"),
+  cardExpiry: varchar("card_expiry"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  notes: text("notes")
+});
+
+export const insertCustomerProfileSchema = createInsertSchema(customerProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CustomerProfile = typeof customerProfiles.$inferSelect;
+export type InsertCustomerProfile = z.infer<typeof insertCustomerProfileSchema>;
+
+// Relations
+export const customerProfilesRelations = relations(customerProfiles, ({ many }) => ({
+  transactions: many(transactions),
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  customerProfile: one(customerProfiles, {
+    fields: [transactions.customerId],
+    references: [customerProfiles.id],
+  }),
+}));

@@ -20,6 +20,30 @@ A robust payment processing application integrating Dejavoo SPIN credit card ter
 
 ## Recent Changes (January 2025)
 
+### Customer Management System Implementation
+- **Date**: January 29, 2025
+- **Change**: Implemented comprehensive customer profile management system with stored payment tokens for SaaS recurring billing
+- **Details**:
+  - **Customer Database Schema**: Added `customerProfiles` table with complete customer information and iPOS token storage
+  - **Storage Layer**: Implemented `DatabaseStorage` class using Drizzle ORM for customer CRUD operations
+  - **API Endpoints**: Created complete customer management endpoints:
+    - `GET /api/customers` - List all customer profiles
+    - `GET /api/customers/:id` - Get specific customer profile
+    - `POST /api/customers` - Create new customer profile
+    - `PUT /api/customers/:id` - Update customer profile
+    - `POST /api/customers/:id/token` - Save iPOS token to customer profile
+    - `POST /api/customers/:id/charge` - Process recurring charge using stored token
+    - `GET /api/customers/:id/transactions` - Get customer transaction history
+  - **Customer Management UI**: Built comprehensive React interface with:
+    - Customer list with search and filtering
+    - Customer profile creation and editing
+    - Token status and payment method display
+    - Recurring charge processing with iPOS authentication
+    - Transaction history for each customer
+  - **Navigation Integration**: Added "Customers" button to main cash register interface
+  - **Token-Based Charging**: Full integration with iPOS Transact API for automated recurring payments
+  - **Perfect for**: SaaS subscriptions, membership billing, and automated recurring payment scenarios
+
 ### iPOS Token Capture Implementation
 - **Date**: January 16, 2025
 - **Change**: Added comprehensive iPOS token capture functionality for SaaS recurring payments using proper API flow

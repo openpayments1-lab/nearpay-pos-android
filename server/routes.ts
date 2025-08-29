@@ -994,6 +994,223 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
   
+  // Customer Management Endpoints
+  
+  // Get all customer profiles
+  app.get('/api/customers', asyncHandler(async (req, res) => {
+    try {
+      const customers = await storage.getCustomerProfiles();
+      res.json(customers);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      res.status(500).json({ error: 'Failed to fetch customers' });
+    }
+  }));
+  
+  // Get customer by ID
+  app.get('/api/customers/:id', asyncHandler(async (req, res) => {
+    try {
+      const customer = await storage.getCustomerProfile(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error('Error fetching customer:', error);
+      res.status(500).json({ error: 'Failed to fetch customer' });
+    }
+  }));
+  
+  // Create new customer profile
+  app.post('/api/customers', asyncHandler(async (req, res) => {
+    try {
+      const customer = await storage.createCustomerProfile(req.body);
+      res.status(201).json(customer);
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      res.status(500).json({ error: 'Failed to create customer' });
+    }
+  }));
+  
+  // Update customer profile
+  app.put('/api/customers/:id', asyncHandler(async (req, res) => {
+    try {
+      const customer = await storage.updateCustomerProfile(req.params.id, req.body);
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      res.status(500).json({ error: 'Failed to update customer' });
+    }
+  }));
+  
+  // Save iPOS token to customer profile
+  app.post('/api/customers/:id/token', asyncHandler(async (req, res) => {
+    const { iPosToken, cardType, cardLast4, cardExpiry } = req.body;
+    
+    if (!iPosToken) {
+      return res.status(400).json({ error: 'iPOS token is required' });
+    }
+    
+    try {
+      const customer = await storage.updateCustomerProfile(req.params.id, {
+        iPosToken: iPosToken,
+        tokenCreatedAt: new Date(),
+        tokenStatus: 'active',
+        cardType: cardType,
+        cardLast4: cardLast4,
+        cardExpiry: cardExpiry
+      });
+      
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Token saved successfully',
+        customer: customer
+      });
+    } catch (error) {
+      console.error('Error saving token:', error);
+      res.status(500).json({ error: 'Failed to save token' });
+    }
+  }));
+  
+  // Charge customer using stored token
+  app.post('/api/customers/:id/charge', asyncHandler(async (req, res) => {
+    const { amount, description, iPosAuthToken } = req.body;
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+    
+    try {
+      // Get customer profile with token
+      const customer = await storage.getCustomerProfile(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      
+      if (!customer.iPosToken || customer.tokenStatus !== 'active') {
+        return res.status(400).json({ error: 'No active payment token found for customer' });
+      }
+      
+      // Import iPOS Transact service
+      const { iPosTransactService } = await import('../services/iPosTransactService');
+      
+      // Use terminal config from settings or defaults
+      const terminalSettings = await storage.getSettings('terminal');
+      const terminalConfig = terminalSettings?.value || {
+        terminalType: "z11invtest69",
+        apiKey: "JZiRUusizc",
+        testMode: true
+      };
+      
+      // Create iPOS Transact service instance
+      const iPosConfig = {
+        authToken: iPosAuthToken || "default_auth_token", // Requires valid auth token
+        tpn: terminalConfig.terminalType,
+        testMode: terminalConfig.testMode !== false
+      };
+      
+      const iPosService = new iPosTransactService(iPosConfig);
+      
+      // Process recurring payment using stored token
+      const response = await iPosService.processSale(amount, customer.iPosToken, {
+        customerName: `${customer.firstName || ''} ${customer.lastName || ''}`.trim(),
+        customerEmail: customer.email,
+        sendReceipt: false
+      });
+      
+      // Check if transaction was approved
+      const isApproved = 
+        (response.transactResponse.responseCode === "00") ||
+        (response.transactResponse.responseCode === "0") ||
+        (response.transactResponse.responseDescription?.toLowerCase().includes("approved"));
+      
+      if (isApproved) {
+        // Save transaction record
+        try {
+          await storage.createTransaction({
+            amount: Math.round(amount * 100), // Convert to cents
+            paymentMethod: "card",
+            status: "approved",
+            dateTime: new Date().toISOString(),
+            terminalIp: terminalConfig.terminalIp || "",
+            customerId: customer.id,
+            cardDetails: {
+              type: customer.cardType || "Credit",
+              number: customer.cardLast4 ? `**** **** **** ${customer.cardLast4}` : "**** **** **** ****",
+              authCode: response.transactResponse.authorizationCode || "",
+              tokenUsed: true,
+              rrn: response.transactResponse.RRN
+            }
+          });
+        } catch (dbError) {
+          console.error('Error saving recurring charge transaction:', dbError);
+        }
+        
+        const result = {
+          success: true,
+          status: "approved",
+          transactionId: response.merchantAuthentication.transactionReferenceId,
+          amount: amount,
+          customer: {
+            id: customer.id,
+            email: customer.email,
+            name: `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
+          },
+          cardInfo: {
+            type: customer.cardType,
+            last4: customer.cardLast4
+          },
+          authCode: response.transactResponse.authorizationCode,
+          rrn: response.transactResponse.RRN,
+          dateTime: response.transactResponse.transactionDateTime,
+          description: description || "Recurring charge"
+        };
+        
+        res.json(result);
+      } else {
+        res.status(400).json({
+          success: false,
+          status: "declined",
+          message: response.transactResponse.responseDescription || "Recurring charge declined",
+          responseCode: response.transactResponse.responseCode
+        });
+      }
+    } catch (error) {
+      console.error('Error processing recurring charge:', error);
+      
+      if (error.message && error.message.includes("auth")) {
+        res.status(400).json({
+          success: false,
+          error: "iPOS authentication token required for recurring charges",
+          note: "Provide valid iPOS auth token in request body"
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: "Failed to process recurring charge"
+        });
+      }
+    }
+  }));
+  
+  // Get customer transaction history
+  app.get('/api/customers/:id/transactions', asyncHandler(async (req, res) => {
+    try {
+      const transactions = await storage.getTransactionsByCustomer(req.params.id);
+      res.json(transactions);
+    } catch (error) {
+      console.error('Error fetching customer transactions:', error);
+      res.status(500).json({ error: 'Failed to fetch customer transactions' });
+    }
+  }));
+  
   // Create HTTP server but don't start listening (index.ts will handle that)
   const server = createServer(app);
   return server;
