@@ -892,6 +892,108 @@ export class DejavooApiService {
   }
   
   /**
+   * Process a sale with token capture for recurring payments
+   * 
+   * @param amount Payment amount
+   * @param options Additional options including customer info
+   * @returns Promise with transaction response including token
+   */
+  public async processSaleWithTokenCapture(
+    amount: number,
+    options: CardPaymentOptions & {
+      customerId?: string;
+      subscriptionId?: string;
+      saveCustomer?: boolean;
+    } = {}
+  ): Promise<DejavooTransactionResponse> {
+    const referenceId = options.referenceId || this.generateReferenceId();
+    
+    // Create payload for token capture transaction
+    const payload = {
+      Amount: amount,
+      TipAmount: options.enableTipping ? options.tipAmount || null : null,
+      ExternalReceipt: "",
+      PaymentType: "Credit",
+      ReferenceId: referenceId,
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      GetReceipt: "No",
+      MerchantNumber: null,
+      InvoiceNumber: options.invoiceNumber || "",
+      CaptureSignature: options.captureSignature || options.enableSignature || false,
+      GetExtendedData: true,
+      // Token capture specific fields
+      CustomerId: options.customerId || `customer_${Date.now()}`,
+      SubscriptionId: options.subscriptionId || `sub_${Date.now()}`,
+      SaveCustomer: options.saveCustomer || true,
+      GetToken: true, // Request token for future use
+      CallbackInfo: {
+        Url: options.callbackUrl || ""
+      },
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey,
+      SPInProxyTimeout: options.transactionTimeout || null,
+      CustomFields: options.customFields || {}
+    };
+    
+    console.log("Processing sale with token capture:", JSON.stringify(payload));
+    
+    // Process the payment with token capture
+    return this.makeApiRequest<DejavooTransactionResponse>('Payment/Sale', payload, {
+      timeout: (options.transactionTimeout || 90) * 1000
+    });
+  }
+  
+  /**
+   * Process a payment using a previously captured token
+   * 
+   * @param amount Payment amount
+   * @param token Previously captured payment token
+   * @param options Additional options
+   * @returns Promise with transaction response
+   */
+  public async processTokenPayment(
+    amount: number,
+    token: string,
+    options: CardPaymentOptions & {
+      customerId?: string;
+    } = {}
+  ): Promise<DejavooTransactionResponse> {
+    const referenceId = options.referenceId || this.generateReferenceId();
+    
+    // Create payload for token payment
+    const payload = {
+      Amount: amount,
+      TipAmount: null,
+      ExternalReceipt: "",
+      PaymentType: "Credit",
+      ReferenceId: referenceId,
+      PrintReceipt: options.printReceipt ? "Yes" : "No",
+      GetReceipt: "No",
+      MerchantNumber: null,
+      InvoiceNumber: options.invoiceNumber || "",
+      CaptureSignature: false,
+      GetExtendedData: true,
+      // Token payment specific fields
+      iPosToken: token, // Use the captured token
+      CustomerId: options.customerId || "",
+      CallbackInfo: {
+        Url: options.callbackUrl || ""
+      },
+      Tpn: this.config.tpn,
+      Authkey: this.config.authKey,
+      SPInProxyTimeout: options.transactionTimeout || null,
+      CustomFields: options.customFields || {}
+    };
+    
+    console.log("Processing token payment:", JSON.stringify(payload));
+    
+    // Process the token payment
+    return this.makeApiRequest<DejavooTransactionResponse>('Payment/Sale', payload, {
+      timeout: (options.transactionTimeout || 90) * 1000
+    });
+  }
+
+  /**
    * Get payment receipt
    * 
    * Retrieves the receipt for a specific transaction

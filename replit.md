@@ -20,6 +20,18 @@ A robust payment processing application integrating Dejavoo SPIN credit card ter
 
 ## Recent Changes (January 2025)
 
+### iPOS Token Capture Implementation
+- **Date**: January 16, 2025
+- **Change**: Added comprehensive token capture functionality for SaaS recurring payments
+- **Details**:
+  - Created `TokenCapture` component for testing token capture and reuse
+  - Added `/api/payment/token-capture` endpoint for initial token generation
+  - Added `/api/payment/token-reuse` endpoint for subsequent payments using stored tokens
+  - Implemented `TokenCaptureTest` page with comprehensive testing interface
+  - Added navigation link to token capture testing from main cash register
+  - Enhanced Dejavoo API service with `processSaleWithTokenCapture()` and `processTokenPayment()` methods
+  - Perfect for SaaS membership, subscription, and recurring payment scenarios
+
 ### Terminal Configuration Updates
 - **Date**: January 16, 2025
 - **Change**: Removed terminal IP address requirement for Dejavoo SPIN API

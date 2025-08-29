@@ -564,6 +564,199 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(result);
   }));
   
+  // Process token capture for recurring payments
+  app.post('/api/payment/token-capture', asyncHandler(async (req, res) => {
+    const { amount, referenceId, customerId, subscriptionId, captureToken, saveCustomer, terminalConfig } = req.body;
+    
+    if (!amount || isNaN(amount)) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+    
+    console.log(`Processing token capture for amount: $${amount.toFixed(2)}`);
+    console.log(`Customer ID: ${customerId}, Subscription ID: ${subscriptionId}`);
+    
+    try {
+      // Create Dejavoo API service instance
+      const config = {
+        tpn: terminalConfig.terminalType || "z11invtest69",
+        authKey: terminalConfig.apiKey || "JZiRUusizc",
+        testMode: terminalConfig.testMode || false
+      };
+      
+      const dejavooService = new DejavooApiService(config);
+      
+      // Process sale with token capture
+      const response = await dejavooService.processSaleWithTokenCapture(amount, {
+        referenceId: referenceId,
+        customerId: customerId,
+        subscriptionId: subscriptionId,
+        saveCustomer: saveCustomer,
+        enableSignature: terminalConfig.enableSignature,
+        transactionTimeout: terminalConfig.transactionTimeout
+      });
+      
+      console.log('Token capture response:', JSON.stringify(response));
+      
+      // Check if transaction was approved and extract token
+      const resp = response as any;
+      const isApproved = 
+        (resp.GeneralResponse?.StatusCode === "0000") ||
+        (resp.GeneralResponse?.ResultCode === "0") ||
+        (resp.GeneralResponse?.HostResponseCode === "00") ||
+        (resp.GeneralResponse?.Message && resp.GeneralResponse.Message.includes("Approved"));
+      
+      if (isApproved) {
+        // Extract token and create response
+        const result = {
+          status: "approved",
+          transactionId: resp.TransactionNumber || resp.ReferenceId || referenceId,
+          dateTime: new Date().toISOString(),
+          cardType: resp.CardData?.CardType || "Credit",
+          maskedPan: resp.CardData?.Last4 ? `**** **** **** ${resp.CardData.Last4}` : "**** **** **** ****",
+          authCode: resp.AuthCode || "",
+          hostResponseCode: resp.GeneralResponse?.HostResponseCode || "",
+          hostResponseMessage: resp.GeneralResponse?.HostResponseMessage || "",
+          // Token capture specific fields
+          iPosToken: resp.IPosToken || resp.iPosToken || resp.Token || null,
+          customerId: customerId,
+          subscriptionId: subscriptionId,
+          // Raw response for debugging
+          rawResponse: response
+        };
+        
+        // Save transaction to database if approved
+        try {
+          await apiRequest("POST", "/api/transactions", {
+            amount: Math.round(amount * 100), // Convert to cents
+            paymentMethod: "card",
+            status: "approved",
+            dateTime: new Date().toISOString(),
+            terminalIp: terminalConfig.terminalIp,
+            cardDetails: {
+              type: result.cardType,
+              number: result.maskedPan,
+              authCode: result.authCode,
+              token: result.iPosToken // Store token for future use
+            }
+          });
+        } catch (dbError) {
+          console.error('Error saving token capture transaction:', dbError);
+        }
+        
+        res.json(result);
+      } else {
+        res.json({
+          status: "declined",
+          message: resp.GeneralResponse?.DetailedMessage || 
+                   resp.GeneralResponse?.Message || 
+                   "Token capture transaction declined",
+          rawResponse: response
+        });
+      }
+    } catch (error) {
+      console.error("Token capture processing failed:", error);
+      res.status(500).json({
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
+  }));
+  
+  // Process payment using stored token
+  app.post('/api/payment/token-reuse', asyncHandler(async (req, res) => {
+    const { amount, token, customerId, terminalConfig } = req.body;
+    
+    if (!amount || isNaN(amount)) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+    
+    if (!token) {
+      return res.status(400).json({ error: 'Payment token is required' });
+    }
+    
+    console.log(`Processing token reuse for amount: $${amount.toFixed(2)}`);
+    console.log(`Using token: ${token.substring(0, 8)}...`);
+    
+    try {
+      // Create Dejavoo API service instance
+      const config = {
+        tpn: terminalConfig.terminalType || "z11invtest69",
+        authKey: terminalConfig.apiKey || "JZiRUusizc",
+        testMode: terminalConfig.testMode || false
+      };
+      
+      const dejavooService = new DejavooApiService(config);
+      
+      // Process payment using token
+      const response = await dejavooService.processTokenPayment(amount, token, {
+        customerId: customerId,
+        transactionTimeout: terminalConfig.transactionTimeout
+      });
+      
+      console.log('Token reuse response:', JSON.stringify(response));
+      
+      // Check if transaction was approved
+      const resp = response as any;
+      const isApproved = 
+        (resp.GeneralResponse?.StatusCode === "0000") ||
+        (resp.GeneralResponse?.ResultCode === "0") ||
+        (resp.GeneralResponse?.HostResponseCode === "00") ||
+        (resp.GeneralResponse?.Message && resp.GeneralResponse.Message.includes("Approved"));
+      
+      if (isApproved) {
+        const result = {
+          status: "approved",
+          transactionId: resp.TransactionNumber || resp.ReferenceId || generateUniqueId(),
+          dateTime: new Date().toISOString(),
+          cardType: resp.CardData?.CardType || "Credit",
+          maskedPan: resp.CardData?.Last4 ? `**** **** **** ${resp.CardData.Last4}` : "**** **** **** ****",
+          authCode: resp.AuthCode || "",
+          hostResponseCode: resp.GeneralResponse?.HostResponseCode || "",
+          hostResponseMessage: resp.GeneralResponse?.HostResponseMessage || "",
+          // Token reuse specific fields
+          tokenUsed: token.substring(0, 8) + "...", // Masked token for security
+          customerId: customerId,
+          rawResponse: response
+        };
+        
+        // Save transaction to database
+        try {
+          await apiRequest("POST", "/api/transactions", {
+            amount: Math.round(amount * 100), // Convert to cents
+            paymentMethod: "card",
+            status: "approved",
+            dateTime: new Date().toISOString(),
+            terminalIp: terminalConfig.terminalIp,
+            cardDetails: {
+              type: result.cardType,
+              number: result.maskedPan,
+              authCode: result.authCode,
+              tokenUsed: true
+            }
+          });
+        } catch (dbError) {
+          console.error('Error saving token reuse transaction:', dbError);
+        }
+        
+        res.json(result);
+      } else {
+        res.json({
+          status: "declined",
+          message: resp.GeneralResponse?.DetailedMessage || 
+                   resp.GeneralResponse?.Message || 
+                   "Token payment declined",
+          rawResponse: response
+        });
+      }
+    } catch (error) {
+      console.error("Token reuse processing failed:", error);
+      res.status(500).json({
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
+  }));
+
   // Void a transaction
   app.post('/api/payment/void', asyncHandler(async (req, res) => {
     const { transactionId, terminalConfig } = req.body;

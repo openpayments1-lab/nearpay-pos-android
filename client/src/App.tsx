@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import CashRegister from "@/pages/CashRegister";
 import TransactionHistory from "@/pages/TransactionHistory";
 import RefundTest from "@/pages/RefundTest";
+import TokenCaptureTest from "@/pages/TokenCaptureTest";
 import { CashRegisterProvider } from "@/lib/cashRegisterContext";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={CashRegister} />
       <Route path="/history" component={TransactionHistory} />
       <Route path="/refund-test" component={RefundTest} />
+      <Route path="/token-test" component={TokenCaptureTest} />
       <Route component={NotFound} />
     </Switch>
   );

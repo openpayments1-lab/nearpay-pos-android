@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, CreditCard, History, RotateCcw, RefreshCcw } from "lucide-react";
+import { Settings, CreditCard, History, RotateCcw, RefreshCcw, Coins } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import AmountInput from "@/components/AmountInput";
 import PaymentMethod from "@/components/PaymentMethod";
@@ -177,7 +177,7 @@ export default function CashRegister() {
           <Receipt />
         </Card>
         
-        {/* Settings, Refund and History Buttons */}
+        {/* Settings, Refund, History and Token Test Buttons */}
         <div className="fixed bottom-6 right-6 flex space-x-3 z-50">
           <Link href="/history">
             <Button 
@@ -186,6 +186,16 @@ export default function CashRegister() {
             >
               <History className="h-5 w-5 mr-1" />
               <span>Transaction History</span>
+            </Button>
+          </Link>
+          
+          <Link href="/token-test">
+            <Button 
+              variant="default"
+              className="bg-purple-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-purple-700"
+            >
+              <Coins className="h-5 w-5 mr-1" />
+              <span>Token Capture</span>
             </Button>
           </Link>
           
