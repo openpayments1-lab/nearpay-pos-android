@@ -790,7 +790,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       // Import iPOS Transact service
-      const { iPosTransactService } = await import('../services/iPosTransactService');
+      const { iPosService } = await import('./services/iPosTransactService');
       
       // Create iPOS Transact service instance
       const iPosConfig = {
@@ -799,71 +799,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         testMode: terminalConfig.testMode !== false // Default to test mode
       };
       
-      const iPosService = new iPosTransactService(iPosConfig);
-      
       // Process payment using iPOS token
-      const response = await iPosService.processSale(amount, token, {
-        customerName: customerId ? `Customer ${customerId}` : undefined,
-        customerEmail: terminalConfig.customerEmail,
-        sendReceipt: false
+      const response = await iPosService.processRecurringCharge({
+        amount: amount,
+        description: 'Token reuse payment',
+        iPosToken: token,
+        iPosAuthToken: iPosAuthToken || terminalConfig.iPosAuthToken || "default_auth_token"
       });
       
-      console.log('iPOS Transact token reuse response:', JSON.stringify(response));
+      console.log('iPOS Transact recurring charge response:', JSON.stringify(response));
       
-      // Check if transaction was approved
-      const isApproved = 
-        (response.transactResponse.responseCode === "00") ||
-        (response.transactResponse.responseCode === "0") ||
-        (response.transactResponse.responseDescription?.toLowerCase().includes("approved"));
-      
-      if (isApproved) {
+      if (response.success) {
         const result = {
           status: "approved",
-          transactionId: response.merchantAuthentication.transactionReferenceId,
-          dateTime: response.transactResponse.transactionDateTime,
-          cardType: response.transactResponse.cardType || "Credit",
-          maskedPan: response.transactResponse.cardLast4 ? 
-            `**** **** **** ${response.transactResponse.cardLast4}` : "**** **** **** ****",
-          authCode: response.transactResponse.authorizationCode || "",
-          responseCode: response.transactResponse.responseCode,
-          responseDescription: response.transactResponse.responseDescription,
-          rrn: response.transactResponse.RRN,
-          // Token reuse specific fields
-          tokenUsed: token.substring(0, 12) + "...", // Masked token for security
-          customerId: customerId,
-          method: "iPOS Transact API",
-          rawResponse: response
+          transactionId: response.transactionId,
+          authCode: response.authCode,
+          message: response.message,
+          rawResponse: response.rawResponse
         };
         
-        // Save transaction to database
-        try {
-          await apiRequest("POST", "/api/transactions", {
-            amount: Math.round(amount * 100), // Convert to cents
-            paymentMethod: "card",
-            status: "approved",
-            dateTime: result.dateTime,
-            terminalIp: terminalConfig.terminalIp,
-            cardDetails: {
-              type: result.cardType,
-              number: result.maskedPan,
-              authCode: result.authCode,
-              tokenUsed: true,
-              rrn: result.rrn
-            }
-          });
-        } catch (dbError) {
-          console.error('Error saving iPOS token reuse transaction:', dbError);
-        }
+        // Log to server console
+        console.log("iPOS token reuse result:", JSON.stringify(result));
         
+        // Return result
         res.json(result);
       } else {
-        res.json({
+        res.status(400).json({
           status: "declined",
-          message: response.transactResponse.responseDescription || "Token payment declined",
-          responseCode: response.transactResponse.responseCode,
-          rawResponse: response
+          error: response.error || 'Payment declined',
+          rawResponse: response.rawResponse
         });
       }
+    } catch (error) {
+      console.error("Error processing recurring charge:", error);
+      res.status(500).json({
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
+  }));
+  
+  // Legacy token reuse endpoint (for backward compatibility)
+  app.post('/api/payment/token-legacy', asyncHandler(async (req, res) => {
+    const { amount, token, customerId, terminalConfig, iPosAuthToken } = req.body;
+    
+    if (!amount || isNaN(amount)) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+    
+    if (!token) {
+      return res.status(400).json({ error: 'iPOS token is required' });
+    }
+    
+    console.log(`Processing legacy iPOS token for amount: $${amount.toFixed(2)}`);
+    
+    try {
+      res.json({
+        status: "not_implemented",
+        message: "Legacy token processing not implemented"
+      });
     } catch (error) {
       console.error("iPOS Transact token reuse processing failed:", error);
       
@@ -1203,7 +1197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Import iPOS Transact service
-      const { iPosTransactService } = await import('../services/iPosTransactService');
+      const { iPosService } = await import('./services/iPosTransactService');
       
       // Use terminal config from settings or defaults
       const terminalSettings = await storage.getSettings('terminal');
@@ -1220,72 +1214,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
         testMode: terminalConfig.testMode !== false
       };
       
-      const iPosService = new iPosTransactService(iPosConfig);
-      
       // Process recurring payment using stored token
-      const response = await iPosService.processSale(amount, customer.iPosToken, {
-        customerName: `${customer.firstName || ''} ${customer.lastName || ''}`.trim(),
-        customerEmail: customer.email,
-        sendReceipt: false
+      const response = await iPosService.processRecurringCharge({
+        amount: amount,
+        description: description || 'Recurring payment',
+        iPosToken: customer.iPosToken,
+        iPosAuthToken: iPosAuthToken
       });
       
-      // Check if transaction was approved
-      const isApproved = 
-        (response.transactResponse.responseCode === "00") ||
-        (response.transactResponse.responseCode === "0") ||
-        (response.transactResponse.responseDescription?.toLowerCase().includes("approved"));
+      console.log('iPOS recurring charge response:', JSON.stringify(response));
       
-      if (isApproved) {
-        // Save transaction record
-        try {
-          await storage.createTransaction({
-            amount: Math.round(amount * 100), // Convert to cents
-            paymentMethod: "card",
-            status: "approved",
-            dateTime: new Date().toISOString(),
-            terminalIp: terminalConfig.terminalIp || "",
-            customerId: customer.id,
-            cardDetails: {
-              type: customer.cardType || "Credit",
-              number: customer.cardLast4 ? `**** **** **** ${customer.cardLast4}` : "**** **** **** ****",
-              authCode: response.transactResponse.authorizationCode || "",
-              tokenUsed: true,
-              rrn: response.transactResponse.RRN
-            }
-          });
-        } catch (dbError) {
-          console.error('Error saving recurring charge transaction:', dbError);
-        }
-        
+      if (response.success) {
         const result = {
-          success: true,
           status: "approved",
-          transactionId: response.merchantAuthentication.transactionReferenceId,
+          transactionId: response.transactionId,
+          authCode: response.authCode,
+          message: response.message,
           amount: amount,
           customer: {
             id: customer.id,
-            email: customer.email,
-            name: `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
-          },
-          cardInfo: {
-            type: customer.cardType,
-            last4: customer.cardLast4
-          },
-          authCode: response.transactResponse.authorizationCode,
-          rrn: response.transactResponse.RRN,
-          dateTime: response.transactResponse.transactionDateTime,
-          description: description || "Recurring charge"
+            name: `${customer.firstName || ''} ${customer.lastName || ''}`.trim(),
+            email: customer.email
+          }
         };
+        
+        // Log successful transaction
+        console.log("Customer charge result:", JSON.stringify(result));
         
         res.json(result);
       } else {
         res.status(400).json({
-          success: false,
           status: "declined",
-          message: response.transactResponse.responseDescription || "Recurring charge declined",
-          responseCode: response.transactResponse.responseCode
+          error: response.error || 'Payment declined',
+          amount: amount,
+          customer: {
+            id: customer.id,
+            name: `${customer.firstName || ''} ${customer.lastName || ''}`.trim(),
+            email: customer.email
+          }
         });
       }
+    } catch (error) {
+      console.error("Error processing recurring charge:", error);
+      res.status(500).json({ error: "Failed to process recurring charge" });
+    }
+  }));
+  
+  // Get customer transaction history
+  app.get('/api/customers/:id/transactions', asyncHandler(async (req, res) => {
+    try {
+      const transactions = await storage.getCustomerTransactions(req.params.id);
+      res.json(transactions);
+    } catch (error) {
+      console.error('Error fetching customer transactions:', error);
+      res.status(500).json({ error: 'Failed to fetch transactions' });
+    }
+  }));
+  
+  // Legacy customer charging for backward compatibility
+  app.post('/api/customers/:id/charge-legacy', asyncHandler(async (req, res) => {
+    const { amount, description, iPosAuthToken } = req.body;
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+    
+    try {
+      // Get customer profile with token
+      const customer = await storage.getCustomerProfile(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      
+      if (!customer.iPosToken || customer.tokenStatus !== 'active') {
+        return res.status(400).json({ error: 'No active payment token found for customer' });
+      }
+      
+      // Process with legacy validation logic
+      res.json({
+        status: "not_implemented",
+        message: "Legacy customer charging not implemented"
+      });
     } catch (error) {
       console.error('Error processing recurring charge:', error);
       
