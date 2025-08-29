@@ -41,8 +41,8 @@ export class iPosTransactService {
       const decodedToken = this.decodeJWT(request.iPosAuthToken);
       const tpn = decodedToken?.tpn || "224725231775"; // Default TPN from token
       
-      // Generate unique transaction reference ID
-      const transactionReferenceId = `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate unique transaction reference ID (must be 20 chars or fewer, alphanumeric)
+      const transactionReferenceId = `${Date.now()}${Math.random().toString(36).substr(2, 7)}`.substr(0, 20);
       
       // Convert amount to cents string format
       const amountInCents = Math.round(request.amount * 100).toString();
@@ -52,7 +52,7 @@ export class iPosTransactService {
           merchantId: tpn,
           transactionReferenceId: transactionReferenceId
         },
-        transactRequest: {
+        transactionRequest: {  // Fixed: was "transactRequest", should be "transactionRequest"
           transactionType: 1, // Sale transaction
           amount: amountInCents,
           cardToken: request.iPosToken,
