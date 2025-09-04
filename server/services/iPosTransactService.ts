@@ -53,7 +53,7 @@ export class iPosTransactService {
       // Generate unique transaction reference ID (must be 20 chars or fewer, alphanumeric)
       const transactionReferenceId = `${Date.now()}${Math.random().toString(36).substr(2, 7)}`.substr(0, 20);
       
-      // Build payload using the new simpler format
+      // Build payload with merchantID (TPN)
       const payload = {
         transactionReferenceId: transactionReferenceId,
         transactionType: 1, // Sale
@@ -61,6 +61,7 @@ export class iPosTransactService {
         customFee: "0.00",
         totalAmount: request.amount.toFixed(2),
         iPOSToken: request.cardToken, // Token obtained from SPIn
+        merchantID: request.merchantId, // TPN for processing
         additionalData: {
           description: request.description || "Recurring payment",
           invoiceNumber: transactionReferenceId
