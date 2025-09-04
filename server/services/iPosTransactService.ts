@@ -75,8 +75,8 @@ export class iPosTransactService {
       
       const response = await axios.post(apiUrl, payload, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${request.authToken}` // Bearer token authentication
+          'token': request.authToken,
+          'Content-Type': 'application/json'
         },
         timeout: 30000
       });
