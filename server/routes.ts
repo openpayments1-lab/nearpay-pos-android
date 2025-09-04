@@ -1202,7 +1202,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the terminal config that has the iPOS auth token
       const terminalSettings = await storage.getSetting('terminalConfig');
       
+      console.log('Terminal settings loaded:', JSON.stringify(terminalSettings, null, 2));
+      console.log('iPosAuthToken exists:', !!terminalSettings?.iPosAuthToken);
+      console.log('iPosAuthToken value:', terminalSettings?.iPosAuthToken?.substring(0, 20) + '...' || 'NOT FOUND');
+      
       if (!terminalSettings || !terminalSettings.iPosAuthToken) {
+        console.error('iPOS auth token missing - terminalSettings:', !!terminalSettings, 'iPosAuthToken:', !!terminalSettings?.iPosAuthToken);
         return res.status(400).json({ error: 'iPOS auth token not configured in terminal settings' });
       }
       
