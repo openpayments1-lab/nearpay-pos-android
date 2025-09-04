@@ -53,18 +53,23 @@ export class iPosTransactService {
       // Generate unique transaction reference ID (must be 20 chars or fewer, alphanumeric)
       const transactionReferenceId = `${Date.now()}${Math.random().toString(36).substr(2, 7)}`.substr(0, 20);
       
-      // Build payload with merchantID (TPN)
+      // Build payload using correct nested structure
       const payload = {
-        transactionReferenceId: transactionReferenceId,
-        transactionType: 1, // Sale
-        amount: request.amount.toFixed(2),
-        customFee: "0.00",
-        totalAmount: request.amount.toFixed(2),
-        iPOSToken: request.cardToken, // Token obtained from SPIn
-        merchantID: request.merchantId, // TPN for processing
-        additionalData: {
-          description: request.description || "Recurring payment",
-          invoiceNumber: transactionReferenceId
+        merchantAuthentication: {
+          merchantId: request.merchantId, // TPN for processing
+          transactionReferenceId: transactionReferenceId
+        },
+        transactionRequest: {
+          transactionType: 1, // Sale (using token)
+          amount: Math.round(request.amount * 100).toString(), // Convert to cents
+          cardToken: request.cardToken, // Token obtained from SPIn
+          applySteamSettingTipFeeTax: false
+        },
+        preferences: {
+          eReceipt: false,
+          customerName: request.customerInfo?.name || "Customer",
+          customerEmail: request.customerInfo?.email || "",
+          customerMobile: request.customerInfo?.mobile || ""
         }
       };
 
