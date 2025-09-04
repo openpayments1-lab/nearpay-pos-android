@@ -1179,7 +1179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Charge customer using stored token
   app.post('/api/customers/:id/charge', asyncHandler(async (req, res) => {
-    const { amount, description, iPosAuthToken } = req.body;
+    const { amount, description } = req.body;
     
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Valid amount is required' });
@@ -1209,7 +1209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create iPOS Transact service instance
       const iPosConfig = {
-        authToken: iPosAuthToken || "default_auth_token", // Requires valid auth token
+        authToken: terminalConfig.iPosAuthToken || "default_auth_token", // Requires valid auth token
         tpn: terminalConfig.terminalType,
         testMode: terminalConfig.testMode !== false
       };
@@ -1219,7 +1219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: amount,
         description: description || 'Recurring payment',
         cardToken: customer.iPosToken, // Card token from SPIn stored in customer profile
-        authToken: iPosAuthToken || terminalConfig.iPosAuthToken || "default_auth_token",
+        authToken: terminalConfig.iPosAuthToken || "default_auth_token",
         merchantId: "224725717795", // iPOS-specific TPN for recurring charges
         isProduction: !terminalConfig.testMode // Use production if not in test mode
       });
