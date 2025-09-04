@@ -1199,29 +1199,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import iPOS Transact service
       const { iPosService } = await import('./services/iPosTransactService');
       
-      // Get the terminal config that has the numeric TPN for iPOS
+      // Get the terminal config that has the iPOS auth token
       const terminalSettings = await storage.getSetting('terminalConfig');
-      const terminalConfig = terminalSettings || {
-        terminalType: "224725575584", // iPOS uses numeric TPN, not Dejavoo's alphanumeric
-        apiKey: "JEkE6S7jPk",
-        testMode: false
-      };
       
-      // Create iPOS Transact service instance
-      const iPosConfig = {
-        authToken: terminalConfig.iPosAuthToken || "default_auth_token", // Requires valid auth token
-        tpn: terminalConfig.terminalType,
-        testMode: terminalConfig.testMode !== false
-      };
+      if (!terminalSettings || !terminalSettings.iPosAuthToken) {
+        return res.status(400).json({ error: 'iPOS auth token not configured in terminal settings' });
+      }
+      
+      console.log('Using iPOS auth token from terminal config:', terminalSettings.iPosAuthToken.substring(0, 20) + '...');
       
       // Process recurring payment using stored card token
       const response = await iPosService.processRecurringCharge({
         amount: amount,
         description: description || 'Recurring payment',
         cardToken: customer.iPosToken, // Card token from SPIn stored in customer profile
-        authToken: terminalConfig.iPosAuthToken || "default_auth_token",
-        merchantId: "224725717795", // iPOS-specific TPN for recurring charges
-        isProduction: !terminalConfig.testMode // Use production if not in test mode
+        authToken: terminalSettings.iPosAuthToken, // Use actual auth token from terminal config
+        merchantId: terminalSettings.iPOSTpn || "224725717795", // Use configured iPOS TPN
+        isProduction: !terminalSettings.testMode // Use production if not in test mode
       });
       
       console.log('iPOS recurring charge response:', JSON.stringify(response));
