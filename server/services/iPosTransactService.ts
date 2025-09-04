@@ -53,30 +53,17 @@ export class iPosTransactService {
       // Generate unique transaction reference ID (must be 20 chars or fewer, alphanumeric)
       const transactionReferenceId = `${Date.now()}${Math.random().toString(36).substr(2, 7)}`.substr(0, 20);
       
-      // Convert amount to cents string format
-      const amountInCents = Math.round(request.amount * 100).toString();
-
-      // Build payload matching the user's example structure
+      // Build payload using the new simpler format
       const payload = {
-        merchantAuthentication: {
-          merchantId: request.merchantId,
-          transactionReferenceId: transactionReferenceId
-        },
-        transactionRequest: {
-          transactionType: 5, // Pre-Auth (using token) as per user's example
-          amount: amountInCents,
-          cardToken: request.cardToken, // Card token obtained from SPIn
-          applySteamSettingTipFeeTax: false
-        },
-        preferences: {
-          eReceipt: true,
-          customerName: request.customerInfo?.name || "",
-          customerEmail: request.customerInfo?.email || "",
-          customerMobile: request.customerInfo?.mobile || ""
-        },
-        Avs: {
-          StreetNo: request.avsInfo?.streetNo || "",
-          Zip: request.avsInfo?.zip || ""
+        transactionReferenceId: transactionReferenceId,
+        transactionType: 1, // Sale
+        amount: request.amount.toFixed(2),
+        customFee: "0.00",
+        totalAmount: request.amount.toFixed(2),
+        iPOSToken: request.cardToken, // Token obtained from SPIn
+        additionalData: {
+          description: request.description || "Recurring payment",
+          invoiceNumber: transactionReferenceId
         }
       };
 
