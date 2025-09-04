@@ -34,7 +34,7 @@ export interface iPosChargeResponse {
 
 export class iPosTransactService {
   private sandboxUrl = 'https://payment.ipospays.tech/api/v3/iposTransact';
-  private productionUrl = 'https://api.ipospays.com/ipos-transact';
+  private productionUrl = 'https://payment.ipospays.com/api/v1/iposTransact';
 
 
   /**
