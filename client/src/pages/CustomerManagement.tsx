@@ -162,24 +162,13 @@ export default function CustomerManagement() {
       return;
     }
 
-    // Get iPOS auth token from local storage (saved in terminal settings)
-    const iPosAuthToken = localStorage.getItem('iPosAuthToken');
-    
-    if (!iPosAuthToken) {
-      toast({
-        title: "Missing iPOS Token",
-        description: "Please configure the iPOS Auth Token in Terminal Settings first",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    // The iPOS auth token is now handled on the backend via terminal settings
+    // No need to check localStorage - backend will validate token availability
     chargeCustomerMutation.mutate({
       customerId: selectedCustomer.id,
       chargeData: {
         ...chargeData,
-        amount,
-        iPosAuthToken
+        amount
       }
     });
   };
