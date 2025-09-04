@@ -34,7 +34,7 @@ export interface iPosChargeResponse {
 
 export class iPosTransactService {
   private sandboxUrl = 'https://payment.ipospays.tech/api/v3/iposTransact';
-  private productionUrl = 'https://api.ipospays.com/ipos-transact';
+  private productionUrl = 'https://api.ipospays.com/api/v3/iposTransact';
 
 
   /**
@@ -46,7 +46,8 @@ export class iPosTransactService {
         amount: request.amount,
         description: request.description,
         cardTokenPresent: !!request.cardToken,
-        merchantId: request.merchantId
+        merchantId: request.merchantId,
+        isProduction: request.isProduction
       });
       
       // Generate unique transaction reference ID (must be 20 chars or fewer, alphanumeric)
@@ -83,6 +84,7 @@ export class iPosTransactService {
 
       // Use the appropriate endpoint
       const apiUrl = request.isProduction ? this.productionUrl : this.sandboxUrl;
+      console.log(`Using iPOS endpoint: ${apiUrl} (isProduction: ${request.isProduction})`);
       
       const response = await axios.post(apiUrl, payload, {
         headers: {
