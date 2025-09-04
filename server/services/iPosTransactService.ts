@@ -91,19 +91,20 @@ export class iPosTransactService {
 
       // Check if the response indicates success
       const iposResponse = response.data;
+      const iposhpresponse = iposResponse?.iposhpresponse;
       
-      if (iposResponse && (iposResponse.responseCode === "200" || iposResponse.responseCode === "00" || iposResponse.success)) {
+      if (iposhpresponse && iposhpresponse.responseCode === "200") {
         return {
           success: true,
-          transactionId: iposResponse.transactionId || iposResponse.id,
-          authCode: iposResponse.authCode || iposResponse.approvalCode,
-          message: iposResponse.message || iposResponse.responseMessage || 'Charge processed successfully',
+          transactionId: iposhpresponse.transactionId,
+          authCode: iposhpresponse.responseApprovalCode,
+          message: iposhpresponse.responseMessage || 'Charge processed successfully',
           rawResponse: response.data
         };
       } else {
         return {
           success: false,
-          error: iposResponse?.message || iposResponse?.responseMessage || 'Charge failed',
+          error: iposhpresponse?.responseMessage || 'Charge failed',
           rawResponse: response.data
         };
       }
