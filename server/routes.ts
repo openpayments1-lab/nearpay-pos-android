@@ -797,12 +797,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         testMode: terminalConfig.testMode !== false // Default to test mode
       };
       
-      // Process payment using iPOS token
+      // Process payment using card token from SPIn
       const response = await iPosService.processRecurringCharge({
         amount: amount,
         description: 'Token reuse payment',
-        iPosToken: token,
-        iPosAuthToken: iPosAuthToken || terminalConfig.iPosAuthToken || "default_auth_token"
+        cardToken: token, // Card token from SPIn
+        authToken: iPosAuthToken || terminalConfig.iPosAuthToken || "default_auth_token",
+        merchantId: terminalConfig.terminalType || "224725575584"
       });
       
       console.log('iPOS Transact recurring charge response:', JSON.stringify(response));
@@ -1212,13 +1213,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         testMode: terminalConfig.testMode !== false
       };
       
-      // Process recurring payment using stored token
+      // Process recurring payment using stored card token
       const response = await iPosService.processRecurringCharge({
         amount: amount,
         description: description || 'Recurring payment',
-        iPosToken: customer.iPosToken,
-        iPosAuthToken: iPosAuthToken,
-        terminalId: terminalConfig.terminalType || "224725575584" // Use TPN from terminal config
+        cardToken: customer.iPosToken, // Card token from SPIn stored in customer profile
+        authToken: iPosAuthToken || terminalConfig.iPosAuthToken || "default_auth_token",
+        merchantId: terminalConfig.terminalType || "224725575584" // Use TPN from terminal config
       });
       
       console.log('iPOS recurring charge response:', JSON.stringify(response));
