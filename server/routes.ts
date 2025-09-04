@@ -1307,7 +1307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
   
-  // Get customer transaction history
+  // Get customer transaction history (fixed duplicate)
   app.get('/api/customers/:id/transactions', asyncHandler(async (req, res) => {
     try {
       const transactions = await storage.getTransactionsByCustomer(req.params.id);
@@ -1317,7 +1317,339 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to fetch customer transactions' });
     }
   }));
-  
+
+  // ==================== MULTI-TENANT SUBSCRIPTION MANAGEMENT ROUTES ====================
+
+  // Tenant Management Routes
+  app.get('/api/tenants', asyncHandler(async (req, res) => {
+    try {
+      const tenants = await storage.getTenants();
+      res.json(tenants);
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      res.status(500).json({ error: 'Failed to fetch tenants' });
+    }
+  }));
+
+  app.get('/api/tenants/:id', asyncHandler(async (req, res) => {
+    try {
+      const tenant = await storage.getTenant(req.params.id);
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+      res.json(tenant);
+    } catch (error) {
+      console.error('Error fetching tenant:', error);
+      res.status(500).json({ error: 'Failed to fetch tenant' });
+    }
+  }));
+
+  app.post('/api/tenants', asyncHandler(async (req, res) => {
+    try {
+      const tenant = await storage.createTenant(req.body);
+      res.status(201).json(tenant);
+    } catch (error) {
+      console.error('Error creating tenant:', error);
+      res.status(500).json({ error: 'Failed to create tenant' });
+    }
+  }));
+
+  app.put('/api/tenants/:id', asyncHandler(async (req, res) => {
+    try {
+      const tenant = await storage.updateTenant(req.params.id, req.body);
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+      res.json(tenant);
+    } catch (error) {
+      console.error('Error updating tenant:', error);
+      res.status(500).json({ error: 'Failed to update tenant' });
+    }
+  }));
+
+  // Subscription Management Routes
+  app.get('/api/subscriptions', asyncHandler(async (req, res) => {
+    const tenantId = req.query.tenantId as string;
+    try {
+      const subscriptions = await storage.getSubscriptions(tenantId);
+      res.json(subscriptions);
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+      res.status(500).json({ error: 'Failed to fetch subscriptions' });
+    }
+  }));
+
+  app.get('/api/subscriptions/:id', asyncHandler(async (req, res) => {
+    try {
+      const subscription = await storage.getSubscription(req.params.id);
+      if (!subscription) {
+        return res.status(404).json({ error: 'Subscription not found' });
+      }
+      res.json(subscription);
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+      res.status(500).json({ error: 'Failed to fetch subscription' });
+    }
+  }));
+
+  app.get('/api/customers/:id/subscriptions', asyncHandler(async (req, res) => {
+    try {
+      const subscriptions = await storage.getSubscriptionsByCustomer(req.params.id);
+      res.json(subscriptions);
+    } catch (error) {
+      console.error('Error fetching customer subscriptions:', error);
+      res.status(500).json({ error: 'Failed to fetch customer subscriptions' });
+    }
+  }));
+
+  app.post('/api/subscriptions', asyncHandler(async (req, res) => {
+    try {
+      // Validate required fields
+      const { tenantId, customerId, amount, billingCycle, nextChargeDate } = req.body;
+      
+      if (!tenantId || !customerId || !amount || !billingCycle || !nextChargeDate) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: tenantId, customerId, amount, billingCycle, nextChargeDate' 
+        });
+      }
+
+      const subscription = await storage.createSubscription(req.body);
+      res.status(201).json(subscription);
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      res.status(500).json({ error: 'Failed to create subscription' });
+    }
+  }));
+
+  app.put('/api/subscriptions/:id', asyncHandler(async (req, res) => {
+    try {
+      const subscription = await storage.updateSubscription(req.params.id, req.body);
+      if (!subscription) {
+        return res.status(404).json({ error: 'Subscription not found' });
+      }
+      res.json(subscription);
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+      res.status(500).json({ error: 'Failed to update subscription' });
+    }
+  }));
+
+  app.delete('/api/subscriptions/:id', asyncHandler(async (req, res) => {
+    try {
+      const deleted = await storage.deleteSubscription(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Subscription not found' });
+      }
+      res.json({ success: true, message: 'Subscription deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting subscription:', error);
+      res.status(500).json({ error: 'Failed to delete subscription' });
+    }
+  }));
+
+  // Payment Logs Routes
+  app.get('/api/payment-logs', asyncHandler(async (req, res) => {
+    const { subscriptionId, tenantId } = req.query as { subscriptionId?: string; tenantId?: string };
+    try {
+      const logs = await storage.getPaymentLogs(subscriptionId, tenantId);
+      res.json(logs);
+    } catch (error) {
+      console.error('Error fetching payment logs:', error);
+      res.status(500).json({ error: 'Failed to fetch payment logs' });
+    }
+  }));
+
+  app.get('/api/subscriptions/:id/payment-logs', asyncHandler(async (req, res) => {
+    try {
+      const logs = await storage.getPaymentLogsBySubscription(req.params.id);
+      res.json(logs);
+    } catch (error) {
+      console.error('Error fetching subscription payment logs:', error);
+      res.status(500).json({ error: 'Failed to fetch subscription payment logs' });
+    }
+  }));
+
+  app.get('/api/tenants/:id/daily-failures', asyncHandler(async (req, res) => {
+    const { date } = req.query;
+    const failureDate = date ? new Date(date as string) : new Date();
+    
+    try {
+      const failures = await storage.getDailyPaymentFailures(req.params.id, failureDate);
+      res.json({
+        date: failureDate.toISOString().split('T')[0],
+        failureCount: failures.length,
+        totalFailureAmount: failures.reduce((sum, log) => sum + log.amount, 0),
+        failures: failures
+      });
+    } catch (error) {
+      console.error('Error fetching daily payment failures:', error);
+      res.status(500).json({ error: 'Failed to fetch daily payment failures' });
+    }
+  }));
+
+  app.post('/api/payment-logs', asyncHandler(async (req, res) => {
+    try {
+      const log = await storage.createPaymentLog(req.body);
+      res.status(201).json(log);
+    } catch (error) {
+      console.error('Error creating payment log:', error);
+      res.status(500).json({ error: 'Failed to create payment log' });
+    }
+  }));
+
+  // Notification Logs Routes
+  app.get('/api/tenants/:id/notifications', asyncHandler(async (req, res) => {
+    try {
+      const notifications = await storage.getNotificationLogs(req.params.id);
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+  }));
+
+  app.post('/api/notifications', asyncHandler(async (req, res) => {
+    try {
+      const notification = await storage.createNotificationLog(req.body);
+      res.status(201).json(notification);
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      res.status(500).json({ error: 'Failed to create notification' });
+    }
+  }));
+
+  // ==================== RECURRING PAYMENT PROCESSING ROUTES ====================
+
+  // Import the recurring payment processor
+  const { RecurringPaymentProcessor } = await import('./services/RecurringPaymentProcessor');
+
+  // Manual trigger for processing all due recurring payments
+  app.post('/api/recurring-payments/process', asyncHandler(async (req, res) => {
+    const { dryRun = false, tenantId } = req.body;
+    
+    try {
+      const processor = new RecurringPaymentProcessor({ dryRun });
+      let results;
+
+      if (tenantId) {
+        results = await processor.processTenantSubscriptions(tenantId);
+      } else {
+        results = await processor.processAllDueSubscriptions();
+      }
+
+      res.json({
+        success: true,
+        message: 'Recurring payment processing completed',
+        results
+      });
+    } catch (error) {
+      console.error('Error in recurring payment processing:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to process recurring payments',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }));
+
+  // Get processing status/history
+  app.get('/api/recurring-payments/status', asyncHandler(async (req, res) => {
+    const { tenantId, date } = req.query;
+    const targetDate = date ? new Date(date as string) : new Date();
+
+    try {
+      if (tenantId) {
+        // Get daily processing results for a specific tenant
+        const failures = await storage.getDailyPaymentFailures(tenantId as string, targetDate);
+        const allLogs = await storage.getPaymentLogs(undefined, tenantId as string);
+        
+        // Filter logs for the target date
+        const dailyLogs = allLogs.filter(log => {
+          const logDate = new Date(log.attemptedAt);
+          return logDate.toDateString() === targetDate.toDateString();
+        });
+
+        const successful = dailyLogs.filter(log => log.status === 'success').length;
+        const failed = failures.length;
+        const totalAmount = dailyLogs
+          .filter(log => log.status === 'success')
+          .reduce((sum, log) => sum + log.amount, 0);
+
+        res.json({
+          date: targetDate.toISOString().split('T')[0],
+          tenantId,
+          summary: {
+            successful,
+            failed,
+            totalProcessed: successful + failed,
+            totalAmount: totalAmount
+          },
+          failures: failures.map(f => ({
+            subscriptionId: f.subscriptionId,
+            customerId: f.customerId,
+            amount: f.amount,
+            reason: f.failureReason,
+            attemptNumber: f.attemptNumber
+          }))
+        });
+      } else {
+        // Get system-wide status
+        const allLogs = await storage.getPaymentLogs();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const todayLogs = allLogs.filter(log => {
+          const logDate = new Date(log.attemptedAt);
+          logDate.setHours(0, 0, 0, 0);
+          return logDate.getTime() === today.getTime();
+        });
+
+        const successful = todayLogs.filter(log => log.status === 'success').length;
+        const failed = todayLogs.filter(log => log.status === 'failed').length;
+
+        res.json({
+          date: today.toISOString().split('T')[0],
+          summary: {
+            successful,
+            failed,
+            totalProcessed: successful + failed,
+            totalAmount: todayLogs
+              .filter(log => log.status === 'success')
+              .reduce((sum, log) => sum + log.amount, 0)
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching processing status:', error);
+      res.status(500).json({ error: 'Failed to fetch processing status' });
+    }
+  }));
+
+  // Test endpoint for dry run processing
+  app.post('/api/recurring-payments/dry-run', asyncHandler(async (req, res) => {
+    try {
+      const processor = new RecurringPaymentProcessor({ dryRun: true });
+      const results = await processor.processAllDueSubscriptions();
+
+      res.json({
+        success: true,
+        message: 'Dry run completed - no actual payments processed',
+        results: {
+          ...results,
+          dryRun: true
+        }
+      });
+    } catch (error) {
+      console.error('Error in dry run processing:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to run dry run processing'
+      });
+    }
+  }));
+
+  // ==================== END RECURRING PAYMENT PROCESSING ROUTES ====================
+
   // Create HTTP server but don't start listening (index.ts will handle that)
   const server = createServer(app);
   return server;

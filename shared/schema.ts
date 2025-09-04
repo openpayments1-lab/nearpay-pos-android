@@ -316,3 +316,169 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
     references: [customerProfiles.id],
   }),
 }));
+
+// Tenants table for multi-tenant support
+export const tenants = pgTable("tenants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  email: varchar("email").unique().notNull(),
+  companyName: varchar("company_name"),
+  
+  // Billing preferences
+  defaultBillingCycle: varchar("default_billing_cycle").default("monthly"), // daily, weekly, monthly
+  defaultBillingDay: integer("default_billing_day").default(1), // Day of month for monthly billing
+  gracePeriorDays: integer("grace_period_days").default(7),
+  maxRetryAttempts: integer("max_retry_attempts").default(3),
+  
+  // Notification settings
+  emailNotifications: boolean("email_notifications").default(true),
+  smsNotifications: boolean("sms_notifications").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  status: varchar("status").default("active"), // active, suspended, cancelled
+});
+
+// Subscriptions table for individual customer recurring payments
+export const subscriptions = pgTable("subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id).notNull(),
+  customerId: varchar("customer_id").references(() => customerProfiles.id).notNull(),
+  
+  // Billing configuration
+  amount: integer("amount").notNull(), // Amount in cents
+  billingCycle: varchar("billing_cycle").notNull(), // daily, weekly, monthly
+  billingDay: integer("billing_day"), // Day of month/week for billing
+  
+  // Status and scheduling
+  status: varchar("status").default("active"), // active, paused, cancelled, failed
+  nextChargeDate: timestamp("next_charge_date").notNull(),
+  lastChargeDate: timestamp("last_charge_date"),
+  
+  // Retry logic
+  failedAttempts: integer("failed_attempts").default(0),
+  lastFailureReason: text("last_failure_reason"),
+  
+  // Metadata
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Payment logs for tracking all recurring payment attempts
+export const paymentLogs = pgTable("payment_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  subscriptionId: varchar("subscription_id").references(() => subscriptions.id).notNull(),
+  tenantId: varchar("tenant_id").references(() => tenants.id).notNull(),
+  customerId: varchar("customer_id").references(() => customerProfiles.id).notNull(),
+  
+  // Payment details
+  amount: integer("amount").notNull(),
+  attemptNumber: integer("attempt_number").default(1),
+  status: varchar("status").notNull(), // success, failed, retrying
+  
+  // Response data
+  transactionId: varchar("transaction_id"),
+  authCode: varchar("auth_code"),
+  failureReason: text("failure_reason"),
+  rawResponse: jsonb("raw_response"),
+  
+  // Timing
+  attemptedAt: timestamp("attempted_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+});
+
+// Notification logs for tracking alerts sent
+export const notificationLogs = pgTable("notification_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id).notNull(),
+  
+  // Notification details
+  type: varchar("type").notNull(), // payment_failed, daily_digest, card_expiring
+  channel: varchar("channel").notNull(), // email, sms, dashboard
+  recipient: varchar("recipient").notNull(),
+  subject: text("subject"),
+  content: text("content"),
+  
+  // Status
+  status: varchar("status").default("pending"), // pending, sent, failed
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  
+  // Metadata
+  relatedId: varchar("related_id"), // subscription_id or customer_id
+  metadata: jsonb("metadata"),
+});
+
+// Schema types for the new tables
+export const insertTenantSchema = createInsertSchema(tenants).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPaymentLogSchema = createInsertSchema(paymentLogs).omit({
+  id: true,
+  attemptedAt: true,
+});
+
+export const insertNotificationLogSchema = createInsertSchema(notificationLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Tenant = typeof tenants.$inferSelect;
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type PaymentLog = typeof paymentLogs.$inferSelect;
+export type InsertPaymentLog = z.infer<typeof insertPaymentLogSchema>;
+export type NotificationLog = typeof notificationLogs.$inferSelect;
+export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
+
+// Relations for the new tables
+export const tenantsRelations = relations(tenants, ({ many }) => ({
+  subscriptions: many(subscriptions),
+  paymentLogs: many(paymentLogs),
+  notificationLogs: many(notificationLogs),
+}));
+
+export const subscriptionsRelations = relations(subscriptions, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [subscriptions.tenantId],
+    references: [tenants.id],
+  }),
+  customer: one(customerProfiles, {
+    fields: [subscriptions.customerId],
+    references: [customerProfiles.id],
+  }),
+  paymentLogs: many(paymentLogs),
+}));
+
+export const paymentLogsRelations = relations(paymentLogs, ({ one }) => ({
+  subscription: one(subscriptions, {
+    fields: [paymentLogs.subscriptionId],
+    references: [subscriptions.id],
+  }),
+  tenant: one(tenants, {
+    fields: [paymentLogs.tenantId],
+    references: [tenants.id],
+  }),
+  customer: one(customerProfiles, {
+    fields: [paymentLogs.customerId],
+    references: [customerProfiles.id],
+  }),
+}));
+
+export const notificationLogsRelations = relations(notificationLogs, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [notificationLogs.tenantId],
+    references: [tenants.id],
+  }),
+}));
