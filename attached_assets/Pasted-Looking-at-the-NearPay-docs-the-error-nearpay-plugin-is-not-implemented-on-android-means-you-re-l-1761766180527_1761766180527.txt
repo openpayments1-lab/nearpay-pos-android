@@ -1,0 +1,529 @@
+Looking at the NearPay docs, the error "nearpay plugin is not implemented on android" means you're likely trying to use a Flutter/React Native plugin that hasn't been properly configured for Android. Let me help you fix this.
+Solution: Proper NearPay Android Integration
+NearPay provides native Android SDK, not just a plugin. Here's how to properly integrate it:
+
+Option 1: Native Android Integration (Recommended)
+Step 1: Add NearPay SDK to Android Project
+File: android/app/build.gradle
+gradleandroid {
+    compileSdkVersion 33
+    
+    defaultConfig {
+        minSdkVersion 21  // NearPay requires API 21+
+        targetSdkVersion 33
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    // Add NearPay SDK
+    implementation 'io.nearpay:nearpay-sdk:2.1.18' // Check docs for latest version
+    
+    // Required dependencies
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.code.gson:gson:2.10.1'
+}
+Step 2: Add Permissions
+File: android/app/src/main/AndroidManifest.xml
+xml<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- NearPay Required Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <application
+        android:label="YourApp"
+        android:icon="@mipmap/ic_launcher">
+        
+        <!-- Your activities here -->
+        
+    </application>
+</manifest>
+Step 3: Initialize NearPay SDK
+File: android/app/src/main/java/com/yourapp/MainActivity.java (or .kt for Kotlin)
+javapackage com.yourapp;
+
+import android.os.Bundle;
+import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.MethodChannel;
+
+import io.nearpay.sdk.Environments;
+import io.nearpay.sdk.NearPay;
+import io.nearpay.sdk.data.models.AuthenticationData;
+import io.nearpay.sdk.utils.enums.AuthenticationType;
+
+public class MainActivity extends FlutterActivity {
+    private static final String CHANNEL = "nearpay";
+    private NearPay nearPay;
+
+    @Override
+    public void configureFlutterEngine(FlutterEngine flutterEngine) {
+        super.configureFlutterEngine(flutterEngine);
+        
+        // Initialize NearPay
+        AuthenticationData authData = new AuthenticationData(
+            "your_auth_type", // From NearPay dashboard
+            "your_auth_value", // From NearPay dashboard
+            Environments.SANDBOX // Use PRODUCTION for live
+        );
+        
+        nearPay = new NearPay(
+            this,
+            authData,
+            Environments.SANDBOX,
+            "en" // Language: "en" or "ar"
+        );
+
+        // Create Method Channel for Flutter/React Native
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
+            .setMethodCallHandler((call, result) -> {
+                if (call.method.equals("purchase")) {
+                    double amount = call.argument("amount");
+                    String reference = call.argument("reference");
+                    
+                    makePurchase(amount, reference, result);
+                } else if (call.method.equals("initialize")) {
+                    initializeNearPay(result);
+                } else {
+                    result.notImplemented();
+                }
+            });
+    }
+
+    private void initializeNearPay(MethodChannel.Result result) {
+        nearPay.initialize(
+            isSuccess -> {
+                if (isSuccess) {
+                    result.success("NearPay initialized successfully");
+                } else {
+                    result.error("INIT_FAILED", "Failed to initialize NearPay", null);
+                }
+            }
+        );
+    }
+
+    private void makePurchase(double amount, String reference, MethodChannel.Result result) {
+        nearPay.purchase(
+            amount,
+            reference,
+            (transactionData, status) -> {
+                if (status.isSuccess()) {
+                    result.success(transactionData.toString());
+                } else {
+                    result.error("PURCHASE_FAILED", status.getMessage(), null);
+                }
+            }
+        );
+    }
+}
+
+Option 2: React Native Bridge Implementation
+If you're using React Native, create a native module:
+File: android/app/src/main/java/com/yourapp/NearPayModule.java
+javapackage com.yourapp;
+
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.Arguments;
+
+import io.nearpay.sdk.Environments;
+import io.nearpay.sdk.NearPay;
+import io.nearpay.sdk.data.models.AuthenticationData;
+
+public class NearPayModule extends ReactContextBaseJavaModule {
+    private NearPay nearPay;
+
+    NearPayModule(ReactApplicationContext context) {
+        super(context);
+    }
+
+    @Override
+    public String getName() {
+        return "NearPayModule";
+    }
+
+    @ReactMethod
+    public void initialize(String authType, String authValue, Promise promise) {
+        try {
+            AuthenticationData authData = new AuthenticationData(
+                authType,
+                authValue,
+                Environments.SANDBOX
+            );
+            
+            nearPay = new NearPay(
+                getCurrentActivity(),
+                authData,
+                Environments.SANDBOX,
+                "en"
+            );
+
+            nearPay.initialize(isSuccess -> {
+                if (isSuccess) {
+                    promise.resolve("Initialized successfully");
+                } else {
+                    promise.reject("INIT_ERROR", "Failed to initialize NearPay");
+                }
+            });
+        } catch (Exception e) {
+            promise.reject("INIT_ERROR", e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void purchase(double amount, String reference, Promise promise) {
+        if (nearPay == null) {
+            promise.reject("NOT_INITIALIZED", "NearPay not initialized");
+            return;
+        }
+
+        nearPay.purchase(amount, reference, (transactionData, status) -> {
+            if (status.isSuccess()) {
+                WritableMap result = Arguments.createMap();
+                result.putString("transactionId", transactionData.getTransactionUUID());
+                result.putDouble("amount", transactionData.getAmount());
+                result.putString("status", "SUCCESS");
+                promise.resolve(result);
+            } else {
+                promise.reject("PURCHASE_FAILED", status.getMessage());
+            }
+        });
+    }
+
+    @ReactMethod
+    public void refund(String transactionId, double amount, Promise promise) {
+        if (nearPay == null) {
+            promise.reject("NOT_INITIALIZED", "NearPay not initialized");
+            return;
+        }
+
+        nearPay.refund(transactionId, amount, (transactionData, status) -> {
+            if (status.isSuccess()) {
+                promise.resolve("Refund successful");
+            } else {
+                promise.reject("REFUND_FAILED", status.getMessage());
+            }
+        });
+    }
+}
+Register the Module:
+File: android/app/src/main/java/com/yourapp/NearPayPackage.java
+javapackage com.yourapp;
+
+import com.facebook.react.ReactPackage;
+import com.facebook.react.bridge.NativeModule;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.uimanager.ViewManager;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class NearPayPackage implements ReactPackage {
+    @Override
+    public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
+        List<NativeModule> modules = new ArrayList<>();
+        modules.add(new NearPayModule(reactContext));
+        return modules;
+    }
+}
+Register in MainApplication:
+File: android/app/src/main/java/com/yourapp/MainApplication.java
+java@Override
+protected List<ReactPackage> getPackages() {
+    @SuppressWarnings("UnnecessaryLocalVariable")
+    List<ReactPackage> packages = new PackageList(this).getPackages();
+    packages.add(new NearPayPackage()); // Add this line
+    return packages;
+}
+
+Option 3: Use JavaScript/TypeScript Interface
+JavaScript Usage (React Native):
+javascriptimport { NativeModules } from 'react-native';
+const { NearPayModule } = NativeModules;
+
+// Initialize NearPay
+const initializeNearPay = async () => {
+  try {
+    const result = await NearPayModule.initialize(
+      'JWT', // or 'EMAIL_PASSWORD'
+      'your_auth_value'
+    );
+    console.log('✅ NearPay initialized:', result);
+  } catch (error) {
+    console.error('❌ Initialization failed:', error);
+  }
+};
+
+// Make a purchase
+const makePurchase = async (amount, reference) => {
+  try {
+    const result = await NearPayModule.purchase(amount, reference);
+    console.log('✅ Purchase successful:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Purchase failed:', error);
+    throw error;
+  }
+};
+
+// Process refund
+const processRefund = async (transactionId, amount) => {
+  try {
+    const result = await NearPayModule.refund(transactionId, amount);
+    console.log('✅ Refund successful:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Refund failed:', error);
+    throw error;
+  }
+};
+
+// Example usage
+export default function PaymentScreen() {
+  useEffect(() => {
+    initializeNearPay();
+  }, []);
+
+  const handlePayment = async () => {
+    try {
+      const result = await makePurchase(
+        50.00, // Amount in your currency
+        'ORDER-12345' // Your reference number
+      );
+      
+      Alert.alert('Success', `Payment processed: ${result.transactionId}`);
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    }
+  };
+
+  return (
+    <View>
+      <Button title="Pay $50" onPress={handlePayment} />
+    </View>
+  );
+}
+
+Option 4: Flutter Integration (If using Flutter)
+pubspec.yaml:
+yamldependencies:
+  flutter:
+    sdk: flutter
+  nearpay_flutter: ^1.0.0  # Check for latest version
+Dart Code:
+dartimport 'package:nearpay_flutter/nearpay_flutter.dart';
+
+class PaymentService {
+  final NearPay _nearPay = NearPay();
+
+  Future<void> initialize() async {
+    try {
+      await _nearPay.initialize(
+        authType: AuthType.JWT,
+        authValue: 'your_jwt_token',
+        environment: Environment.SANDBOX,
+        locale: 'en',
+      );
+      print('✅ NearPay initialized');
+    } catch (e) {
+      print('❌ Initialization failed: $e');
+    }
+  }
+
+  Future<TransactionData?> purchase(double amount, String reference) async {
+    try {
+      final result = await _nearPay.purchase(
+        amount: amount,
+        customerReferenceNumber: reference,
+      );
+      
+      print('✅ Purchase successful: ${result.transactionUUID}');
+      return result;
+    } catch (e) {
+      print('❌ Purchase failed: $e');
+      return null;
+    }
+  }
+}
+
+// Usage in widget
+class PaymentScreen extends StatefulWidget {
+  @override
+  _PaymentScreenState createState() => _PaymentScreenState();
+}
+
+class _PaymentScreenState extends State<PaymentScreen> {
+  final PaymentService _paymentService = PaymentService();
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentService.initialize();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: ElevatedButton(
+          child: Text('Pay \$50'),
+          onPressed: () async {
+            final result = await _paymentService.purchase(50.0, 'ORDER-123');
+            if (result != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Payment successful!')),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+Common Issues & Solutions
+Issue 1: "plugin is not implemented on android"
+✅ Solution: You're missing the native module registration. Make sure:
+
+NearPayModule is created
+NearPayPackage is created
+Package is added to MainApplication.java
+Run cd android && ./gradlew clean
+Rebuild: npx react-native run-android
+
+Issue 2: SDK not found
+✅ Solution: Add NearPay Maven repository:
+File: android/build.gradle
+gradleallprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' } // Add this
+        maven { url 'https://maven.nearpay.io/repository/maven-public/' } // NearPay repo
+    }
+}
+Issue 3: Bluetooth permissions not working
+✅ Solution: Request runtime permissions:
+javaimport androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.Manifest;
+
+private void requestPermissions() {
+    String[] permissions = {
+        Manifest.permission.BLUETOOTH,
+        Manifest.permission.BLUETOOTH_ADMIN,
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_SCAN,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    };
+    
+    ActivityCompat.requestPermissions(this, permissions, 1);
+}
+Issue 4: Authentication failed
+✅ Solution: Get correct credentials from NearPay dashboard:
+java// JWT Authentication
+AuthenticationData authData = new AuthenticationData(
+    AuthenticationType.JWT,
+    "your_jwt_token_from_dashboard",
+    Environments.SANDBOX
+);
+
+// OR Email/Password
+AuthenticationData authData = new AuthenticationData(
+    AuthenticationType.EMAIL,
+    "email:password", // Format: "email:password"
+    Environments.SANDBOX
+);
+
+Complete Working Example
+Create: PaymentManager.java
+javapackage com.yourapp;
+
+import android.app.Activity;
+import io.nearpay.sdk.Environments;
+import io.nearpay.sdk.NearPay;
+import io.nearpay.sdk.data.models.AuthenticationData;
+import io.nearpay.sdk.utils.enums.AuthenticationType;
+
+public class PaymentManager {
+    private static PaymentManager instance;
+    private NearPay nearPay;
+    private boolean isInitialized = false;
+
+    private PaymentManager() {}
+
+    public static PaymentManager getInstance() {
+        if (instance == null) {
+            instance = new PaymentManager();
+        }
+        return instance;
+    }
+
+    public void initialize(Activity activity, String authValue, Callback callback) {
+        AuthenticationData authData = new AuthenticationData(
+            AuthenticationType.JWT,
+            authValue,
+            Environments.SANDBOX
+        );
+
+        nearPay = new NearPay(activity, authData, Environments.SANDBOX, "en");
+        
+        nearPay.initialize(isSuccess -> {
+            isInitialized = isSuccess;
+            callback.onResult(isSuccess);
+        });
+    }
+
+    public void purchase(double amount, String reference, TransactionCallback callback) {
+        if (!isInitialized) {
+            callback.onError("NearPay not initialized");
+            return;
+        }
+
+        nearPay.purchase(amount, reference, (transactionData, status) -> {
+            if (status.isSuccess()) {
+                callback.onSuccess(transactionData);
+            } else {
+                callback.onError(status.getMessage());
+            }
+        });
+    }
+
+    public interface Callback {
+        void onResult(boolean success);
+    }
+
+    public interface TransactionCallback {
+        void onSuccess(Object transactionData);
+        void onError(String error);
+    }
+}
+
+Testing Checklist
+✅ SDK added to build.gradle
+✅ Permissions in AndroidManifest.xml
+✅ Native module created and registered
+✅ Clean build: cd android && ./gradlew clean
+✅ Rebuild app: npx react-native run-android or flutter run
+✅ Test in sandbox mode first
+✅ Check logs: adb logcat | grep NearPay
