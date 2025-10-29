@@ -62,9 +62,8 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
     
-    // NearPay SDK for NFC payments
-    // NOTE: Using stub classes for now. Replace with real SDK when available:
-    // implementation "io.nearpay:nearpay-sdk-store:2.1.91"
+    // NearPay SDK for NFC Tap to Pay on Phone
+    implementation 'io.nearpay:nearpay-sdk-store:2.1.94'
 }
 
 apply from: 'capacitor.build.gradle'
