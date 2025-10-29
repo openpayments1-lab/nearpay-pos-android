@@ -1,24 +1,55 @@
-# Cash Register Application with Dejavoo SPIN Integration
+# NearPay POS Android Application
 
 ## Project Overview
-A robust payment processing application integrating Dejavoo SPIN credit card terminal with advanced transaction management capabilities, designed for seamless and intelligent financial transactions.
+A mobile point-of-sale application built with Capacitor and NearPay.io for accepting NFC contactless payments on Android devices. Designed for seamless tap-to-pay transactions with comprehensive transaction tracking.
 
 ### Core Features
-- TypeScript React frontend with comprehensive UI interactions
-- Node.js backend with Dejavoo SPIN API integration
+- NFC payment processing via NearPay SDK
+- Native Android application built with Capacitor
+- TypeScript React frontend with modern UI
+- Node.js backend for transaction persistence
 - PostgreSQL database managed through Drizzle ORM
-- Advanced transaction processing workflows
-- Intelligent error validation and API request management
-- Enhanced refund and terminal configuration functionality
+- GitHub Actions CI/CD for automated APK builds
+- SSL/TLS certificate management for secure NearPay communication
 
 ## Architecture
+- **Mobile Platform**: Android (Capacitor)
 - **Frontend**: React + TypeScript with shadcn/ui components
 - **Backend**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
-- **Payment Integration**: Dejavoo SPIN REST API
-- **State Management**: React Context API
+- **Payment Integration**: NearPay SDK (v2.1.91)
+- **Build System**: Gradle + GitHub Actions
 
 ## Recent Changes (January 2025)
+
+### Complete Platform Migration to NearPay
+- **Date**: January 29, 2025
+- **Change**: Migrated from Dejavoo terminal integration to NearPay mobile NFC payments
+- **Details**:
+  - **Removed**: All Dejavoo SPIN API integration code
+  - **Removed**: iPOS recurring payment system and customer management
+  - **Removed**: Terminal configuration and complex payment flows
+  - **Added**: Capacitor Android platform with NearPay SDK integration
+  - **Added**: Native Android plugin (NearPayPlugin.java) for NFC payments
+  - **Added**: TypeScript bridge for NearPay functionality
+  - **Simplified**: Database schema to basic transactions only
+  - **Simplified**: UI to streamlined payment flow: amount → pay button → NFC tap
+  - **Added**: GitHub Actions workflow for automated APK building
+  - **Added**: SSL/TLS certificate generation and management system
+
+### SSL/TLS Certificate Management System
+- **Date**: January 29, 2025
+- **Change**: Implemented comprehensive certificate management for NearPay integration
+- **Details**:
+  - **Certificate Script**: Created `scripts/generate-keystore.sh` for automated keystore and PEM generation
+  - **Documentation**: Added `INFRA.md` with complete certificate management guide
+  - **Security**: Updated `.gitignore` to protect keystores and certificates
+  - **Separation**: Distinct sandbox and production certificate workflows
+  - **Integration**: Certificates required for NearPay API authentication
+  - **Process**: Generate keystore → Extract PEM → Send to NearPay → Configure app signing
+  - **Note**: Script requires Java JDK, run locally (not in Replit web environment)
+
+## Previous Changes (January 2025)
 
 ### iPOS Auth Token System Configuration
 - **Date**: January 29, 2025
@@ -102,34 +133,67 @@ A robust payment processing application integrating Dejavoo SPIN credit card ter
 - **Communication**: Direct and technical explanations preferred
 - **Code Style**: TypeScript with comprehensive error handling
 - **API Integration**: Focus on authentic data sources, no mock data
-- **Terminal Integration**: Cloud-based SPIN API preferred over direct IP communication
+- **Mobile Platform**: Native Android app with NFC payment capability
 
 ## Key Technical Details
 
-### Terminal Configuration
-- **Required Fields**: Terminal ID (TPN), API Key (Auth Key)
-- **Optional Fields**: Terminal IP (not used for SPIN API)
-- **API Endpoints**: Uses Dejavoo cloud service URLs
-- **Test Credentials**: z11invtest69 (TPN), JZiRUusizc (Auth Key)
+### NearPay Integration
+- **SDK Version**: v2.1.91
+- **Package Name**: io.nearpay.payment
+- **Authentication**: JWT token-based
+- **Environments**: Sandbox (testing) and Production (live payments)
+- **Payment Method**: NFC tap-to-pay contactless
+- **SDK Location**: NearPayPlugin.java (Android native)
+- **TypeScript Bridge**: client/src/lib/nearpay.ts
 
-### Payment Processing
-- **Sales**: Payment/Sale endpoint
-- **Refunds**: Payment/Return endpoint (independent operations)
-- **Voids**: Payment/Void endpoint
-- **Status**: Payment/Status endpoint for connection testing
+### SSL/TLS Certificates (REQUIRED)
+- **Purpose**: Secure communication with NearPay API
+- **Format**: PEM certificate extracted from Android keystore
+- **Sandbox**: `certs/nearpay-sandbox.keystore` and `certs/nearpay-sandbox-cert.pem`
+- **Production**: `certs/nearpay-production.keystore` and `certs/nearpay-production-cert.pem`
+- **Registration**: Send PEM to [email protected]
+- **Generation**: Run `./scripts/generate-keystore.sh [sandbox|production]`
+- **Requirements**: Java JDK with keytool command
+- **Security**: All cert files gitignored, never commit keystores
+
+### Android Build Configuration
+- **Platform**: Capacitor 7.x
+- **Minimum SDK**: 21 (Android 5.0)
+- **Target SDK**: 34 (Android 14)
+- **Build System**: Gradle
+- **Signing**: Configured with sandbox/production keystores
+- **APK Output**: `android/app/build/outputs/apk/`
+
+### Payment Processing Flow
+1. User enters amount in UI
+2. Taps "Pay with Card" button
+3. NearPay SDK initializes with JWT token
+4. Customer taps NFC card on device
+5. Payment processed through NearPay
+6. Transaction saved to database
+7. Success/error status displayed
 
 ### Database Schema
-- **Users**: Authentication and user management
-- **Transactions**: Payment history and details
-- **Settings**: Terminal configuration storage
-- **Card Details**: Secure card information storage
+- **Transactions**: Payment history with status, amount, card details
+- Simplified schema: No customer profiles, subscriptions, or recurring payments
+- Fields: id, amount, status, dateTime, transactionId, cardDetails, errorMessage
+
+### CI/CD Pipeline
+- **Platform**: GitHub Actions
+- **Workflow**: `.github/workflows/build-apk.yml`
+- **Triggers**: Push to main, pull requests, manual dispatch
+- **Process**: Install deps → Build web → Sync Capacitor → Build APK → Upload artifact
+- **Releases**: Automatic GitHub releases on main branch pushes
+- **Artifacts**: APK available for 30 days
 
 ## Current Status
-- Application running successfully on port 5000
-- Terminal configuration UI functional
-- Refund functionality implemented and testable
-- Database integration working with PostgreSQL
-- Real-time transaction processing active
-- iPOS Transact V3 API integration successfully configured for production
-- TPN validation resolved - now using correct production TPN 224725575584
-- Card token validation issue identified - requires production token capture
+- ✅ Capacitor Android platform configured
+- ✅ NearPay SDK integrated with native plugin
+- ✅ Frontend simplified to basic payment flow
+- ✅ Backend API endpoints for transactions
+- ✅ Database schema simplified and working
+- ✅ GitHub Actions workflow for APK builds
+- ✅ Certificate generation system implemented
+- ⚠️ Requires: Certificate registration with NearPay
+- ⚠️ Requires: JWT authentication token from NearPay
+- ⚠️ Requires: Java JDK for local certificate generation

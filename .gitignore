@@ -4,3 +4,16 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# NearPay Certificates & Keystores (CRITICAL: Never commit!)
+certs/
+*.keystore
+*.pem
+*.jks
+*.p12
+*-details.txt
+
+# Android signing
+android/app/nearpay.keystore
+android/app/*.keystore
+android/app/*.jks

@@ -83,7 +83,28 @@ The app will be available at `http://localhost:5000`
    npx cap open android
    ```
 
-4. **Configure NearPay Authentication**
+4. **Generate SSL/TLS Certificates**
+   
+   NearPay requires a PEM certificate from your app signing keystore:
+   
+   ```bash
+   # Generate keystore and certificate for sandbox testing
+   chmod +x scripts/generate-keystore.sh
+   ./scripts/generate-keystore.sh sandbox
+   ```
+   
+   This creates:
+   - `certs/nearpay-sandbox.keystore` - For app signing
+   - `certs/nearpay-sandbox-cert.pem` - Send to NearPay
+   
+   **Send PEM certificate to NearPay:**
+   - Email: [email protected]
+   - Attach: `certs/nearpay-sandbox-cert.pem`
+   - Include: Package name `io.nearpay.payment` and environment "Sandbox"
+   
+   📖 **See INFRA.md for detailed certificate management**
+
+5. **Configure NearPay Authentication**
    - Open `client/src/pages/CashRegister.tsx`
    - Replace `YOUR_JWT_TOKEN_HERE` with your actual NearPay JWT token
    ```typescript
@@ -93,7 +114,29 @@ The app will be available at `http://localhost:5000`
    });
    ```
 
-5. **Build APK in Android Studio**
+6. **Configure App Signing**
+   
+   Edit `android/app/build.gradle` to add signing configuration:
+   
+   ```groovy
+   android {
+       signingConfigs {
+           debug {
+               storeFile file("../../certs/nearpay-sandbox.keystore")
+               storePassword "nearpaysandbox2025"
+               keyAlias "nearpay-sandbox-key"
+               keyPassword "nearpaysandbox2025"
+           }
+       }
+       buildTypes {
+           debug {
+               signingConfig signingConfigs.debug
+           }
+       }
+   }
+   ```
+
+7. **Build APK in Android Studio**
    - In Android Studio, select **Build > Build Bundle(s) / APK(s) > Build APK(s)**
    - The APK will be generated in `android/app/build/outputs/apk/debug/`
 
@@ -105,6 +148,78 @@ cd android
 ```
 
 The APK will be at: `android/app/build/outputs/apk/debug/app-debug.apk`
+
+## 🔐 SSL/TLS Certificate Setup (REQUIRED)
+
+Before your app can communicate with NearPay, you must generate and register SSL certificates.
+
+⚠️ **Note:** This requires Java JDK installed locally. **Run on your computer, not in Replit web environment.**
+
+### Quick Setup
+
+```bash
+# 1. Install Java JDK (if not already installed)
+# macOS: brew install openjdk
+# Ubuntu: sudo apt install openjdk-17-jdk
+# Windows: Download from https://adoptium.net/
+
+# 2. Clone repository locally
+git clone <your-repo-url>
+cd <repo-name>
+
+# 3. Generate keystore and certificate
+./scripts/generate-keystore.sh sandbox
+
+# 4. Send PEM certificate to NearPay
+# Email: [email protected]
+# Attach: certs/nearpay-sandbox-cert.pem
+# Include: Package name (io.nearpay.payment) and environment (Sandbox)
+
+# 5. Wait for NearPay confirmation
+# They will register your certificate in their system
+```
+
+### What Gets Generated
+
+- `certs/nearpay-sandbox.keystore` - Android app signing keystore
+- `certs/nearpay-sandbox-cert.pem` - PEM certificate for NearPay
+- `certs/nearpay-sandbox-details.txt` - Keystore passwords and details
+
+### Certificate Registration Steps
+
+1. **Generate Certificate**
+   ```bash
+   ./scripts/generate-keystore.sh sandbox
+   ```
+
+2. **Email to NearPay**
+   - **To:** [email protected]
+   - **Subject:** PEM Certificate - io.nearpay.payment (Sandbox)
+   - **Attach:** `certs/nearpay-sandbox-cert.pem`
+   - **Body:**
+     ```
+     Hello,
+     
+     Please register the attached PEM certificate for our NearPay integration.
+     
+     Package Name: io.nearpay.payment
+     Environment: Sandbox
+     Company: [Your Company Name]
+     Contact: [Your Email]
+     
+     Thank you!
+     ```
+
+3. **Wait for Confirmation**
+   - NearPay will confirm certificate registration
+   - Usually takes 1-2 business days
+
+4. **For Production**
+   - Repeat process with `./scripts/generate-keystore.sh production`
+   - Send production certificate separately
+   - Production requires additional approval
+
+📖 **Complete certificate guide:** [INFRA.md](INFRA.md)
 
 ## Building APK with GitHub Actions
 
@@ -255,10 +370,24 @@ environment: 'production'
 
 ## Security Notes
 
+### Certificates & Keystores
+- **NEVER commit certificates or keystores to git** (already in .gitignore)
+- Store keystore passwords securely in a password manager
+- Use separate keystores for sandbox and production
+- Backup keystores in secure, encrypted location
+- See [INFRA.md](INFRA.md) for complete certificate security guide
+
+### API Keys & Tokens
 - Never commit JWT tokens or API keys to version control
 - Use environment variables for sensitive configuration
+- Rotate credentials annually
+- Use GitHub Secrets for CI/CD builds
+
+### General
 - Always use HTTPS for production deployments
 - Implement proper authentication for production apps
+- Monitor and log all payment transactions
+- Follow PCI-DSS guidelines for payment processing
 
 ## Support
 
