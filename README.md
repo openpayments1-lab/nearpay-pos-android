@@ -157,6 +157,39 @@ Before your app can communicate with NearPay, you must generate and register SSL
 
 ### Quick Setup
 
+#### Option 1: Using GitHub Actions (Easiest - No Local Setup Required!)
+
+1. **Push your code to GitHub**
+   ```bash
+   git push origin main
+   ```
+
+2. **Generate certificates via GitHub Actions:**
+   - Go to your repository on GitHub
+   - Click **Actions** tab
+   - Select **Generate NearPay Certificates** workflow
+   - Click **Run workflow**
+   - Choose environment: **sandbox**
+   - Click **Run workflow** button
+
+3. **Download the certificates:**
+   - Wait for the workflow to complete (~30 seconds)
+   - Click on the workflow run
+   - Scroll to **Artifacts** section
+   - Download **nearpay-sandbox-certificates.zip**
+   - Extract the files
+
+4. **Send PEM to NearPay:**
+   - Email: [email protected]
+   - Attach: `nearpay-sandbox-cert.pem`
+   - Include: Package name `io.nearpay.payment` and environment "Sandbox"
+
+5. **Keep keystore safe:**
+   - Store `nearpay-sandbox.keystore` securely
+   - You'll need it to sign your app
+
+#### Option 2: Using Local Machine
+
 ```bash
 # 1. Install Java JDK (if not already installed)
 # macOS: brew install openjdk

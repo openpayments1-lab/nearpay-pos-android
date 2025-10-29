@@ -1,0 +1,55 @@
+name: Generate NearPay Certificates
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment (sandbox or production)'
+        required: true
+        default: 'sandbox'
+        type: choice
+        options:
+          - sandbox
+          - production
+
+jobs:
+  generate-certificates:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Generate certificates
+        run: |
+          chmod +x scripts/generate-keystore.sh
+          ./scripts/generate-keystore.sh ${{ github.event.inputs.environment }}
+
+      - name: Upload certificates as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nearpay-${{ github.event.inputs.environment }}-certificates
+          path: |
+            certs/nearpay-${{ github.event.inputs.environment }}.keystore
+            certs/nearpay-${{ github.event.inputs.environment }}-cert.pem
+            certs/nearpay-${{ github.event.inputs.environment }}-details.txt
+          retention-days: 7
+
+      - name: Display next steps
+        run: |
+          echo "✅ Certificates generated successfully!"
+          echo ""
+          echo "📋 Next Steps:"
+          echo "1. Download the artifacts from the Actions tab"
+          echo "2. Extract the files"
+          echo "3. Send nearpay-${{ github.event.inputs.environment }}-cert.pem to [email protected]"
+          echo "4. Include package name: io.nearpay.payment"
+          echo "5. Specify environment: ${{ github.event.inputs.environment }}"
+          echo ""
+          echo "⚠️  SECURITY: Keep the .keystore file safe! You need it to sign your app."

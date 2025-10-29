@@ -12,9 +12,46 @@ NearPay requires a PEM format certificate extracted from your Android app signin
 
 ## Quick Start
 
-### Prerequisites
+### Method 1: GitHub Actions (Recommended - No Local Setup!)
 
-Before generating certificates, ensure Java JDK is installed on your local machine:
+**Easiest way to generate certificates without installing anything locally.**
+
+1. **Push your code to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Add certificate generation"
+   git push origin main
+   ```
+
+2. **Run the certificate generation workflow:**
+   - Go to your GitHub repository
+   - Click **Actions** tab
+   - Select **Generate NearPay Certificates**
+   - Click **Run workflow** dropdown
+   - Select environment: `sandbox` or `production`
+   - Click **Run workflow** button
+
+3. **Download the certificates:**
+   - Wait ~30 seconds for completion
+   - Click on the completed workflow run
+   - Scroll to **Artifacts** section
+   - Download `nearpay-sandbox-certificates.zip` (or production)
+   - Extract the zip file
+
+4. **You'll get these files:**
+   - `nearpay-sandbox.keystore` - Keep this safe!
+   - `nearpay-sandbox-cert.pem` - Send to NearPay
+   - `nearpay-sandbox-details.txt` - Passwords and info
+
+✅ **Advantages:** No Java installation needed, works from anywhere, automated
+
+### Method 2: Local Machine
+
+**If you prefer to generate certificates locally.**
+
+#### Prerequisites
+
+Ensure Java JDK is installed on your local machine:
 
 **macOS:**
 ```bash
@@ -34,9 +71,7 @@ sudo apt install openjdk-17-jdk
 keytool -version
 ```
 
-### 1. Generate Certificates
-
-⚠️ **Run on your local machine** (not in Replit web environment - JDK not available there)
+#### Generate Certificates
 
 We provide separate certificates for sandbox and production environments:
 
