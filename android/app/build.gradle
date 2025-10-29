@@ -75,8 +75,9 @@ dependencies {
     // Kotlin standard library
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     
-    // NearPay SDK for NFC Tap to Pay on Phone
-    implementation 'io.nearpay:nearpay-sdk-store:2.1.94'
+    // NearPay SDK - Using stub classes until real SDK access granted
+    // TODO: Replace with real SDK when approved by NearPay
+    // implementation 'io.nearpay:nearpay-sdk-store:2.1.94'
 }
 
 apply from: 'capacitor.build.gradle'
