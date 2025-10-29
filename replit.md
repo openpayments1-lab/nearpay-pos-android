@@ -33,7 +33,11 @@ A mobile point-of-sale application built with Capacitor and NearPay.io for accep
     - `PurchaseListener` with `onPurchaseApproved()` and `onPurchaseFailed()` callbacks
     - `SetupListener` for SDK initialization
     - Amount conversion to minor units (14.55 SAR = 1455)
-  - **Build Configuration**: Added Kotlin plugin and kotlin-stdlib dependency
+  - **Build Configuration**: 
+    - Added Kotlin plugin (kotlin-android) and kotlin-stdlib dependency
+    - Kotlin version: 1.9.22
+    - Java compatibility: VERSION_17 (Kotlin doesn't support JVM target 21)
+    - GitHub Actions: Java 17 LTS (downgraded from 21)
   - **File**: `android/app/src/main/java/io/nearpay/payment/NearPayPlugin.kt`
 
 ### Complete Platform Migration to NearPay

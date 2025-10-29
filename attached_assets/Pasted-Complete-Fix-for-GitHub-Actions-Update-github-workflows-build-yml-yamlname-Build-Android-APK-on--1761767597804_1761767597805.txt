@@ -1,0 +1,225 @@
+Complete Fix for GitHub Actions
+Update .github/workflows/build.yml:
+yamlname: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Set up JDK 17  # CHANGED FROM 21
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'  # Java 17 LTS
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build web assets
+      run: npm run build
+    
+    - name: Sync Capacitor
+      run: npx cap sync android
+    
+    - name: Generate keystore
+      env:
+        CI: true
+      run: |
+        chmod +x scripts/generate-keystore.sh
+        ./scripts/generate-keystore.sh sandbox
+    
+    - name: Make gradlew executable
+      run: chmod +x android/gradlew
+      working-directory: ./
+    
+    - name: Build APK
+      run: ./gradlew assembleDebug
+      working-directory: ./android
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+
+Update android/app/build.gradle:
+gradleplugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+android {
+    namespace 'io.nearpay.payment'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "io.nearpay.payment"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    // IMPORTANT: Set Java compatibility
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // IMPORTANT: Set Kotlin JVM target
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // Capacitor
+    implementation project(':capacitor-android')
+    implementation project(':capacitor-cordova-android-plugins')
+
+    // NearPay SDK
+    implementation 'io.nearpay:nearpay-sdk:2.1.18'
+
+    // Android dependencies
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+Update android/build.gradle:
+gradlebuildscript {
+    ext.kotlin_version = '1.9.22'
+    
+    repositories {
+        google()
+        mavenCentral()
+    }
+    
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://maven.nearpay.io/repository/maven-public/' }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+Kotlin/Java Compatibility Matrix
+Java VersionKotlin JVM TargetStatusJava 81.8✅ SupportedJava 1111✅ SupportedJava 1717✅ Supported (LTS)Java 1919✅ SupportedJava 2121❌ NOT Supported
+Recommendation: Use Java 17 - it's the current LTS (Long Term Support) version and fully supported by Kotlin.
+
+Quick Fix Commands
+bash# Local testing
+cd android
+./gradlew clean
+./gradlew assembleDebug --info
+
+# Check Java version
+java -version
+
+# Check Gradle version
+./gradlew --version
+```
+
+---
+
+## Prompt for Replit/GitHub Actions Fix
+```
+The Android build is failing with error: "Unknown Kotlin JVM target: 21"
+
+This is because:
+- GitHub Actions is using Java 21
+- Kotlin doesn't support JVM target 21 yet (max is 19)
+- Need to either downgrade Java or configure Kotlin properly
+
+FIXES NEEDED:
+
+1. UPDATE .github/workflows/build.yml:
+Change Java version from 21 to 17:
+```yaml
+- name: Set up JDK 17
+  uses: actions/setup-java@v4
+  with:
+    distribution: 'temurin'
+    java-version: '17'  # Changed from 21
+```
+
+2. UPDATE android/app/build.gradle:
+Add explicit Java and Kotlin compatibility:
+```gradle
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+```
+
+3. UPDATE android/build.gradle:
+Ensure Kotlin version is up to date:
+```gradle
+buildscript {
+    ext.kotlin_version = '1.9.22'
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+```
+
+4. VERIFY gradle-wrapper.properties:
+Make sure Gradle version is compatible:
+```properties
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-all.zip
+```
+
+After these changes, run:
+```bash
+cd android
+./gradlew clean
+./gradlew assembleDebug
+```
+
+The build should complete successfully with Java 17 and Kotlin JVM target 17.
