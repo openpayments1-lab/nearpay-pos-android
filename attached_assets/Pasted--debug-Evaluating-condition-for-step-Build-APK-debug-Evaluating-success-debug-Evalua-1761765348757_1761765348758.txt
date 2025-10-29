@@ -1,0 +1,413 @@
+##[debug]Evaluating condition for step: 'Build APK'
+##[debug]Evaluating: success()
+##[debug]Evaluating success:
+##[debug]=> true
+##[debug]Result: true
+##[debug]Starting: Build APK
+##[debug]Loading inputs
+##[debug]Loading env
+Run ./gradlew assembleDebug
+##[debug]/usr/bin/bash -e /home/runner/work/_temp/39b27dcc-853c-4eae-92ca-1f03336fadf9.sh
+Downloading https://services.gradle.org/distributions/gradle-8.11.1-all.zip
+.....................10%......................20%......................30%......................40%......................50%......................60%......................70%......................80%......................90%......................100%
+Welcome to Gradle 8.11.1!
+Here are the highlights of this release:
+ - Parallel load and store for Configuration Cache
+ - Java compilation errors at the end of the build output
+ - Consolidated report for warnings and deprecations
+For more details see https://docs.gradle.org/8.11.1/release-notes.html
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Configure project :app
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+> Configure project :capacitor-cordova-android-plugins
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:javaPreCompileDebug
+> Task :capacitor-android:preBuild UP-TO-DATE
+> Task :capacitor-android:preDebugBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preDebugBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:writeDebugAarMetadata
+> Task :capacitor-android:writeDebugAarMetadata
+> Task :app:generateDebugResValues
+> Task :capacitor-android:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :capacitor-android:generateDebugResources
+> Task :capacitor-android:packageDebugResources
+> Task :capacitor-cordova-android-plugins:generateDebugResValues
+> Task :capacitor-cordova-android-plugins:generateDebugResources
+> Task :capacitor-cordova-android-plugins:packageDebugResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :capacitor-android:extractDeepLinksDebug
+> Task :capacitor-cordova-android-plugins:extractDeepLinksDebug
+> Task :app:mergeDebugResources
+> Task :app:parseDebugLocalResources
+> Task :capacitor-android:processDebugManifest
+> Task :capacitor-cordova-android-plugins:processDebugManifest
+> Task :capacitor-android:compileDebugLibraryResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :capacitor-android:parseDebugLocalResources
+> Task :capacitor-cordova-android-plugins:compileDebugLibraryResources
+> Task :app:processDebugManifestForPackage
+> Task :capacitor-android:javaPreCompileDebug
+> Task :capacitor-cordova-android-plugins:parseDebugLocalResources
+> Task :capacitor-cordova-android-plugins:javaPreCompileDebug
+> Task :app:mergeDebugShaders
+> Task :capacitor-android:generateDebugRFile
+> Task :capacitor-cordova-android-plugins:generateDebugRFile
+Note: Some input files use unchecked or unsafe operations.
+> Task :capacitor-android:compileDebugJavaWithJavac
+Note: Recompile with -Xlint:unchecked for details.
+> Task :capacitor-cordova-android-plugins:compileDebugJavaWithJavac NO-SOURCE
+> Task :capacitor-cordova-android-plugins:bundleLibCompileToJarDebug
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :capacitor-android:mergeDebugShaders
+> Task :capacitor-android:compileDebugShaders NO-SOURCE
+> Task :capacitor-android:generateDebugAssets UP-TO-DATE
+> Task :capacitor-android:bundleLibCompileToJarDebug
+> Task :capacitor-android:packageDebugAssets
+> Task :capacitor-cordova-android-plugins:mergeDebugShaders
+> Task :capacitor-cordova-android-plugins:compileDebugShaders NO-SOURCE
+> Task :capacitor-cordova-android-plugins:generateDebugAssets UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:packageDebugAssets
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+> Task :capacitor-cordova-android-plugins:bundleLibRuntimeToJarDebug
+> Task :capacitor-android:bundleLibRuntimeToJarDebug
+> Task :app:processDebugResources
+> Task :app:desugarDebugFileDependencies
+> Task :app:compileDebugJavaWithJavac
+> Task :app:dexBuilderDebug
+> Task :app:processDebugJavaRes NO-SOURCE
+> Task :capacitor-android:processDebugJavaRes NO-SOURCE
+> Task :capacitor-cordova-android-plugins:processDebugJavaRes NO-SOURCE
+> Task :app:mergeDebugJniLibFolders
+> Task :capacitor-android:mergeDebugJniLibFolders
+> Task :capacitor-android:mergeDebugNativeLibs NO-SOURCE
+> Task :app:checkDebugDuplicateClasses
+> Task :capacitor-android:copyDebugJniLibsProjectOnly
+> Task :app:mergeDebugJavaResource
+> Task :app:mergeDebugGlobalSynthetics
+> Task :capacitor-cordova-android-plugins:mergeDebugJniLibFolders
+> Task :capacitor-cordova-android-plugins:mergeDebugNativeLibs NO-SOURCE
+> Task :capacitor-cordova-android-plugins:copyDebugJniLibsProjectOnly
+> Task :app:mergeLibDexDebug
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:mergeProjectDexDebug
+> Task :app:stripDebugDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :capacitor-android:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-android:copyDebugJniLibsProjectAndLocalJars
+> Task :app:mergeExtDexDebug
+> Task :capacitor-android:extractDebugAnnotations
+> Task :capacitor-android:extractDeepLinksForAarDebug
+> Task :capacitor-android:mergeDebugGeneratedProguardFiles
+> Task :capacitor-android:mergeDebugConsumerProguardFiles
+> Task :capacitor-android:prepareDebugArtProfile
+> Task :capacitor-android:prepareLintJarForPublish
+> Task :capacitor-android:mergeDebugJavaResource
+> Task :capacitor-cordova-android-plugins:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-android:syncDebugLibJars
+> Task :capacitor-android:bundleDebugAar
+> Task :capacitor-android:assembleDebug
+> Task :capacitor-cordova-android-plugins:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-cordova-android-plugins:extractDebugAnnotations
+> Task :capacitor-cordova-android-plugins:extractDeepLinksForAarDebug
+> Task :capacitor-cordova-android-plugins:mergeDebugGeneratedProguardFiles
+> Task :capacitor-cordova-android-plugins:mergeDebugConsumerProguardFiles
+> Task :capacitor-cordova-android-plugins:prepareDebugArtProfile
+> Task :capacitor-cordova-android-plugins:prepareLintJarForPublish
+> Task :capacitor-cordova-android-plugins:mergeDebugJavaResource
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :capacitor-cordova-android-plugins:syncDebugLibJars
+> Task :capacitor-cordova-android-plugins:bundleDebugAar
+> Task :capacitor-cordova-android-plugins:assembleDebug
+[Incubating] Problems report is available at: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/build/reports/problems/problems-report.html
+BUILD SUCCESSFUL in 2m 44s
+85 actionable tasks: 85 executed
+##[debug]Finishing: Build APK
+1s
+##[debug]Evaluating condition for step: 'Upload APK artifact'
+##[debug]Evaluating: success()
+##[debug]Evaluating success:
+##[debug]=> true
+##[debug]Result: true
+##[debug]Starting: Upload APK artifact
+##[debug]Loading inputs
+##[debug]Loading env
+Run actions/upload-artifact@v4
+  
+##[debug]followSymbolicLinks 'true'
+##[debug]implicitDescendants 'true'
+##[debug]omitBrokenSymbolicLinks 'true'
+##[debug]excludeHiddenFiles 'true'
+##[debug]followSymbolicLinks 'true'
+##[debug]implicitDescendants 'true'
+##[debug]matchDirectories 'true'
+##[debug]omitBrokenSymbolicLinks 'true'
+##[debug]excludeHiddenFiles 'true'
+##[debug]Search path '/home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/build/outputs/apk/debug/app-debug.apk'
+##[debug]File:/home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/build/outputs/apk/debug/app-debug.apk was found using the provided searchPath
+With the provided path, there will be 1 file uploaded
+##[debug]Root artifact directory is /home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/build/outputs/apk/debug
+Artifact name is valid!
+Root directory input is valid!
+##[debug]Workflow Run Backend ID: 1685dc77-a75b-4fc0-ac39-c481f965217a
+##[debug]Workflow Job Run Backend ID: 39303a53-93c3-527d-8186-34a59449f465
+##[debug][Request] CreateArtifact https://results-receiver.actions.githubusercontent.com/twirp/github.actions.results.api.v1.ArtifactService/CreateArtifact
+##[debug][Response] - 200
+##[debug]Headers: {
+##[debug]  "content-length": "584",
+##[debug]  "content-type": "application/json",
+##[debug]  "date": "Wed, 29 Oct 2025 19:14:29 GMT",
+##[debug]  "x-github-backend": "Kubernetes",
+##[debug]  "x-github-request-id": "C411:38AA3E:29E2815:2F694FA:69026795"
+##[debug]}
+::add-mask::***
+::add-mask::***
+##[debug]Body: {
+##[debug]  "ok": true,
+##[debug]  "signed_upload_url": "https://productionresultssa4.blob.core.windows.net/actions-results/1685dc77-a75b-4fc0-ac39-c481f965217a/workflow-job-run-39303a53-93c3-527d-8186-34a59449f465/artifacts/cbfebd2f63179235c5e7693971b96d9196268614f129414bf79f8d3571f47df7.zip?se=2025-10-29T20%3A14%3A29Z&sig=***&ske=2025-10-30T04%3A40%3A40Z&skoid=ca7593d4-ee42-46cd-af88-8b886a2f84eb&sks=b&skt=2025-10-29T16%3A40%3A40Z&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skv=2025-11-05&sp=cw&spr=https&sr=b&st=2025-10-29T19%3A14%3A24Z&sv=2025-11-05"
+##[debug]}
+##[debug]Creating Artifact archive with compressionLevel: 6
+##[debug]Zip write high watermark value 8388608
+##[debug]Zip read high watermark value 8388608
+##[debug]Uploading artifact zip to blob storage with maxConcurrency: 5, bufferSize: 8388608
+Beginning upload of artifact content to blob storage
+##[debug]Zip stream for upload has ended.
+##[debug]Zip stream for upload has finished.
+Uploaded bytes 3809515
+Finished uploading artifact content to blob storage!
+SHA256 digest of uploaded artifact zip is 6a98ffce4f8fb959a6d61fe344e186c6f588b68838bc9f86d195ee7a4f2e742d
+Finalizing artifact upload
+##[debug][Request] FinalizeArtifact https://results-receiver.actions.githubusercontent.com/twirp/github.actions.results.api.v1.ArtifactService/FinalizeArtifact
+##[debug][Response] - 200
+##[debug]Headers: {
+##[debug]  "content-length": "39",
+##[debug]  "content-type": "application/json",
+##[debug]  "date": "Wed, 29 Oct 2025 19:14:30 GMT",
+##[debug]  "x-github-backend": "Kubernetes",
+##[debug]  "x-github-request-id": "C411:38AA3E:29E2B08:2F698A8:69026795"
+##[debug]}
+##[debug]Body: {
+##[debug]  "ok": true,
+##[debug]  "artifact_id": "4409872462"
+##[debug]}
+Artifact app-debug.zip successfully finalized. Artifact ID 4409872462
+Artifact app-debug has been successfully uploaded! Final size is 3809515 bytes. Artifact ID is 4409872462
+Artifact download URL: https://github.com/openpayments1-lab/nearpay-pos-android/actions/runs/18919121485/artifacts/4409872462
+##[debug]Node Action run completed with exit code 0
+##[debug]Set output artifact-id = 4409872462
+##[debug]Set output artifact-digest = 6a98ffce4f8fb959a6d61fe344e186c6f588b68838bc9f86d195ee7a4f2e742d
+##[debug]Set output artifact-url = https://github.com/openpayments1-lab/nearpay-pos-android/actions/runs/18919121485/artifacts/4409872462
+##[debug]Finishing: Upload APK artifact
+1s
+##[debug]Evaluating: secrets.GITHUB_TOKEN
+##[debug]Evaluating Index:
+##[debug]..Evaluating secrets:
+##[debug]..=> Object
+##[debug]..Evaluating String:
+##[debug]..=> 'GITHUB_TOKEN'
+##[debug]=> '***'
+##[debug]Result: '***'
+##[debug]Evaluating condition for step: 'Create release (on main branch push)'
+##[debug]Evaluating: (success() && (github.ref == 'refs/heads/main') && (github.event_name == 'push'))
+##[debug]Evaluating And:
+##[debug]..Evaluating success:
+##[debug]..=> true
+##[debug]..Evaluating Equal:
+##[debug]....Evaluating Index:
+##[debug]......Evaluating github:
+##[debug]......=> Object
+##[debug]......Evaluating String:
+##[debug]......=> 'ref'
+##[debug]....=> 'refs/heads/main'
+##[debug]....Evaluating String:
+##[debug]....=> 'refs/heads/main'
+##[debug]..=> true
+##[debug]..Evaluating Equal:
+##[debug]....Evaluating Index:
+##[debug]......Evaluating github:
+##[debug]......=> Object
+##[debug]......Evaluating String:
+##[debug]......=> 'event_name'
+##[debug]....=> 'push'
+##[debug]....Evaluating String:
+##[debug]....=> 'push'
+##[debug]..=> true
+##[debug]=> true
+##[debug]Expanded: (true && ('refs/heads/main' == 'refs/heads/main') && ('push' == 'push'))
+##[debug]Result: true
+##[debug]Starting: Create release (on main branch push)
+##[debug]Loading inputs
+##[debug]Evaluating: format('v{0}', github.run_number)
+##[debug]Evaluating format:
+##[debug]..Evaluating String:
+##[debug]..=> 'v{0}'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating github:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'run_number'
+##[debug]..=> '5'
+##[debug]=> 'v5'
+##[debug]Result: 'v5'
+##[debug]Evaluating: format('Release v{0}', github.run_number)
+##[debug]Evaluating format:
+##[debug]..Evaluating String:
+##[debug]..=> 'Release v{0}'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating github:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'run_number'
+##[debug]..=> '5'
+##[debug]=> 'Release v5'
+##[debug]Result: 'Release v5'
+##[debug]Evaluating: github.token
+##[debug]Evaluating Index:
+##[debug]..Evaluating github:
+##[debug]..=> Object
+##[debug]..Evaluating String:
+##[debug]..=> 'token'
+##[debug]=> '***'
+##[debug]Result: '***'
+##[debug]Loading env
+Run softprops/action-gh-release@v1
+  
+👩‍🏭 Creating new GitHub release for tag v5...
+⚠️ GitHub release failed with status: 403
+undefined
+retrying... (2 retries remaining)
+👩‍🏭 Creating new GitHub release for tag v5...
+⚠️ GitHub release failed with status: 403
+undefined
+retrying... (1 retries remaining)
+👩‍🏭 Creating new GitHub release for tag v5...
+⚠️ GitHub release failed with status: 403
+undefined
+retrying... (0 retries remaining)
+❌ Too many retries. Aborting...
+Error: Too many retries.
+##[debug]Node Action run completed with exit code 1
+##[debug]Finishing: Create release (on main branch push)
+0s
+##[debug]Evaluating condition for step: 'Post Setup Java'
+##[debug]Evaluating: always()
+##[debug]Evaluating always:
+##[debug]=> true
+##[debug]Result: true
+##[debug]Starting: Post Setup Java
+##[debug]Loading inputs
+##[debug]Evaluating: job.status
+##[debug]Evaluating Index:
+##[debug]..Evaluating job:
+##[debug]..=> Object
+##[debug]..Evaluating String:
+##[debug]..=> 'status'
+##[debug]=> 'failure'
+##[debug]Result: 'failure'
+##[debug]Evaluating: (((github.server_url == 'https://github.com') && github.token) || '')
+##[debug]Evaluating Or:
+##[debug]..Evaluating And:
+##[debug]....Evaluating Equal:
+##[debug]......Evaluating Index:
+##[debug]........Evaluating github:
+##[debug]........=> Object
+##[debug]........Evaluating String:
+##[debug]........=> 'server_url'
+##[debug]......=> 'https://github.com'
+##[debug]......Evaluating String:
+##[debug]......=> 'https://github.com'
+##[debug]....=> true
+##[debug]....Evaluating Index:
+##[debug]......Evaluating github:
+##[debug]......=> Object
+##[debug]......Evaluating String:
+##[debug]......=> 'token'
+##[debug]....=> '***'
+##[debug]..=> '***'
+##[debug]=> '***'
+##[debug]Expanded: ((('https://github.com' == 'https://github.com') && '***') || '')
+##[debug]Result: '***'
+##[debug]Loading env
+Post job cleanup.
+##[debug]Node Action run completed with exit code 0
+##[debug]Finishing: Post Setup Java
+0s
+##[debug]Evaluating condition for step: 'Post Setup Node.js'
+##[debug]Evaluating: success()
+##[debug]Evaluating success:
+##[debug]=> false
+##[debug]Result: false
+1s
+##[debug]Evaluating condition for step: 'Post Checkout code'
+##[debug]Evaluating: always()
+##[debug]Evaluating always:
+##[debug]=> true
+##[debug]Result: true
+##[debug]Starting: Post Checkout code
+##[debug]Loading inputs
+##[debug]Evaluating: github.repository
+##[debug]Evaluating Index:
+##[debug]..Evaluating github:
+##[debug]..=> Object
+##[debug]..Evaluating String:
+##[debug]..=> 'repository'
+##[debug]=> 'openpayments1-lab/nearpay-pos-android'
+##[debug]Result: 'openpayments1-lab/nearpay-pos-android'
+##[debug]Evaluating: github.token
+##[debug]Evaluating Index:
+##[debug]..Evaluating github:
+##[debug]..=> Object
+##[debug]..Evaluating String:
+##[debug]..=> 'token'
+##[debug]=> '***'
+##[debug]Result: '***'
+##[debug]Loading env
+Post job cleanup.
+##[debug]Getting git version
+/usr/bin/git version
+git version 2.51.0
+##[debug]0
+##[debug]git version 2.51.0
+##[debug]
+##[debug]Set git useragent to: git/2.51.0 (github-actions-checkout)
+::add-mask::***
+Temporarily overriding HOME='/home/runner/work/_temp/ff69bb70-e073-4ea0-b3be-d8520cae6ffc' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+/usr/bin/git config --global --add safe.directory /home/runner/work/nearpay-pos-android/nearpay-pos-android
+##[debug]0
+##[debug]
+/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+##[debug]1
+##[debug]
+/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+##[debug]0
+##[debug]
+/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+##[debug]0
+##[debug]http.https://github.com/.extraheader
+##[debug]
+/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+##[debug]0
+##[debug]
+/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+##[debug]0
+##[debug]
+##[debug]Unsetting HOME override
+##[debug]Node Action run completed with exit code 0
+##[debug]Finishing: Post Checkout code
