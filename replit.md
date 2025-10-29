@@ -22,6 +22,20 @@ A mobile point-of-sale application built with Capacitor and NearPay.io for accep
 
 ## Recent Changes (January 2025)
 
+### Native Plugin Rewritten in Kotlin
+- **Date**: January 29, 2025
+- **Change**: Converted NearPayPlugin from Java to Kotlin for proper SDK compatibility
+- **Details**:
+  - **Reason**: NearPay SDK is written in Kotlin with Kotlin-specific APIs that don't work well in Java
+  - **Fixed**: Compilation errors with AuthenticationData, PurchaseListener, SetupListener classes
+  - **API Updates**: Using correct NearPay SDK v2.x API structure:
+    - `AuthenticationData.Jwt(token)` for JWT authentication
+    - `PurchaseListener` with `onPurchaseApproved()` and `onPurchaseFailed()` callbacks
+    - `SetupListener` for SDK initialization
+    - Amount conversion to minor units (14.55 SAR = 1455)
+  - **Build Configuration**: Added Kotlin plugin and kotlin-stdlib dependency
+  - **File**: `android/app/src/main/java/io/nearpay/payment/NearPayPlugin.kt`
+
 ### Complete Platform Migration to NearPay
 - **Date**: January 29, 2025
 - **Change**: Migrated from Dejavoo terminal integration to NearPay mobile NFC payments

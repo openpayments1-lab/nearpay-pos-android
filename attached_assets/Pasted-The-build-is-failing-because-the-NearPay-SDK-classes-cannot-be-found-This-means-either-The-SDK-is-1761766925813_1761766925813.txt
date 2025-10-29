@@ -1,0 +1,362 @@
+The build is failing because the NearPay SDK classes cannot be found. This means either:
+
+The SDK isn't properly added to dependencies
+The SDK version is wrong or incompatible
+The import paths have changed in newer SDK versions
+
+Here's how to fix this:
+
+Fix 1: Check NearPay SDK Version & Dependencies
+File: android/app/build.gradle
+gradledependencies {
+    // Check current NearPay SDK version from their docs
+    // https://docs.nearpay.io/en/sdk/android-sdk
+    
+    implementation 'io.nearpay:nearpay-sdk:2.1.18' // Try latest version
+    
+    // OR if that doesn't work, try:
+    // implementation 'io.nearpay:nearpay-sdk:+'  // Gets latest version
+    
+    // Required dependencies
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.0'
+}
+File: android/build.gradle
+Make sure the NearPay repository is added:
+gradleallprojects {
+    repositories {
+        google()
+        mavenCentral()
+        
+        // ADD THIS - NearPay Maven Repository
+        maven { 
+            url 'https://maven.nearpay.io/repository/maven-public/' 
+        }
+        
+        // OR try this alternate URL
+        maven { 
+            url 'https://jitpack.io' 
+        }
+    }
+}
+
+Fix 2: Update NearPayPlugin.java with Correct Imports
+The error shows that the classes have changed. Here's the corrected version based on latest NearPay SDK:
+File: android/app/src/main/java/io/nearpay/payment/NearPayPlugin.java
+javapackage io.nearpay.payment;
+
+import android.app.Activity;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+
+// UPDATED IMPORTS - Check NearPay docs for correct paths
+import io.nearpay.sdk.NearPay;
+import io.nearpay.sdk.utils.Environments;
+import io.nearpay.sdk.utils.enums.AuthenticationTypeEnum;
+import io.nearpay.sdk.utils.enums.PaymentStatusEnum;
+
+// NEW SDK STRUCTURE (v2.x)
+import io.nearpay.sdk.data.models.AuthenticationData;
+import io.nearpay.sdk.data.models.PurchaseRequest;
+import io.nearpay.sdk.data.models.TransactionData;
+import io.nearpay.sdk.utils.listeners.PurchaseListener;
+
+@CapacitorPlugin(name = "NearPay")
+public class NearPayPlugin extends Plugin {
+    
+    private NearPay nearPay;
+    private boolean isInitialized = false;
+
+    @PluginMethod
+    public void initialize(PluginCall call) {
+        Activity activity = getActivity();
+        String authToken = call.getString("authToken");
+        String environment = call.getString("environment", "sandbox");
+        
+        if (authToken == null || authToken.isEmpty()) {
+            call.reject("Authentication token is required");
+            return;
+        }
+
+        try {
+            // UPDATED: New SDK initialization
+            AuthenticationData authData = new AuthenticationData.Builder()
+                .authType(AuthenticationTypeEnum.JWT)
+                .authValue(authToken)
+                .build();
+
+            Environments env = environment.equals("production") 
+                ? Environments.PRODUCTION 
+                : Environments.SANDBOX;
+
+            nearPay = new NearPay.Builder()
+                .context(activity)
+                .authenticationData(authData)
+                .environment(env)
+                .locale("en")
+                .build();
+
+            // Setup NearPay
+            nearPay.setup((setupResult) -> {
+                if (setupResult.isSuccess()) {
+                    isInitialized = true;
+                    JSObject ret = new JSObject();
+                    ret.put("success", true);
+                    ret.put("message", "NearPay initialized successfully");
+                    call.resolve(ret);
+                } else {
+                    call.reject("Failed to initialize NearPay: " + setupResult.getMessage());
+                }
+            });
+
+        } catch (Exception e) {
+            call.reject("Initialization error: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void purchase(PluginCall call) {
+        if (!isInitialized) {
+            call.reject("NearPay not initialized. Call initialize() first.");
+            return;
+        }
+
+        Double amount = call.getDouble("amount");
+        String reference = call.getString("reference", "");
+        
+        if (amount == null || amount <= 0) {
+            call.reject("Valid amount is required");
+            return;
+        }
+
+        try {
+            // UPDATED: New purchase request structure
+            PurchaseRequest purchaseRequest = new PurchaseRequest.Builder()
+                .amount(amount)
+                .customerReferenceNumber(reference)
+                .enableReceiptUi(true)
+                .enableReversalUi(true)
+                .build();
+
+            nearPay.purchase(purchaseRequest, new PurchaseListener() {
+                @Override
+                public void onPurchaseApproved(TransactionData transactionData) {
+                    JSObject ret = new JSObject();
+                    ret.put("success", true);
+                    ret.put("status", "APPROVED");
+                    ret.put("transactionId", transactionData.getTransactionUUID());
+                    ret.put("amount", transactionData.getAmount());
+                    ret.put("reference", transactionData.getCustomerReferenceNumber());
+                    call.resolve(ret);
+                }
+
+                @Override
+                public void onPurchaseFailed(TransactionData transactionData) {
+                    JSObject ret = new JSObject();
+                    ret.put("success", false);
+                    ret.put("status", "FAILED");
+                    ret.put("message", transactionData.getMessage());
+                    call.resolve(ret);
+                }
+
+                @Override
+                public void onPurchaseDeclined(TransactionData transactionData) {
+                    JSObject ret = new JSObject();
+                    ret.put("success", false);
+                    ret.put("status", "DECLINED");
+                    ret.put("message", transactionData.getMessage());
+                    call.resolve(ret);
+                }
+            });
+
+        } catch (Exception e) {
+            call.reject("Purchase error: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void refund(PluginCall call) {
+        if (!isInitialized) {
+            call.reject("NearPay not initialized");
+            return;
+        }
+
+        String transactionId = call.getString("transactionId");
+        Double amount = call.getDouble("amount");
+
+        if (transactionId == null || transactionId.isEmpty()) {
+            call.reject("Transaction ID is required");
+            return;
+        }
+
+        try {
+            nearPay.refund(
+                transactionId,
+                amount,
+                true, // enableReceiptUi
+                true, // enableReversalUi
+                (transactionData, status) -> {
+                    if (status == PaymentStatusEnum.APPROVED) {
+                        JSObject ret = new JSObject();
+                        ret.put("success", true);
+                        ret.put("status", "REFUNDED");
+                        ret.put("transactionId", transactionData.getTransactionUUID());
+                        call.resolve(ret);
+                    } else {
+                        call.reject("Refund failed: " + transactionData.getMessage());
+                    }
+                }
+            );
+        } catch (Exception e) {
+            call.reject("Refund error: " + e.getMessage());
+        }
+    }
+}
+
+Fix 3: Check SDK Version Compatibility
+The imports suggest you might have an older SDK reference. Check the actual SDK version:
+bash# In your android directory
+cd android
+./gradlew app:dependencies | grep nearpay
+
+Fix 4: Clean and Rebuild
+bashcd android
+
+# Clean build
+./gradlew clean
+
+# Delete build folders
+rm -rf app/build
+rm -rf .gradle
+
+# Rebuild
+./gradlew assembleDebug
+```
+
+---
+
+## Prompt for Replit Agent
+```
+The Android build is failing with compilation errors for NearPay SDK classes. The errors show:
+- "cannot find symbol: class AuthenticationData"
+- "cannot find symbol: class PaymentListener"
+- "cannot find symbol: class PaymentResult"
+- "cannot find symbol: class PaymentError"
+
+This means the NearPay SDK is either:
+1. Not properly added to dependencies
+2. Wrong version
+3. Import paths changed in newer SDK versions
+
+FIXES NEEDED:
+
+1. UPDATE android/app/build.gradle:
+Add or update NearPay SDK dependency with the LATEST version from https://docs.nearpay.io/en/sdk/android-sdk
+```gradle
+dependencies {
+    // Check docs for latest version
+    implementation 'io.nearpay:nearpay-sdk:2.1.18'
+    
+    // OR try getting latest automatically
+    implementation 'io.nearpay:nearpay-sdk:+'
+    
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.code.gson:gson:2.10.1'
+}
+```
+
+2. ADD MAVEN REPOSITORY in android/build.gradle:
+```gradle
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://maven.nearpay.io/repository/maven-public/' }
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+3. UPDATE IMPORTS in NearPayPlugin.java:
+Replace the old imports with these (based on SDK v2.x structure):
+```java
+import io.nearpay.sdk.NearPay;
+import io.nearpay.sdk.utils.Environments;
+import io.nearpay.sdk.utils.enums.AuthenticationTypeEnum;
+import io.nearpay.sdk.utils.enums.PaymentStatusEnum;
+import io.nearpay.sdk.data.models.AuthenticationData;
+import io.nearpay.sdk.data.models.PurchaseRequest;
+import io.nearpay.sdk.data.models.TransactionData;
+import io.nearpay.sdk.utils.listeners.PurchaseListener;
+```
+
+4. UPDATE THE INITIALIZATION CODE:
+The old SDK used different patterns. Update to new SDK v2.x pattern:
+```java
+AuthenticationData authData = new AuthenticationData.Builder()
+    .authType(AuthenticationTypeEnum.JWT)
+    .authValue(authToken)
+    .build();
+
+nearPay = new NearPay.Builder()
+    .context(activity)
+    .authenticationData(authData)
+    .environment(Environments.SANDBOX)
+    .locale("en")
+    .build();
+
+nearPay.setup((setupResult) -> {
+    if (setupResult.isSuccess()) {
+        // Success
+    }
+});
+```
+
+5. UPDATE PURCHASE METHOD:
+Use PurchaseRequest builder pattern:
+```java
+PurchaseRequest purchaseRequest = new PurchaseRequest.Builder()
+    .amount(amount)
+    .customerReferenceNumber(reference)
+    .enableReceiptUi(true)
+    .enableReversalUi(true)
+    .build();
+
+nearPay.purchase(purchaseRequest, new PurchaseListener() {
+    @Override
+    public void onPurchaseApproved(TransactionData data) { }
+    
+    @Override
+    public void onPurchaseFailed(TransactionData data) { }
+    
+    @Override
+    public void onPurchaseDeclined(TransactionData data) { }
+});
+```
+
+6. CLEAN BUILD:
+Run these commands in order:
+```bash
+cd android
+./gradlew clean
+rm -rf app/build .gradle
+./gradlew assembleDebug --refresh-dependencies
+```
+
+7. VERIFY SDK DOWNLOADED:
+Check that SDK was actually downloaded:
+```bash
+./gradlew app:dependencies | grep nearpay
+```
+
+8. IF STILL FAILING:
+- Check NearPay docs for the exact SDK version number
+- Check if SDK requires specific Kotlin version
+- Check if SDK requires specific Android compileSdk version
+- Try downloading the AAR manually and adding as local dependency
+
+The goal is to get all NearPay classes importing correctly so the build completes.
