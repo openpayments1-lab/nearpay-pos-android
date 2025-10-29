@@ -36,6 +36,13 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Generate signing keystore
+        run: |
+          chmod +x scripts/generate-keystore.sh
+          ./scripts/generate-keystore.sh sandbox
+        env:
+          CI: true
+
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
