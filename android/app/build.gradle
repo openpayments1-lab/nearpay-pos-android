@@ -16,10 +16,30 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    
+    signingConfigs {
+        release {
+            storeFile file("../../certs/nearpay-sandbox.keystore")
+            storePassword "nearpaysandbox2025"
+            keyAlias "nearpay-sandbox-key"
+            keyPassword "nearpaysandbox2025"
+        }
+        debug {
+            storeFile file("../../certs/nearpay-sandbox.keystore")
+            storePassword "nearpaysandbox2025"
+            keyAlias "nearpay-sandbox-key"
+            keyPassword "nearpaysandbox2025"
+        }
+    }
+    
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 }
@@ -43,7 +63,8 @@ dependencies {
     implementation project(':capacitor-cordova-android-plugins')
     
     // NearPay SDK for NFC payments
-    implementation "io.nearpay:nearpay-sdk-store:2.1.91"
+    // NOTE: Using stub classes for now. Replace with real SDK when available:
+    // implementation "io.nearpay:nearpay-sdk-store:2.1.91"
 }
 
 apply from: 'capacitor.build.gradle'

@@ -1,0 +1,23 @@
+NearPay Keystore Details - SANDBOX
+Generated: Wed Oct 29 18:39:26 UTC 2025
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Keystore File: certs/nearpay-sandbox.keystore
+PEM Certificate: certs/nearpay-sandbox-cert.pem
+Key Alias: nearpay-sandbox-key
+Store Password: nearpaysandbox2025
+Key Password: nearpaysandbox2025
+
+⚠️  IMPORTANT SECURITY NOTES:
+- Never commit these files to git (already in .gitignore)
+- Store keystore password securely (use password manager)
+- Send PEM certificate to NearPay: [email protected]
+- Keep keystore file safe - you need it to sign app updates
+
+📧 Next Steps:
+1. Email certs/nearpay-sandbox-cert.pem to [email protected]
+2. Include your app package name: io.nearpay.payment
+3. Specify environment: sandbox
+4. Wait for NearPay confirmation
+5. Update build.gradle with signing configuration
+
