@@ -1,324 +1,266 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, CreditCard, History, RotateCcw, RefreshCcw, Coins, Users } from "lucide-react";
-import { Link, useLocation } from "wouter";
-import AmountInput from "@/components/AmountInput";
-import PaymentMethod from "@/components/PaymentMethod";
-import TransactionStatus from "@/components/TransactionStatus";
-import Receipt from "@/components/Receipt";
-import TerminalConfig from "@/components/TerminalConfig";
-import ProcessingOverlay from "@/components/ProcessingOverlay";
-import { CustomerSelector } from "@/components/CustomerSelector";
-import { useCashRegister } from "@/lib/cashRegisterContext";
+import { Input } from "@/components/ui/input";
+import { CreditCard, History, DollarSign, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle 
-} from "@/components/ui/dialog";
 import { apiRequest } from "@/lib/queryClient";
-import { Transaction } from "@/types";
+import NearPay from "@/lib/nearpay";
+import { Capacitor } from "@capacitor/core";
 
 export default function CashRegister() {
-  const [showConfigDialog, setShowConfigDialog] = useState(false);
-  const [showRefundDialog, setShowRefundDialog] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loadingTransactions, setLoadingTransactions] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  
-  const { 
-    terminalStatus, 
-    checkTerminalConnection,
-    setAmount,
-    setRefundMode,
-    setSelectedPaymentMethod,
-    isRefundMode
-  } = useCashRegister();
-  const [location] = useLocation();
+  const [amount, setAmount] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState("");
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
+  // Initialize NearPay SDK on component mount
   useEffect(() => {
-    // Check terminal connection on component mount if IP is stored
-    const savedTerminalIp = localStorage.getItem('terminalIp');
-    const connectionStatus = localStorage.getItem('terminalConnectionStatus');
-    
-    if (savedTerminalIp) {
-      // Only force a check if not already connected, otherwise use cache
-      const forceCheck = connectionStatus !== 'connected';
-      checkTerminalConnection(savedTerminalIp, forceCheck);
-    }
-  }, [checkTerminalConnection]);
+    const initializeNearPay = async () => {
+      if (!Capacitor.isNativePlatform()) {
+        console.log('Running in browser - NearPay not available');
+        return;
+      }
 
-  // Function to fetch recent transactions for the refund dialog
-  const fetchRecentTransactions = async () => {
-    try {
-      setLoadingTransactions(true);
-      const response = await apiRequest('GET', '/api/transactions');
-      const data = await response.json();
-      
-      // Filter to show only approved card transactions that can be refunded
-      const refundableTransactions = data.filter((t: Transaction) => 
-        t.paymentMethod === 'card' && t.status === 'approved'
-      );
-      
-      setTransactions(refundableTransactions);
-    } catch (error) {
-      console.error('Failed to fetch transactions:', error);
+      try {
+        const result = await NearPay.initialize({
+          authToken: 'YOUR_JWT_TOKEN_HERE', // TODO: Get from settings/environment
+          environment: 'sandbox'
+        });
+        
+        if (result.success) {
+          setIsInitialized(true);
+          console.log('NearPay initialized successfully');
+        }
+      } catch (error) {
+        console.error('Failed to initialize NearPay:', error);
+        toast({
+          title: "Initialization Error",
+          description: "Failed to initialize payment system",
+          variant: "destructive"
+        });
+      }
+    };
+
+    initializeNearPay();
+  }, [toast]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow numbers and decimal point
+    if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+      setAmount(value);
+    }
+  };
+
+  const handlePayment = async () => {
+    const amountValue = parseFloat(amount);
+    
+    if (!amount || amountValue <= 0) {
       toast({
-        title: 'Error',
-        description: 'Failed to load transactions for refund.',
-        variant: 'destructive',
+        title: "Invalid Amount",
+        description: "Please enter a valid amount",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!Capacitor.isNativePlatform()) {
+      toast({
+        title: "Platform Not Supported",
+        description: "NearPay is only available on Android devices",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    setPaymentStatus('idle');
+    setStatusMessage("");
+
+    try {
+      // Process payment with NearPay
+      const result = await NearPay.processPayment({
+        amount: amountValue
+      });
+
+      if (result.success) {
+        // Save transaction to database
+        await apiRequest('POST', '/api/transactions', {
+          amount: Math.round(amountValue * 100), // Convert to cents
+          status: 'approved',
+          transactionId: result.transactionId,
+          cardDetails: result.cardDetails,
+          errorMessage: null
+        });
+
+        setPaymentStatus('success');
+        setStatusMessage(`Payment of $${amountValue.toFixed(2)} approved`);
+        
+        toast({
+          title: "Payment Successful",
+          description: `Transaction ID: ${result.transactionId}`,
+        });
+
+        // Reset amount after successful payment
+        setTimeout(() => {
+          setAmount("");
+          setPaymentStatus('idle');
+          setStatusMessage("");
+        }, 3000);
+      } else {
+        // Payment declined or error
+        await apiRequest('POST', '/api/transactions', {
+          amount: Math.round(amountValue * 100),
+          status: 'declined',
+          transactionId: null,
+          cardDetails: null,
+          errorMessage: result.errorMessage || 'Payment declined'
+        });
+
+        setPaymentStatus('error');
+        setStatusMessage(result.errorMessage || 'Payment declined');
+        
+        toast({
+          title: "Payment Failed",
+          description: result.errorMessage || 'Payment was declined',
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      
+      // Log error transaction
+      try {
+        await apiRequest('POST', '/api/transactions', {
+          amount: Math.round(amountValue * 100),
+          status: 'error',
+          transactionId: null,
+          cardDetails: null,
+          errorMessage: error.message || 'Unknown error'
+        });
+      } catch (logError) {
+        console.error('Failed to log transaction error:', logError);
+      }
+
+      setPaymentStatus('error');
+      setStatusMessage(error.message || 'Payment failed');
+      
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to process payment',
+        variant: "destructive"
       });
     } finally {
-      setLoadingTransactions(false);
+      setIsProcessing(false);
     }
   };
 
-  // Function to handle opening the refund dialog
-  const handleOpenRefundDialog = () => {
-    fetchRecentTransactions();
-    setShowRefundDialog(true);
-  };
-
-  // Function to handle selecting a transaction for refund
-  const handleSelectTransactionForRefund = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-  };
-
-  // Function to process the selected refund
-  const handleProcessRefund = () => {
-    if (!selectedTransaction) return;
-    
-    // Set up refund mode with the selected transaction
-    setRefundMode(true);
-    setAmount(selectedTransaction.amount.toFixed(2));
-    setSelectedPaymentMethod('card');
-    
-    toast({
-      title: "Refund Mode Activated",
-      description: `Ready to process refund for $${selectedTransaction.amount.toFixed(2)}`,
-      variant: "default",
-    });
-    
-    // Close the dialog
-    setShowRefundDialog(false);
-    
-    // Note: refund mode will be reset automatically after the refund is processed
-    // in the processRefund function in the cashRegisterContext
-  };
-
-  // Format amount for display
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  // Format date for display
-  const formatDate = (dateString: string | Date) => {
-    try {
-      return new Date(dateString).toLocaleString();
-    } catch (error) {
-      console.error('Error formatting date:', dateString, error);
-      return String(dateString);
-    }
-  };
+  const quickAmounts = [10, 20, 50, 100];
 
   return (
-    <div className="bg-gray-100 min-h-screen">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <header className="mb-6">
-          <div className="flex justify-center items-center">
-            <h1 className="text-3xl font-bold text-dark text-center">
-              {isRefundMode ? "Cash Register - Refund Mode" : "Cash Register"}
-            </h1>
-            
-            {/* Cancel Refund button - only visible in refund mode */}
-            {isRefundMode && (
-              <Button 
-                variant="destructive"
-                className="ml-4"
-                onClick={() => {
-                  setRefundMode(false);
-                  toast({
-                    title: "Refund Cancelled",
-                    description: "Returned to normal sales mode",
-                    variant: "default",
-                  });
-                }}
-              >
-                Cancel Refund
-              </Button>
-            )}
-          </div>
-        </header>
-
-        <Card className="overflow-hidden">
-          {/* Main content area with two columns on desktop, stacked on mobile */}
-          <div className="flex flex-col md:flex-row">
-            {/* Left column: Keypad and amount input */}
-            <div className="w-full md:w-7/12 p-6 border-b md:border-b-0 md:border-r border-gray-200">
-              <AmountInput />
-            </div>
-            
-            {/* Right column: Customer selection, payment methods and status */}
-            <div className="w-full md:w-5/12 p-6">
-              <CustomerSelector />
-              <PaymentMethod />
-              <TransactionStatus />
-            </div>
-          </div>
-          
-          {/* Receipt area */}
-          <Receipt />
-        </Card>
-        
-        {/* Settings, Refund, History and Token Test Buttons */}
-        <div className="fixed bottom-6 right-6 flex space-x-3 z-50">
-          <Link href="/history">
-            <Button 
-              variant="default"
-              className="bg-amber-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-amber-700"
-            >
-              <History className="h-5 w-5 mr-1" />
-              <span>Transaction History</span>
-            </Button>
-          </Link>
-          
-          <Link href="/token-test">
-            <Button 
-              variant="default"
-              className="bg-purple-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-purple-700"
-            >
-              <Coins className="h-5 w-5 mr-1" />
-              <span>Token Capture</span>
-            </Button>
-          </Link>
-          
-          <Link href="/customers">
-            <Button 
-              variant="default"
-              className="bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-green-700"
-            >
-              <Users className="h-5 w-5 mr-1" />
-              <span>Customers</span>
-            </Button>
-          </Link>
-          
-          <Button 
-            variant="default"
-            className="bg-teal-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-teal-700"
-            onClick={handleOpenRefundDialog}
-          >
-            <RefreshCcw className="h-5 w-5 mr-1" />
-            <span>Process Refund</span>
-          </Button>
-          
-          <Button 
-            variant="default"
-            className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-lg font-medium flex items-center space-x-2 hover:bg-blue-700"
-            onClick={() => setShowConfigDialog(true)}
-          >
-            <Settings className="h-5 w-5 mr-1" />
-            <span>Terminal Settings</span>
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="max-w-md mx-auto space-y-4">
+        {/* Header */}
+        <div className="text-center py-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            NearPay POS
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Tap to Pay on Phone
+          </p>
         </div>
-      </div>
 
-      {/* Terminal Configuration Dialog */}
-      {showConfigDialog && (
-        <TerminalConfig 
-          onClose={() => setShowConfigDialog(false)} 
-        />
-      )}
-
-      {/* Refund Dialog */}
-      {showRefundDialog && (
-        <Dialog open={true} onOpenChange={setShowRefundDialog}>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Process Refund</DialogTitle>
-              <DialogDescription>
-                Select a transaction to refund from the list below.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="max-h-[350px] overflow-y-auto">
-              {loadingTransactions ? (
-                <div className="flex justify-center items-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-                </div>
-              ) : transactions.length === 0 ? (
-                <div className="text-center py-6 text-gray-500">
-                  No refundable transactions found.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3 my-4">
-                  {transactions.map((transaction) => (
-                    <div 
-                      key={transaction.id} 
-                      className={`border rounded-md p-3 cursor-pointer transition-all ${
-                        selectedTransaction?.id === transaction.id 
-                          ? 'border-amber-600 bg-amber-50' 
-                          : 'hover:border-gray-400'
-                      }`}
-                      onClick={() => handleSelectTransactionForRefund(transaction)}
-                    >
-                      <div className="flex justify-between">
-                        <span className="font-medium">Transaction #{transaction.id}</span>
-                        <span className="font-bold">{formatAmount(transaction.amount)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-gray-500 mt-1">
-                        <span>{transaction.cardDetails?.type || 'Card'}</span>
-                        <span>{formatDate(transaction.dateTime)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+        {/* Main Payment Card */}
+        <Card className="p-6 space-y-6" data-testid="card-payment">
+          {/* Amount Input */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Enter Amount
+            </label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                type="text"
+                value={amount}
+                onChange={handleAmountChange}
+                placeholder="0.00"
+                className="pl-10 text-2xl font-semibold h-14"
+                disabled={isProcessing}
+                data-testid="input-amount"
+              />
             </div>
+          </div>
 
-            <DialogFooter>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowRefundDialog(false);
-                  
-                  // If we're already in refund mode, cancel it when closing the dialog
-                  if (isRefundMode) {
-                    setRefundMode(false);
-                    toast({
-                      title: "Refund Cancelled",
-                      description: "Returned to normal sales mode",
-                      variant: "default",
-                    });
-                  }
-                }} 
-                className="mt-4"
+          {/* Quick Amount Buttons */}
+          <div className="grid grid-cols-4 gap-2">
+            {quickAmounts.map((value) => (
+              <Button
+                key={value}
+                variant="outline"
+                onClick={() => setAmount(value.toString())}
+                disabled={isProcessing}
+                data-testid={`button-quick-${value}`}
               >
-                Cancel
+                ${value}
               </Button>
-              <Button 
-                onClick={handleProcessRefund}
-                disabled={!selectedTransaction || loadingTransactions}
-                className="bg-amber-600 hover:bg-amber-700 text-white mt-4"
-              >
-                <RefreshCcw className="h-4 w-4 mr-2" />
-                Process Refund
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+            ))}
+          </div>
 
-      {/* Processing Overlay */}
-      <ProcessingOverlay />
+          {/* Payment Status */}
+          {paymentStatus !== 'idle' && (
+            <div className={`p-4 rounded-lg flex items-center gap-3 ${
+              paymentStatus === 'success' 
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
+                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+            }`} data-testid={`status-${paymentStatus}`}>
+              {paymentStatus === 'success' ? (
+                <CheckCircle className="h-5 w-5" />
+              ) : (
+                <XCircle className="h-5 w-5" />
+              )}
+              <span className="font-medium">{statusMessage}</span>
+            </div>
+          )}
+
+          {/* Pay Button */}
+          <Button
+            onClick={handlePayment}
+            disabled={!amount || parseFloat(amount) <= 0 || isProcessing}
+            className="w-full h-14 text-lg font-semibold"
+            data-testid="button-pay"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <CreditCard className="mr-2 h-5 w-5" />
+                Pay with Card
+              </>
+            )}
+          </Button>
+
+          {!Capacitor.isNativePlatform() && (
+            <p className="text-sm text-center text-amber-600 dark:text-amber-400">
+              ⚠️ NearPay is only available on Android devices
+            </p>
+          )}
+        </Card>
+
+        {/* Navigation */}
+        <Link href="/history">
+          <Button variant="outline" className="w-full" data-testid="button-history">
+            <History className="mr-2 h-4 w-4" />
+            View Transaction History
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }
