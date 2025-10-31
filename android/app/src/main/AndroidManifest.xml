@@ -35,6 +35,14 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        
+        <!-- NearPay Tap-to-Pay configuration -->
+        <meta-data
+            android:name="com.google.android.gms.wallet.tap_to_pay_service_enabled"
+            android:value="true" />
+        <meta-data
+            android:name="com.google.android.gms.wallet.api.projectNumber"
+            android:value="@string/google_cloud_project_number" />
     </application>
 
     <!-- Permissions -->
