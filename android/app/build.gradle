@@ -6,14 +6,14 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "app.cashmgmtnp.pos"
-        minSdkVersion 30  // Required for Tap-to-Pay on Phone (SoftPOS)
+        minSdkVersion 28  // NearPay Terminal SDK requirement
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
         // NearPay Google Cloud Project Number for Tap-to-Pay
-        resValue "string", "google_cloud_project_number", System.getenv("GOOGLE_CLOUD_PROJECT_NUMBER") ?: "25252525"
+        resValue "string", "google_cloud_project_number", System.getenv("GOOGLE_CLOUD_PROJECT_NUMBER") ?: "392076631783"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -89,8 +89,8 @@ dependencies {
     // Kotlin standard library
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     
-    // NearPay Terminal SDK v2.1.91 - SoftPOS (Tap-to-Pay)
-    implementation 'io.nearpay:terminalsdk-release:2.1.91'
+    // NearPay Terminal SDK - Revert to v0.0.114 until GitLab token for v2.1.91 is available
+    implementation 'io.nearpay:terminalsdk-release:0.0.114'
     implementation 'com.google.android.gms:play-services-location:21.0.1'
     implementation 'com.huawei.hms:location:6.11.0.301'
 }
