@@ -8,6 +8,8 @@ import { Express, Request, Response, NextFunction } from 'express';
 import { Server, createServer } from 'http';
 import { storage } from './storage';
 import { insertTransactionSchema2 } from '../shared/schema';
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
 
 // Create a route handler with error catching
 function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) {
@@ -68,6 +70,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error creating transaction:', error);
       res.status(400).json({ error: error.message || 'Failed to create transaction' });
+    }
+  }));
+
+  // Generate NearPay JWT token for authentication
+  app.get('/api/nearpay/jwt', asyncHandler(async (req, res) => {
+    console.log('Generating NearPay JWT token');
+    
+    try {
+      const clientUuid = process.env.NEARPAY_CLIENT_UUID;
+      const terminalId = process.env.NEARPAY_TERMINAL_ID;
+      
+      if (!clientUuid) {
+        return res.status(500).json({ 
+          error: 'NEARPAY_CLIENT_UUID not configured',
+          message: 'Add NEARPAY_CLIENT_UUID to Replit Secrets'
+        });
+      }
+      
+      if (!terminalId) {
+        return res.status(500).json({ 
+          error: 'NEARPAY_TERMINAL_ID not configured',
+          message: 'Add NEARPAY_TERMINAL_ID to Replit Secrets (e.g., PS239210)'
+        });
+      }
+      
+      let privateKey: Buffer;
+      try {
+        privateKey = fs.readFileSync('./pos_key.pem');
+      } catch (error) {
+        return res.status(500).json({ 
+          error: 'pos_key.pem not found',
+          message: 'Download pos_key.pem from NearPay Dashboard → Credentials → Generate JWT Key, then place it in the project root'
+        });
+      }
+      
+      const payload = {
+        data: {
+          ops: "auth",
+          client_uuid: clientUuid,
+          terminal_id: terminalId
+        }
+      };
+      
+      const token = jwt.sign(payload, privateKey, { algorithm: "RS256" });
+      
+      console.log('JWT token generated successfully');
+      res.json({ jwt: token });
+      
+    } catch (error: any) {
+      console.error('Error generating JWT token:', error);
+      res.status(500).json({ error: error.message || 'Failed to generate JWT token' });
     }
   }));
 
