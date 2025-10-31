@@ -8,7 +8,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url 'https://developer.huawei.com/repo/' }
-                maven {
+        maven {
             url 'https://gitlab.com/api/v4/projects/37026421/packages/maven'
             credentials(HttpHeaderCredentials) {
                 name = 'Private-Token'
