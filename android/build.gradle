@@ -26,14 +26,25 @@ allprojects {
     }
     
     // Force all modules to use Java 17 (Kotlin 1.9.22 doesn't support Java 21)
-    tasks.withType(JavaCompile).configureEach {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-        kotlinOptions {
-            jvmTarget = '17'
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+        
+        tasks.withType(JavaCompile).configureEach {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
+        
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = '17'
+            }
         }
     }
 }
