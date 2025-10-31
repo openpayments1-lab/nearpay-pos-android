@@ -1,0 +1,40 @@
+Run ./gradlew assembleDebug --no-daemon -DnearPayGitLabToken="***"
+Downloading https://services.gradle.org/distributions/gradle-8.11.1-all.zip
+.....................10%......................20%......................30%......................40%......................50%......................60%......................70%......................80%......................90%......................100%
+
+Welcome to Gradle 8.11.1!
+
+Here are the highlights of this release:
+ - Parallel load and store for Configuration Cache
+ - Java compilation errors at the end of the build output
+ - Consolidated report for warnings and deprecations
+
+For more details see https://docs.gradle.org/8.11.1/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+[Incubating] Problems report is available at: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* Where:
+Settings file '/home/runner/work/nearpay-pos-android/nearpay-pos-android/android/settings.gradle' line: 5
+
+* What went wrong:
+Could not compile settings file '/home/runner/work/nearpay-pos-android/nearpay-pos-android/android/settings.gradle'.
+> startup failed:
+  settings file '/home/runner/work/nearpay-pos-android/nearpay-pos-android/android/settings.gradle': 5: Unexpected input: '{' @ line 5, column 32.
+     dependencyResolutionManagement {
+                                    ^
+  
+  1 error
+
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 12s
+Error: Process completed with exit code 1.

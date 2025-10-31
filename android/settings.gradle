@@ -18,6 +18,7 @@ dependencyResolutionManagement {
                 header(HttpHeaderAuthentication)
             }
         }
+    }
 }
 
 apply from: 'capacitor.settings.gradle'
