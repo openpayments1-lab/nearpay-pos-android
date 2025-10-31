@@ -1,0 +1,460 @@
+2025-10-31T17:17:24.2206410Z Current runner version: '2.328.0'
+2025-10-31T17:17:24.2229272Z ##[group]Runner Image Provisioner
+2025-10-31T17:17:24.2230019Z Hosted Compute Agent
+2025-10-31T17:17:24.2230635Z Version: 20250912.392
+2025-10-31T17:17:24.2231231Z Commit: d921fda672a98b64f4f82364647e2f10b2267d0b
+2025-10-31T17:17:24.2232089Z Build Date: 2025-09-12T15:23:14Z
+2025-10-31T17:17:24.2232728Z ##[endgroup]
+2025-10-31T17:17:24.2233290Z ##[group]Operating System
+2025-10-31T17:17:24.2233825Z Ubuntu
+2025-10-31T17:17:24.2234361Z 24.04.3
+2025-10-31T17:17:24.2234801Z LTS
+2025-10-31T17:17:24.2235267Z ##[endgroup]
+2025-10-31T17:17:24.2235760Z ##[group]Runner Image
+2025-10-31T17:17:24.2236374Z Image: ubuntu-24.04
+2025-10-31T17:17:24.2236868Z Version: 20250929.60.1
+2025-10-31T17:17:24.2237903Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250929.60/images/ubuntu/Ubuntu2404-Readme.md
+2025-10-31T17:17:24.2239410Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250929.60
+2025-10-31T17:17:24.2240452Z ##[endgroup]
+2025-10-31T17:17:24.2241771Z ##[group]GITHUB_TOKEN Permissions
+2025-10-31T17:17:24.2243703Z Contents: read
+2025-10-31T17:17:24.2244243Z Metadata: read
+2025-10-31T17:17:24.2244756Z Packages: read
+2025-10-31T17:17:24.2245222Z ##[endgroup]
+2025-10-31T17:17:24.2247294Z Secret source: Actions
+2025-10-31T17:17:24.2248324Z Prepare workflow directory
+2025-10-31T17:17:24.2574595Z Prepare all required actions
+2025-10-31T17:17:24.2614142Z Getting action download info
+2025-10-31T17:17:24.7032240Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+2025-10-31T17:17:24.9055893Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2025-10-31T17:17:24.9941026Z Download action repository 'actions/setup-java@v4' (SHA:c5195efecf7bdfc987ee8bae7a71cb8b11521c00)
+2025-10-31T17:17:25.5648230Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2025-10-31T17:17:25.6744984Z Download action repository 'softprops/action-gh-release@v1' (SHA:de2c0eb89ae2a093876385947365aca7b0e5f844)
+2025-10-31T17:17:26.0812903Z Complete job name: build
+2025-10-31T17:17:26.1643927Z ##[group]Run actions/checkout@v4
+2025-10-31T17:17:26.1645316Z with:
+2025-10-31T17:17:26.1646185Z   repository: openpayments1-lab/nearpay-pos-android
+2025-10-31T17:17:26.1647563Z   token: ***
+2025-10-31T17:17:26.1648264Z   ssh-strict: true
+2025-10-31T17:17:26.1649004Z   ssh-user: git
+2025-10-31T17:17:26.1649761Z   persist-credentials: true
+2025-10-31T17:17:26.1650612Z   clean: true
+2025-10-31T17:17:26.1651588Z   sparse-checkout-cone-mode: true
+2025-10-31T17:17:26.1652541Z   fetch-depth: 1
+2025-10-31T17:17:26.1653277Z   fetch-tags: false
+2025-10-31T17:17:26.1654018Z   show-progress: true
+2025-10-31T17:17:26.1654779Z   lfs: false
+2025-10-31T17:17:26.1655462Z   submodules: false
+2025-10-31T17:17:26.1656223Z   set-safe-directory: true
+2025-10-31T17:17:26.1657394Z ##[endgroup]
+2025-10-31T17:17:26.2804691Z Syncing repository: openpayments1-lab/nearpay-pos-android
+2025-10-31T17:17:26.2809075Z ##[group]Getting Git version info
+2025-10-31T17:17:26.2811998Z Working directory is '/home/runner/work/nearpay-pos-android/nearpay-pos-android'
+2025-10-31T17:17:26.2815703Z [command]/usr/bin/git version
+2025-10-31T17:17:26.2824809Z git version 2.51.0
+2025-10-31T17:17:26.2854050Z ##[endgroup]
+2025-10-31T17:17:26.2879390Z Temporarily overriding HOME='/home/runner/work/_temp/bd2bd1f0-6b20-4db0-b2f7-659d3a0fb144' before making global git config changes
+2025-10-31T17:17:26.2885900Z Adding repository directory to the temporary git global config as a safe directory
+2025-10-31T17:17:26.2891898Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/nearpay-pos-android/nearpay-pos-android
+2025-10-31T17:17:26.2932073Z Deleting the contents of '/home/runner/work/nearpay-pos-android/nearpay-pos-android'
+2025-10-31T17:17:26.2936253Z ##[group]Initializing the repository
+2025-10-31T17:17:26.2940729Z [command]/usr/bin/git init /home/runner/work/nearpay-pos-android/nearpay-pos-android
+2025-10-31T17:17:26.3038664Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-10-31T17:17:26.3042448Z hint: is subject to change. To configure the initial branch name to use in all
+2025-10-31T17:17:26.3045443Z hint: of your new repositories, which will suppress this warning, call:
+2025-10-31T17:17:26.3047767Z hint:
+2025-10-31T17:17:26.3049324Z hint: 	git config --global init.defaultBranch <name>
+2025-10-31T17:17:26.3051208Z hint:
+2025-10-31T17:17:26.3053307Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-10-31T17:17:26.3056342Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-10-31T17:17:26.3058751Z hint:
+2025-10-31T17:17:26.3060014Z hint: 	git branch -m <name>
+2025-10-31T17:17:26.3061682Z hint:
+2025-10-31T17:17:26.3063558Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-10-31T17:17:26.3067336Z Initialized empty Git repository in /home/runner/work/nearpay-pos-android/nearpay-pos-android/.git/
+2025-10-31T17:17:26.3073811Z [command]/usr/bin/git remote add origin https://github.com/openpayments1-lab/nearpay-pos-android
+2025-10-31T17:17:26.3100138Z ##[endgroup]
+2025-10-31T17:17:26.3102685Z ##[group]Disabling automatic garbage collection
+2025-10-31T17:17:26.3104805Z [command]/usr/bin/git config --local gc.auto 0
+2025-10-31T17:17:26.3140672Z ##[endgroup]
+2025-10-31T17:17:26.3143444Z ##[group]Setting up auth
+2025-10-31T17:17:26.3148796Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-10-31T17:17:26.3185825Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-10-31T17:17:26.3517379Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-10-31T17:17:26.3547935Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-10-31T17:17:26.3832775Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-10-31T17:17:26.3838136Z ##[endgroup]
+2025-10-31T17:17:26.3839683Z ##[group]Fetching the repository
+2025-10-31T17:17:26.3842908Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +4239fcb2ca42c2fb96be4c19c0b03fa89010e7f2:refs/remotes/origin/main
+2025-10-31T17:17:26.7541587Z From https://github.com/openpayments1-lab/nearpay-pos-android
+2025-10-31T17:17:26.7543654Z  * [new ref]         4239fcb2ca42c2fb96be4c19c0b03fa89010e7f2 -> origin/main
+2025-10-31T17:17:26.7576610Z ##[endgroup]
+2025-10-31T17:17:26.7578786Z ##[group]Determining the checkout info
+2025-10-31T17:17:26.7581241Z ##[endgroup]
+2025-10-31T17:17:26.7584887Z [command]/usr/bin/git sparse-checkout disable
+2025-10-31T17:17:26.7626051Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-10-31T17:17:26.7654067Z ##[group]Checking out the ref
+2025-10-31T17:17:26.7656942Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-10-31T17:17:26.7885760Z Switched to a new branch 'main'
+2025-10-31T17:17:26.7888421Z branch 'main' set up to track 'origin/main'.
+2025-10-31T17:17:26.7896795Z ##[endgroup]
+2025-10-31T17:17:26.7928138Z [command]/usr/bin/git log -1 --format=%H
+2025-10-31T17:17:26.7948888Z 4239fcb2ca42c2fb96be4c19c0b03fa89010e7f2
+2025-10-31T17:17:26.8227230Z ##[group]Run actions/setup-node@v4
+2025-10-31T17:17:26.8228170Z with:
+2025-10-31T17:17:26.8228831Z   node-version: 20
+2025-10-31T17:17:26.8229531Z   cache: npm
+2025-10-31T17:17:26.8230214Z   always-auth: false
+2025-10-31T17:17:26.8230970Z   check-latest: false
+2025-10-31T17:17:26.8232107Z   token: ***
+2025-10-31T17:17:26.8232782Z ##[endgroup]
+2025-10-31T17:17:26.9994499Z Found in cache @ /opt/hostedtoolcache/node/20.19.5/x64
+2025-10-31T17:17:26.9998005Z ##[group]Environment details
+2025-10-31T17:17:27.3740954Z node: v20.19.5
+2025-10-31T17:17:27.3742600Z npm: 10.8.2
+2025-10-31T17:17:27.3743789Z yarn: 1.22.22
+2025-10-31T17:17:27.3746031Z ##[endgroup]
+2025-10-31T17:17:27.3768883Z [command]/opt/hostedtoolcache/node/20.19.5/x64/bin/npm config get cache
+2025-10-31T17:17:27.5023187Z /home/runner/.npm
+2025-10-31T17:17:27.6755095Z npm cache is not found
+2025-10-31T17:17:27.6969496Z ##[group]Run actions/setup-java@v4
+2025-10-31T17:17:27.6970367Z with:
+2025-10-31T17:17:27.6971015Z   distribution: temurin
+2025-10-31T17:17:27.6972085Z   java-version: 17
+2025-10-31T17:17:27.6972790Z   java-package: jdk
+2025-10-31T17:17:27.6973500Z   check-latest: false
+2025-10-31T17:17:27.6974213Z   server-id: github
+2025-10-31T17:17:27.6974935Z   server-username: GITHUB_ACTOR
+2025-10-31T17:17:27.6975768Z   server-password: GITHUB_TOKEN
+2025-10-31T17:17:27.6976600Z   overwrite-settings: true
+2025-10-31T17:17:27.6977364Z   job-status: success
+2025-10-31T17:17:27.6978378Z   token: ***
+2025-10-31T17:17:27.6979030Z ##[endgroup]
+2025-10-31T17:17:27.8960577Z ##[group]Installed distributions
+2025-10-31T17:17:27.9026825Z Resolved Java 17.0.16+8 from tool-cache
+2025-10-31T17:17:27.9027936Z Setting Java 17.0.16+8 as the default
+2025-10-31T17:17:27.9037326Z Creating toolchains.xml for JDK version 17 from temurin
+2025-10-31T17:17:27.9114301Z Writing to /home/runner/.m2/toolchains.xml
+2025-10-31T17:17:27.9115396Z 
+2025-10-31T17:17:27.9115916Z Java configuration:
+2025-10-31T17:17:27.9117063Z   Distribution: temurin
+2025-10-31T17:17:27.9118186Z   Version: 17.0.16+8
+2025-10-31T17:17:27.9119825Z   Path: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:27.9121121Z 
+2025-10-31T17:17:27.9122423Z ##[endgroup]
+2025-10-31T17:17:27.9127388Z Creating settings.xml with server-id: github
+2025-10-31T17:17:27.9142609Z Writing to /home/runner/.m2/settings.xml
+2025-10-31T17:17:27.9270229Z ##[group]Run npm ci
+2025-10-31T17:17:27.9270994Z [36;1mnpm ci[0m
+2025-10-31T17:17:27.9314286Z shell: /usr/bin/bash -e {0}
+2025-10-31T17:17:27.9315048Z env:
+2025-10-31T17:17:27.9315945Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:27.9317351Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:27.9318434Z ##[endgroup]
+2025-10-31T17:17:33.2453893Z npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2025-10-31T17:17:33.2822467Z npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2025-10-31T17:17:38.3054913Z 
+2025-10-31T17:17:38.3055685Z added 591 packages, and audited 592 packages in 10s
+2025-10-31T17:17:38.3056233Z 
+2025-10-31T17:17:38.3056526Z 73 packages are looking for funding
+2025-10-31T17:17:38.3056920Z   run `npm fund` for details
+2025-10-31T17:17:38.3427224Z 
+2025-10-31T17:17:38.3428028Z 13 vulnerabilities (3 low, 8 moderate, 1 high, 1 critical)
+2025-10-31T17:17:38.3428614Z 
+2025-10-31T17:17:38.3429195Z To address issues that do not require attention, run:
+2025-10-31T17:17:38.3429916Z   npm audit fix
+2025-10-31T17:17:38.3430211Z 
+2025-10-31T17:17:38.3430757Z To address all issues (including breaking changes), run:
+2025-10-31T17:17:38.3431816Z   npm audit fix --force
+2025-10-31T17:17:38.3432267Z 
+2025-10-31T17:17:38.3432564Z Run `npm audit` for details.
+2025-10-31T17:17:38.3735978Z ##[group]Run npm run build
+2025-10-31T17:17:38.3736261Z [36;1mnpm run build[0m
+2025-10-31T17:17:38.3774950Z shell: /usr/bin/bash -e {0}
+2025-10-31T17:17:38.3775212Z env:
+2025-10-31T17:17:38.3775497Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:38.3775963Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:38.3776301Z ##[endgroup]
+2025-10-31T17:17:38.4882193Z 
+2025-10-31T17:17:38.4882455Z > rest-express@1.0.0 build
+2025-10-31T17:17:38.4883207Z > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+2025-10-31T17:17:38.4883924Z 
+2025-10-31T17:17:38.8060383Z [36mvite v5.4.14 [32mbuilding for production...[36m[39m
+2025-10-31T17:17:38.8596770Z transforming...
+2025-10-31T17:17:39.0966450Z Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+2025-10-31T17:17:39.0967325Z   npx update-browserslist-db@latest
+2025-10-31T17:17:39.0968275Z   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+2025-10-31T17:17:41.9305530Z [32m✓[39m 1657 modules transformed.
+2025-10-31T17:17:42.0739540Z rendering chunks...
+2025-10-31T17:17:42.0809625Z computing gzip size...
+2025-10-31T17:17:42.0899187Z [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m  1.60 kB[22m[1m[22m[2m │ gzip:  0.63 kB[22m
+2025-10-31T17:17:42.0900557Z [2m../dist/public/[22m[2massets/[22m[35mindex-DP2OAQfz.css  [39m[1m[2m 58.62 kB[22m[1m[22m[2m │ gzip: 10.36 kB[22m
+2025-10-31T17:17:42.0901801Z [2m../dist/public/[22m[2massets/[22m[36mindex-UB34LBoW.js   [39m[1m[2m256.39 kB[22m[1m[22m[2m │ gzip: 81.52 kB[22m
+2025-10-31T17:17:42.0902795Z [32m✓ built in 3.26s[39m
+2025-10-31T17:17:42.1246297Z 
+2025-10-31T17:17:42.1246600Z   dist/index.js  10.2kb
+2025-10-31T17:17:42.1246877Z 
+2025-10-31T17:17:42.1247200Z ⚡ Done in 3ms
+2025-10-31T17:17:42.1341713Z ##[group]Run npx cap sync android
+2025-10-31T17:17:42.1342028Z [36;1mnpx cap sync android[0m
+2025-10-31T17:17:42.1374180Z shell: /usr/bin/bash -e {0}
+2025-10-31T17:17:42.1374412Z env:
+2025-10-31T17:17:42.1374703Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:42.1375168Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:42.1375510Z ##[endgroup]
+2025-10-31T17:17:43.0529084Z ✔ Copying web assets from public to android/app/src/main/assets/public in 9.67ms
+2025-10-31T17:17:43.0543757Z ✔ Creating capacitor.config.json in android/app/src/main/assets in 1.07ms
+2025-10-31T17:17:43.0720731Z ✔ copy android in 60.51ms
+2025-10-31T17:17:43.1252275Z ✔ Updating Android plugins in 16.05ms
+2025-10-31T17:17:43.1691239Z ✔ update android in 76.38ms
+2025-10-31T17:17:43.1864577Z [info] Sync finished in 0.206s
+2025-10-31T17:17:43.2180176Z ##[group]Run chmod +x scripts/generate-keystore.sh
+2025-10-31T17:17:43.2180563Z [36;1mchmod +x scripts/generate-keystore.sh[0m
+2025-10-31T17:17:43.2180859Z [36;1m./scripts/generate-keystore.sh sandbox[0m
+2025-10-31T17:17:43.2214113Z shell: /usr/bin/bash -e {0}
+2025-10-31T17:17:43.2214349Z env:
+2025-10-31T17:17:43.2214636Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:43.2215108Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:43.2215469Z   CI: true
+2025-10-31T17:17:43.2215633Z ##[endgroup]
+2025-10-31T17:17:43.2289382Z 🔐 Generating NearPay keystore and certificate for: sandbox
+2025-10-31T17:17:43.2289736Z 
+2025-10-31T17:17:43.2303100Z 📝 Step 1: Generating Android keystore...
+2025-10-31T17:17:43.2303662Z    You will be prompted for information.
+2025-10-31T17:17:43.2303913Z 
+2025-10-31T17:17:44.6326046Z Generating 2,048 bit RSA key pair and self-signed certificate (SHA256withRSA) with a validity of 10,000 days
+2025-10-31T17:17:44.6336154Z 	for: CN=NearPay POS App, OU=Payment Systems, O=Your Company, L=San Antonio, ST=Texas, C=US
+2025-10-31T17:17:45.1925811Z [Storing certs/nearpay-sandbox.keystore]
+2025-10-31T17:17:45.3973699Z 
+2025-10-31T17:17:45.3974731Z ✅ Keystore generated: certs/nearpay-sandbox.keystore
+2025-10-31T17:17:45.3975171Z 
+2025-10-31T17:17:45.3975606Z 📝 Step 2: Extracting PEM certificate...
+2025-10-31T17:17:45.3975913Z 
+2025-10-31T17:17:45.6446816Z Certificate stored in file <certs/nearpay-sandbox-cert.pem>
+2025-10-31T17:17:45.7099632Z 
+2025-10-31T17:17:45.7100645Z ✅ PEM certificate generated: certs/nearpay-sandbox-cert.pem
+2025-10-31T17:17:45.7101151Z 
+2025-10-31T17:17:45.7101654Z 📋 Certificate Information:
+2025-10-31T17:17:45.7102345Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-10-31T17:17:46.1263355Z Owner: CN=NearPay POS App, OU=Payment Systems, O=Your Company, L=San Antonio, ST=Texas, C=US
+2025-10-31T17:17:46.1264723Z Issuer: CN=NearPay POS App, OU=Payment Systems, O=Your Company, L=San Antonio, ST=Texas, C=US
+2025-10-31T17:17:46.1265264Z Serial number: d57ae8f48ac0fb41
+2025-10-31T17:17:46.1265731Z Valid from: Fri Oct 31 17:17:44 UTC 2025 until: Tue Mar 18 17:17:44 UTC 2053
+2025-10-31T17:17:46.1266129Z Certificate fingerprints:
+2025-10-31T17:17:46.1266537Z 	 SHA1: 38:E6:02:E5:BF:3D:14:E0:A6:70:72:26:F8:5B:D5:CC:5A:41:30:8D
+2025-10-31T17:17:46.1267638Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-10-31T17:17:46.1267971Z 
+2025-10-31T17:17:46.1294430Z ✅ Setup complete!
+2025-10-31T17:17:46.1294660Z 
+2025-10-31T17:17:46.1294865Z 📧 NEXT STEPS:
+2025-10-31T17:17:46.1295293Z 1. Send PEM certificate to NearPay:
+2025-10-31T17:17:46.1295895Z    📎 File: certs/nearpay-sandbox-cert.pem
+2025-10-31T17:17:46.1296411Z    ✉️  To: [email protected]
+2025-10-31T17:17:46.1297131Z    📝 Include: Package name (app.cashmgmtnp.pos) and environment (sandbox)
+2025-10-31T17:17:46.1297617Z 
+2025-10-31T17:17:46.1297875Z 2. Configure app signing (see INFRA.md)
+2025-10-31T17:17:46.1298185Z 
+2025-10-31T17:17:46.1298747Z ⚠️  SECURITY: Never commit certs/ directory to git!
+2025-10-31T17:17:46.1299097Z 
+2025-10-31T17:17:46.1299609Z 📄 Keystore details saved to: certs/nearpay-sandbox-details.txt
+2025-10-31T17:17:46.1353755Z ##[group]Run chmod +x android/gradlew
+2025-10-31T17:17:46.1354066Z [36;1mchmod +x android/gradlew[0m
+2025-10-31T17:17:46.1386416Z shell: /usr/bin/bash -e {0}
+2025-10-31T17:17:46.1386643Z env:
+2025-10-31T17:17:46.1386933Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:46.1387397Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:46.1387744Z ##[endgroup]
+2025-10-31T17:17:46.1474059Z ##[group]Run ./gradlew assembleDebug
+2025-10-31T17:17:46.1474360Z [36;1m./gradlew assembleDebug[0m
+2025-10-31T17:17:46.1504004Z shell: /usr/bin/bash -e {0}
+2025-10-31T17:17:46.1504236Z env:
+2025-10-31T17:17:46.1504524Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:46.1504983Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
+2025-10-31T17:17:46.1505334Z ##[endgroup]
+2025-10-31T17:17:46.2990587Z Downloading https://services.gradle.org/distributions/gradle-8.11.1-all.zip
+2025-10-31T17:17:49.0342131Z .....................10%......................20%......................30%......................40%......................50%......................60%......................70%......................80%......................90%......................100%
+2025-10-31T17:17:52.6945229Z 
+2025-10-31T17:17:52.6946371Z Welcome to Gradle 8.11.1!
+2025-10-31T17:17:52.6946703Z 
+2025-10-31T17:17:52.6948162Z Here are the highlights of this release:
+2025-10-31T17:17:52.6950181Z  - Parallel load and store for Configuration Cache
+2025-10-31T17:17:52.6952181Z  - Java compilation errors at the end of the build output
+2025-10-31T17:17:52.6953142Z  - Consolidated report for warnings and deprecations
+2025-10-31T17:17:52.6953685Z 
+2025-10-31T17:17:52.6955431Z For more details see https://docs.gradle.org/8.11.1/release-notes.html
+2025-10-31T17:17:52.6956083Z 
+2025-10-31T17:17:52.7902295Z To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+2025-10-31T17:17:54.3895516Z Daemon will be stopped at the end of the build 
+2025-10-31T17:18:29.8898941Z 
+2025-10-31T17:18:29.8937787Z > Configure project :
+2025-10-31T17:18:29.8942480Z Build was configured to prefer settings repositories over project repositories but repository 'Google' was added by build file 'build.gradle'
+2025-10-31T17:18:29.8945301Z Build was configured to prefer settings repositories over project repositories but repository 'MavenRepo' was added by build file 'build.gradle'
+2025-10-31T17:18:29.9922563Z Build was configured to prefer settings repositories over project repositories but repository 'Google' was added by build file 'build.gradle'
+2025-10-31T17:18:29.9936404Z Build was configured to prefer settings repositories over project repositories but repository 'MavenRepo' was added by build file 'build.gradle'
+2025-10-31T17:18:29.9938482Z Build was configured to prefer settings repositories over project repositories but repository 'Google' was added by build file 'build.gradle'
+2025-10-31T17:18:29.9940466Z Build was configured to prefer settings repositories over project repositories but repository 'MavenRepo' was added by build file 'build.gradle'
+2025-10-31T17:18:29.9962568Z Build was configured to prefer settings repositories over project repositories but repository 'Google' was added by build file 'build.gradle'
+2025-10-31T17:18:29.9964369Z Build was configured to prefer settings repositories over project repositories but repository 'MavenRepo' was added by build file 'build.gradle'
+2025-10-31T17:18:32.6895805Z 
+2025-10-31T17:18:32.6900037Z > Configure project :app
+2025-10-31T17:18:32.6923478Z Build was configured to prefer settings repositories over project repositories but repository 'flatDir' was added by build file 'app/build.gradle'
+2025-10-31T17:18:32.6925897Z Build was configured to prefer settings repositories over project repositories but repository 'maven' was added by build file 'app/build.gradle'
+2025-10-31T17:18:32.6927947Z Build was configured to prefer settings repositories over project repositories but repository 'maven2' was added by build file 'app/build.gradle'
+2025-10-31T17:18:32.7942837Z WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+2025-10-31T17:18:35.3893539Z 
+2025-10-31T17:18:35.3894528Z > Configure project :capacitor-android
+2025-10-31T17:18:35.3896940Z Build was configured to prefer settings repositories over project repositories but repository 'Google2' was added by build file '../node_modules/@capacitor/android/capacitor/build.gradle'
+2025-10-31T17:18:35.3899401Z Build was configured to prefer settings repositories over project repositories but repository 'MavenRepo2' was added by build file '../node_modules/@capacitor/android/capacitor/build.gradle'
+2025-10-31T17:18:35.7893139Z 
+2025-10-31T17:18:35.7894290Z > Configure project :capacitor-cordova-android-plugins
+2025-10-31T17:18:35.7896335Z Build was configured to prefer settings repositories over project repositories but repository 'Google2' was added by build file 'capacitor-cordova-android-plugins/build.gradle'
+2025-10-31T17:18:35.7898916Z Build was configured to prefer settings repositories over project repositories but repository 'MavenRepo2' was added by build file 'capacitor-cordova-android-plugins/build.gradle'
+2025-10-31T17:18:35.7901763Z Build was configured to prefer settings repositories over project repositories but repository 'flatDir' was added by build file 'capacitor-cordova-android-plugins/build.gradle'
+2025-10-31T17:18:35.7904632Z WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+2025-10-31T17:18:38.2893581Z 
+2025-10-31T17:18:38.2894737Z > Task :app:preBuild UP-TO-DATE
+2025-10-31T17:18:38.2895534Z > Task :app:preDebugBuild UP-TO-DATE
+2025-10-31T17:18:38.2897101Z > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+2025-10-31T17:18:38.6899136Z > Task :app:checkKotlinGradlePluginConfigurationErrors
+2025-10-31T17:18:38.6902279Z > Task :capacitor-android:preBuild UP-TO-DATE
+2025-10-31T17:18:38.6903532Z > Task :capacitor-android:preDebugBuild UP-TO-DATE
+2025-10-31T17:18:38.7894346Z > Task :capacitor-cordova-android-plugins:preBuild UP-TO-DATE
+2025-10-31T17:18:38.7894965Z > Task :capacitor-android:writeDebugAarMetadata
+2025-10-31T17:18:39.6895357Z > Task :capacitor-cordova-android-plugins:preDebugBuild UP-TO-DATE
+2025-10-31T17:18:39.6896647Z > Task :capacitor-cordova-android-plugins:writeDebugAarMetadata
+2025-10-31T17:18:48.5972678Z > Task :app:generateDebugResValues
+2025-10-31T17:18:48.6894597Z > Task :capacitor-android:generateDebugResValues
+2025-10-31T17:18:48.6896461Z > Task :app:checkDebugAarMetadata
+2025-10-31T17:18:48.6897454Z > Task :capacitor-android:generateDebugResources
+2025-10-31T17:18:48.7896364Z > Task :capacitor-android:packageDebugResources
+2025-10-31T17:18:48.7899728Z > Task :capacitor-cordova-android-plugins:generateDebugResValues
+2025-10-31T17:18:48.7900962Z > Task :capacitor-cordova-android-plugins:generateDebugResources
+2025-10-31T17:18:48.7904476Z > Task :capacitor-cordova-android-plugins:packageDebugResources
+2025-10-31T17:18:48.8895034Z > Task :app:mapDebugSourceSetPaths
+2025-10-31T17:18:48.8895634Z > Task :app:generateDebugResources
+2025-10-31T17:18:51.6895819Z > Task :app:packageDebugResources
+2025-10-31T17:18:52.0895439Z > Task :app:mergeDebugResources
+2025-10-31T17:18:52.0896151Z > Task :app:createDebugCompatibleScreenManifests
+2025-10-31T17:18:52.0896804Z > Task :app:extractDeepLinksDebug
+2025-10-31T17:18:52.0897474Z > Task :capacitor-android:extractDeepLinksDebug
+2025-10-31T17:18:52.1896013Z > Task :capacitor-cordova-android-plugins:extractDeepLinksDebug
+2025-10-31T17:18:52.1899098Z > Task :app:parseDebugLocalResources
+2025-10-31T17:18:52.1903465Z > Task :capacitor-android:processDebugManifest
+2025-10-31T17:18:52.1906931Z > Task :capacitor-cordova-android-plugins:processDebugManifest
+2025-10-31T17:18:52.4919001Z > Task :capacitor-android:compileDebugLibraryResources
+2025-10-31T17:18:52.6894853Z 
+2025-10-31T17:18:52.6896899Z > Task :app:processDebugMainManifest
+2025-10-31T17:18:52.6899572Z /home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/AndroidManifest.xml:5:5-39:19 Warning:
+2025-10-31T17:18:52.6903491Z 	application@android:allowBackup was tagged at AndroidManifest.xml:5 to replace other declarations but no other declaration present
+2025-10-31T17:18:52.7897442Z 
+2025-10-31T17:18:52.7900028Z > Task :app:processDebugManifest
+2025-10-31T17:18:52.8974822Z > Task :app:processDebugManifestForPackage
+2025-10-31T17:18:52.8993394Z > Task :capacitor-android:parseDebugLocalResources
+2025-10-31T17:18:52.8994336Z > Task :capacitor-cordova-android-plugins:compileDebugLibraryResources
+2025-10-31T17:18:52.8995292Z > Task :capacitor-cordova-android-plugins:parseDebugLocalResources
+2025-10-31T17:18:52.8996057Z > Task :capacitor-android:javaPreCompileDebug
+2025-10-31T17:18:52.8996790Z > Task :capacitor-cordova-android-plugins:javaPreCompileDebug
+2025-10-31T17:18:52.8997450Z > Task :app:javaPreCompileDebug
+2025-10-31T17:18:52.8998005Z > Task :capacitor-android:generateDebugRFile
+2025-10-31T17:18:52.8998707Z > Task :capacitor-cordova-android-plugins:generateDebugRFile
+2025-10-31T17:18:52.8999288Z > Task :app:mergeDebugShaders
+2025-10-31T17:18:55.0895136Z > Task :app:processDebugResources
+2025-10-31T17:18:59.3894748Z 
+2025-10-31T17:18:59.3899744Z > Task :capacitor-android:compileDebugJavaWithJavac
+2025-10-31T17:18:59.3910128Z Note: Some input files use unchecked or unsafe operations.
+2025-10-31T17:18:59.3911058Z Note: Recompile with -Xlint:unchecked for details.
+2025-10-31T17:19:01.3893107Z 
+2025-10-31T17:19:01.3894453Z > Task :capacitor-cordova-android-plugins:compileDebugJavaWithJavac NO-SOURCE
+2025-10-31T17:19:01.3895673Z > Task :app:compileDebugShaders NO-SOURCE
+2025-10-31T17:19:01.3896541Z > Task :app:generateDebugAssets UP-TO-DATE
+2025-10-31T17:19:01.3897593Z > Task :capacitor-cordova-android-plugins:bundleLibCompileToJarDebug
+2025-10-31T17:19:01.3898628Z > Task :capacitor-android:mergeDebugShaders
+2025-10-31T17:19:01.3899726Z > Task :capacitor-android:compileDebugShaders NO-SOURCE
+2025-10-31T17:19:01.3900727Z > Task :capacitor-android:generateDebugAssets UP-TO-DATE
+2025-10-31T17:19:01.3912782Z > Task :capacitor-android:packageDebugAssets
+2025-10-31T17:19:01.3913518Z > Task :capacitor-android:bundleLibCompileToJarDebug
+2025-10-31T17:19:01.3914326Z > Task :capacitor-cordova-android-plugins:mergeDebugShaders
+2025-10-31T17:19:04.9907040Z > Task :capacitor-cordova-android-plugins:compileDebugShaders NO-SOURCE
+2025-10-31T17:19:04.9908690Z > Task :capacitor-cordova-android-plugins:generateDebugAssets UP-TO-DATE
+2025-10-31T17:19:04.9916219Z > Task :capacitor-cordova-android-plugins:packageDebugAssets
+2025-10-31T17:19:05.0904970Z > Task :app:mergeDebugAssets
+2025-10-31T17:19:05.0920024Z > Task :capacitor-cordova-android-plugins:bundleLibRuntimeToJarDebug
+2025-10-31T17:19:05.1894486Z > Task :capacitor-android:bundleLibRuntimeToJarDebug
+2025-10-31T17:19:05.1895460Z > Task :app:compressDebugAssets
+2025-10-31T17:19:06.7895168Z > Task :app:desugarDebugFileDependencies
+2025-10-31T17:19:06.7895967Z > Task :capacitor-android:processDebugJavaRes NO-SOURCE
+2025-10-31T17:19:06.7896899Z > Task :capacitor-cordova-android-plugins:processDebugJavaRes NO-SOURCE
+2025-10-31T17:19:07.5896446Z > Task :app:mergeDebugJniLibFolders
+2025-10-31T17:19:07.5897727Z > Task :capacitor-android:mergeDebugJniLibFolders
+2025-10-31T17:19:07.5898791Z > Task :capacitor-android:mergeDebugNativeLibs NO-SOURCE
+2025-10-31T17:19:07.5899925Z > Task :capacitor-android:copyDebugJniLibsProjectOnly
+2025-10-31T17:19:07.5901049Z > Task :capacitor-cordova-android-plugins:mergeDebugJniLibFolders
+2025-10-31T17:19:07.5902415Z > Task :capacitor-cordova-android-plugins:mergeDebugNativeLibs NO-SOURCE
+2025-10-31T17:19:07.6932655Z > Task :capacitor-cordova-android-plugins:copyDebugJniLibsProjectOnly
+2025-10-31T17:19:07.6933943Z > Task :app:checkDebugDuplicateClasses
+2025-10-31T17:19:07.8894463Z > Task :app:mergeDebugNativeLibs NO-SOURCE
+2025-10-31T17:19:14.9914605Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:11:35 Unresolved reference: AuthenticationData
+2025-10-31T17:19:14.9954427Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:12:35 Unresolved reference: PurchaseFailure
+2025-10-31T17:19:14.9955603Z 
+2025-10-31T17:19:14.9957855Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:13:35 Unresolved reference: SetupFailure
+2025-10-31T17:19:14.9959386Z > Task :app:compileDebugKotlin FAILED
+2025-10-31T17:19:14.9961697Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:14:35 Unresolved reference: TransactionData
+2025-10-31T17:19:14.9964481Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:51:37 Unresolved reference: AuthenticationData
+2025-10-31T17:19:14.9967144Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:70:58 Unresolved reference: SetupFailure
+2025-10-31T17:19:14.9969870Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:72:40 'when' expression must be exhaustive, add necessary 'else' branch
+2025-10-31T17:19:14.9972644Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:73:28 Unresolved reference: SetupFailure
+2025-10-31T17:19:14.9975157Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:74:28 Unresolved reference: SetupFailure
+2025-10-31T17:19:14.9977604Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:75:28 Unresolved reference: SetupFailure
+2025-10-31T17:19:14.9980050Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:76:28 Unresolved reference: SetupFailure
+2025-10-31T17:19:14.9982798Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:77:28 Unresolved reference: SetupFailure
+2025-10-31T17:19:14.9985421Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:130:70 Unresolved reference: TransactionData
+2025-10-31T17:19:14.9988558Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:140:55 Cannot infer a type for this parameter. Please specify it explicitly.
+2025-10-31T17:19:14.9991264Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:142:41 Overload resolution ambiguity: 
+2025-10-31T17:19:14.9993266Z public open fun put(p0: String!, p1: Any!): JSObject! defined in com.getcapacitor.JSObject
+2025-10-31T17:19:14.9994475Z public open fun put(p0: String!, p1: Boolean): JSObject! defined in com.getcapacitor.JSObject
+2025-10-31T17:19:14.9995759Z public open fun put(p0: String!, p1: Double): JSObject! defined in com.getcapacitor.JSObject
+2025-10-31T17:19:14.9996916Z public open fun put(p0: String!, p1: Int): JSObject! defined in com.getcapacitor.JSObject
+2025-10-31T17:19:14.9998213Z public open fun put(p0: String!, p1: Long): JSObject! defined in com.getcapacitor.JSObject
+2025-10-31T17:19:14.9999513Z public open fun put(p0: String!, p1: String!): JSObject! defined in com.getcapacitor.JSObject
+2025-10-31T17:19:15.0002284Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:143:101 Unresolved reference: it
+2025-10-31T17:19:15.0004681Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:150:68 Unresolved reference: PurchaseFailure
+2025-10-31T17:19:15.0007355Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:151:57 'when' expression must be exhaustive, add necessary 'else' branch
+2025-10-31T17:19:15.0010182Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:152:32 Unresolved reference: PurchaseFailure
+2025-10-31T17:19:15.0012852Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:155:32 Unresolved reference: PurchaseFailure
+2025-10-31T17:19:15.0015300Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:158:32 Unresolved reference: PurchaseFailure
+2025-10-31T17:19:15.0017773Z e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:161:32 Unresolved reference: PurchaseFailure
+2025-10-31T17:19:37.8894011Z 
+2025-10-31T17:19:37.8898429Z > Task :app:mergeExtDexDebug
+2025-10-31T17:19:47.8893744Z 
+2025-10-31T17:19:47.8902731Z FAILURE: Build failed with an exception.
+2025-10-31T17:19:47.8905018Z 
+2025-10-31T17:19:47.8905271Z * What went wrong:
+2025-10-31T17:19:47.8905894Z Execution failed for task ':app:compileDebugKotlin'.
+2025-10-31T17:19:47.8907428Z > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+2025-10-31T17:19:47.8908710Z    > Compilation error. See log for more details
+2025-10-31T17:19:47.8909079Z 
+2025-10-31T17:19:47.8914335Z [Incubating] Problems report is available at: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/build/reports/problems/problems-report.html
+2025-10-31T17:19:47.8917491Z * Try:
+2025-10-31T17:19:47.8928370Z > Run with --stacktrace option to get the stack trace.
+2025-10-31T17:19:47.8929152Z > Run with --info or --debug option to get more log output.
+2025-10-31T17:19:47.8929824Z > Run with --scan to get full insights.
+2025-10-31T17:19:47.8930446Z > Get more help at https://help.gradle.org.
+2025-10-31T17:19:47.8930797Z 
+2025-10-31T17:19:47.8930978Z BUILD FAILED in 2m 1s
+2025-10-31T17:19:47.8934694Z 56 actionable tasks: 56 executed
+2025-10-31T17:19:48.3406438Z ##[error]Process completed with exit code 1.
+2025-10-31T17:19:48.3510455Z Post job cleanup.
+2025-10-31T17:19:48.5245166Z Post job cleanup.
+2025-10-31T17:19:48.6198650Z [command]/usr/bin/git version
+2025-10-31T17:19:48.6235588Z git version 2.51.0
+2025-10-31T17:19:48.6281794Z Temporarily overriding HOME='/home/runner/work/_temp/cba33a30-0caf-4255-ab97-623d6de8abf7' before making global git config changes
+2025-10-31T17:19:48.6283252Z Adding repository directory to the temporary git global config as a safe directory
+2025-10-31T17:19:48.6288387Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/nearpay-pos-android/nearpay-pos-android
+2025-10-31T17:19:48.6323851Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-10-31T17:19:48.6356003Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-10-31T17:19:48.6579306Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-10-31T17:19:48.6599442Z http.https://github.com/.extraheader
+2025-10-31T17:19:48.6612552Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-10-31T17:19:48.6643467Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-10-31T17:19:48.6981057Z Cleaning up orphan processes
+2025-10-31T17:19:48.7264043Z Terminate orphan process: pid (2664) (java)

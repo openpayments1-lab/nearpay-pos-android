@@ -77,12 +77,13 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     
     // NearPay Direct SDK (SoftPOS - Tap to Pay on Phone)
-    // Try multiple potential artifact names from GitLab repository
-    // The exact artifact name will be confirmed after first build attempt
-    implementation 'io.nearpay:nearpay-sdk:2.1.91'  // Direct SDK for tap on phone
+    // USING STUB CLASSES UNTIL REAL SDK ACCESS GRANTED
+    // The GitLab repository credentials provided are for Terminal SDK, not Direct SDK
+    // Contact [email protected] for Direct SDK / SoftPOS access
+    // Include package name: app.cashmgmtnp.pos
     
-    // Fallback to publicly available Proxy SDK if Direct SDK not accessible
-    // implementation 'io.nearpay:nearpay-proxy-v2:0.0.2'
+    // TODO: Replace stub classes with real SDK when access granted:
+    // implementation 'io.nearpay:nearpay-direct-sdk:VERSION'  // Actual Direct SDK
 }
 
 apply from: 'capacitor.build.gradle'
