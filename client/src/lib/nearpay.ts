@@ -14,6 +14,8 @@ export interface NearPayPlugin {
   initialize(options: {
     authToken: string;
     environment: 'sandbox' | 'production';
+    googleCloudProjectNumber: number;
+    country?: 'SA' | 'TR' | 'USA' | 'KEN';
   }): Promise<{ success: boolean; message: string }>;
 
   /**

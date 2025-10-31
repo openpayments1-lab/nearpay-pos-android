@@ -28,6 +28,12 @@ class NearPayPlugin : Plugin() {
         try {
             val environment = call.getString("environment") ?: "sandbox"
             val country = call.getString("country") ?: "SA"
+            val googleCloudProjectNumber = call.getLong("googleCloudProjectNumber")
+            
+            if (googleCloudProjectNumber == null) {
+                call.reject("Google Cloud Project Number is required")
+                return
+            }
             
             val sdkEnv = if (environment == "production") {
                 SdkEnvironment.PRODUCTION
@@ -46,10 +52,11 @@ class NearPayPlugin : Plugin() {
             terminalSDK = TerminalSDK.Builder()
                 .activity(activity)
                 .environment(sdkEnv)
+                .googleCloudProjectNumber(googleCloudProjectNumber)
                 .country(sdkCountry)
                 .build()
 
-            Log.d(TAG, "NearPay Terminal SDK initialized successfully")
+            Log.d(TAG, "NearPay Terminal SDK initialized successfully with Google Cloud Project Number: $googleCloudProjectNumber")
             
             val result = JSObject()
             result.put("success", true)

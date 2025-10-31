@@ -26,12 +26,16 @@ export default function CashRegister() {
       }
 
       try {
-        // Step 1: Initialize NearPay SDK
+        // Step 1: Initialize NearPay SDK with Google Cloud Project Number
+        const googleCloudProjectNumber = parseInt(import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER || '0');
+        
         await NearPay.initialize({
           authToken: '', // Not used with JWT auth, but required by interface
-          environment: 'sandbox'
+          environment: 'sandbox',
+          googleCloudProjectNumber,
+          country: 'SA'
         });
-        console.log('NearPay SDK initialized');
+        console.log('NearPay SDK initialized with Google Cloud Project Number:', googleCloudProjectNumber);
 
         // Step 2: Fetch JWT token from backend
         const response = await fetch('/api/nearpay/jwt');
