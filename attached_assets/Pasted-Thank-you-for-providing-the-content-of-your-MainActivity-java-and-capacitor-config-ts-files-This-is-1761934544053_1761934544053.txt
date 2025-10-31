@@ -1,0 +1,98 @@
+Thank you for providing the content of your MainActivity.java and capacitor.config.ts files! This is crucial for debugging the Error 1: Plugin Implemented error.
+
+After reviewing the code, here is the analysis and the most likely reasons for the error, along with the necessary fixes.
+
+🛑 Critical Error in MainActivity.java
+The most common reason for a "Plugin Implemented error" in Capacitor is placing the registerPlugin() call in the wrong location in MainActivity.java.
+
+The Problem
+Your MainActivity.java code is:
+
+Java
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState); // <--- Problematic line
+        
+        // Register NearPay plugin
+        registerPlugin(NearPayPlugin.class);
+    }
+}
+Capacitor requires that any manual plugin registration must happen before super.onCreate(savedInstanceState) is called. If you register it afterward, the native bridge setup will miss your plugin, leading to the "Plugin Implemented error" when your JavaScript tries to call it.
+
+The Fix: Reorder onCreate
+You need to move the registerPlugin call before super.onCreate().
+
+Java
+
+// MainActivity.java FIX
+package app.cashmgmtnp.pos;
+
+import com.getcapacitor.BridgeActivity;
+// You need to import the class, make sure this path is correct
+// Example: import com.yourpackage.NearPayPlugin; 
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(android.os.Bundle savedInstanceState) {
+        // 1. Register the plugin FIRST
+        registerPlugin(NearPayPlugin.class); 
+        
+        // 2. Call super.onCreate() SECOND
+        super.onCreate(savedInstanceState);
+    }
+}
+🧐 Capacitor Configuration Check
+Your capacitor.config.ts is currently missing the explicit plugin configuration for NearPayPlugin.
+
+The Problem in capacitor.config.ts
+Your current file has no plugins block:
+
+TypeScript
+
+const config: CapacitorConfig = {
+  appId: 'app.cashmgmtnp.pos',
+  appName: 'NearPay POS',
+  // ... no plugins block
+};
+While manually registering the plugin in MainActivity.java might be enough for a simple plugin, it is best practice (and often necessary for complex plugins) to explicitly configure it in the Capacitor config file as well. This is required if the plugin has configuration options, or if its class name doesn't follow Capacitor's automatic naming convention.
+
+The Fix: Add Plugin Configuration
+You need to add a plugins section to your capacitor.config.ts. Since the NearPay SDK documentation points to a native implementation, you may need to define the full Java class name.
+
+Find the Fully Qualified Class Name: You need to confirm the exact package and class name of the NearPayPlugin.class. Let's assume the package is com.nearpay.capacitor and the class is NearPayPlugin. You will need to confirm this path from your actual Android plugin code.
+
+Update capacitor.config.ts:
+
+TypeScript
+
+// capacitor.config.ts FIX
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'app.cashmgmtnp.pos',
+  appName: 'NearPay POS',
+  webDir: 'dist/public',
+  server: {
+    androidScheme: 'https'
+  },
+  // --- ADD THIS PLUGINS BLOCK ---
+  plugins: {
+    "NearPay": {
+      "androidClassName": "com.nearpay.capacitor.NearPayPlugin" // <--- **Confirm this path!**
+    }
+  },
+  // -------------------------------
+  android: {
+    // ...
+  }
+};
+
+export default config;
+✅ Summary of Next Steps
+Fix MainActivity.java: Move registerPlugin(NearPayPlugin.class); to be before super.onCreate(savedInstanceState);.
+
+Fix capacitor.config.ts: Add the plugins block and ensure the androidClassName is the correct, fully-qualified path to your NearPayPlugin.java file.
+
+Run Build: After making these changes, run npx cap sync android and then rebuild your Android project in Android Studio.

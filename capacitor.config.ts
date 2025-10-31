@@ -7,6 +7,11 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https'
   },
+  plugins: {
+    NearPay: {
+      androidClassName: 'app.cashmgmtnp.pos.NearPayPlugin'
+    }
+  },
   android: {
     buildOptions: {
       keystorePath: undefined,
