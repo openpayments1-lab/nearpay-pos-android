@@ -2,6 +2,38 @@ package io.nearpay.terminalsdk.listeners
 
 import io.nearpay.terminalsdk.data.*
 
+// Failure types
+sealed class OTPMobileFailure(open val message: String?) {
+    data class GeneralError(override val message: String?) : OTPMobileFailure(message)
+    data class NetworkError(override val message: String?) : OTPMobileFailure(message)
+}
+
+sealed class VerifyMobileFailure(open val message: String?) {
+    data class GeneralError(override val message: String?) : VerifyMobileFailure(message)
+    data class InvalidCode(override val message: String?) : VerifyMobileFailure(message)
+}
+
+sealed class GetTerminalsFailure(open val message: String?) {
+    data class GeneralError(override val message: String?) : GetTerminalsFailure(message)
+    data class NetworkError(override val message: String?) : GetTerminalsFailure(message)
+}
+
+sealed class ConnectTerminalFailure(open val message: String?) {
+    data class GeneralError(override val message: String?) : ConnectTerminalFailure(message)
+    data class ConnectionFailed(override val message: String?) : ConnectTerminalFailure(message)
+}
+
+sealed class ReadCardFailure(open val message: String?) {
+    data class GeneralError(override val message: String?) : ReadCardFailure(message)
+    data class CardReadError(override val message: String?) : ReadCardFailure(message)
+}
+
+sealed class SendTransactionFailure(open val message: String?) {
+    data class GeneralError(override val message: String?) : SendTransactionFailure(message)
+    data class TransactionDeclined(override val message: String?) : SendTransactionFailure(message)
+}
+
+// Listener interfaces
 interface SendOTPMobileListener {
     fun onSendOTPMobileSuccess(otpResponse: OtpResponse)
     fun onSendOTPMobileFailure(otpMobileFailure: OTPMobileFailure)
