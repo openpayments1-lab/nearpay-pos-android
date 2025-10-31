@@ -86,6 +86,18 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
+// Force Java 17 compatibility (override capacitor.build.gradle's Java 21 setting)
+// Kotlin 1.9.22 requires Java 17, not Java 21
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
 try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {
