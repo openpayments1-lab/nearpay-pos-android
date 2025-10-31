@@ -76,14 +76,12 @@ dependencies {
     // Kotlin standard library
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     
-    // NearPay Direct SDK (SoftPOS - Tap to Pay on Phone)
-    // USING STUB CLASSES UNTIL REAL SDK ACCESS GRANTED
-    // The GitLab repository credentials provided are for Terminal SDK, not Direct SDK
-    // Contact [email protected] for Direct SDK / SoftPOS access
-    // Include package name: app.cashmgmtnp.pos
-    
-    // TODO: Replace stub classes with real SDK when access granted:
-    // implementation 'io.nearpay:nearpay-direct-sdk:VERSION'  // Actual Direct SDK
+    // NearPay Terminal SDK - Official Android SDK
+    // Using stub classes until GitLab access credentials are confirmed working
+    // TODO: Uncomment when GitLab token is verified:
+    // implementation 'io.nearpay:terminalsdk-release:0.0.111'
+    // implementation 'com.google.android.gms:play-services-location:20.0.0'
+    // implementation 'com.huawei.hms:location:6.4.0.300'
 }
 
 apply from: 'capacitor.build.gradle'

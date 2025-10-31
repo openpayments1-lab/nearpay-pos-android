@@ -6,17 +6,9 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import io.nearpay.sdk.Environments
-import io.nearpay.sdk.NearPay
-import io.nearpay.sdk.data.models.AuthenticationData
-import io.nearpay.sdk.data.models.PurchaseFailure
-import io.nearpay.sdk.data.models.SetupFailure
-import io.nearpay.sdk.data.models.TransactionData
-import io.nearpay.sdk.utils.enums.NetworkConfiguration
-import io.nearpay.sdk.utils.enums.UIPosition
-import io.nearpay.sdk.utils.listeners.PurchaseListener
-import io.nearpay.sdk.utils.listeners.SetupListener
-import java.util.Locale
+import io.nearpay.terminalsdk.TerminalSDK
+import io.nearpay.terminalsdk.data.*
+import io.nearpay.terminalsdk.listeners.*
 import java.util.UUID
 
 @CapacitorPlugin(name = "NearPay")
@@ -26,77 +18,220 @@ class NearPayPlugin : Plugin() {
         private const val TAG = "NearPayPlugin"
     }
     
-    private var nearPay: NearPay? = null
-    private var isSetupComplete = false
+    private var terminalSDK: TerminalSDK? = null
+    private var currentUser: User? = null
+    private var currentTerminal: Terminal? = null
 
     @PluginMethod
     fun initialize(call: PluginCall) {
         try {
-            val authToken = call.getString("authToken")
             val environment = call.getString("environment") ?: "sandbox"
+            val country = call.getString("country") ?: "SA"
             
-            if (authToken.isNullOrEmpty()) {
-                call.reject("Authentication token is required")
+            val sdkEnv = if (environment == "production") {
+                SdkEnvironment.PRODUCTION
+            } else {
+                SdkEnvironment.SANDBOX
+            }
+            
+            val sdkCountry = when (country.uppercase()) {
+                "SA" -> Country.SA
+                "TR" -> Country.TR
+                "USA" -> Country.USA
+                "KEN" -> Country.KEN
+                else -> Country.SA
+            }
+
+            terminalSDK = TerminalSDK.Builder()
+                .activity(activity)
+                .environment(sdkEnv)
+                .googleCloudProjectNumber(12345678)  // TODO: Get from config
+                .huaweiSafetyDetectApiKey("your_api_key")  // TODO: Get from config
+                .country(sdkCountry)
+                .build()
+
+            Log.d(TAG, "NearPay Terminal SDK initialized successfully")
+            
+            val result = JSObject()
+            result.put("success", true)
+            result.put("message", "NearPay Terminal SDK initialized")
+            call.resolve(result)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize NearPay Terminal SDK", e)
+            call.reject("Failed to initialize: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun sendOTP(call: PluginCall) {
+        if (terminalSDK == null) {
+            call.reject("Terminal SDK not initialized. Call initialize() first.")
+            return
+        }
+
+        try {
+            val mobile = call.getString("mobile")
+            if (mobile.isNullOrEmpty()) {
+                call.reject("Mobile number is required")
                 return
             }
 
-            val env = if (environment == "production") {
-                Environments.PRODUCTION
-            } else {
-                Environments.SANDBOX
-            }
-
-            nearPay = NearPay.Builder()
-                .context(activity)
-                .authenticationData(AuthenticationData.Jwt(authToken))
-                .environment(env)
-                .locale(Locale.getDefault())
-                .networkConfiguration(NetworkConfiguration.DEFAULT)
-                .uiPosition(UIPosition.CENTER_BOTTOM)
-                .loadingUi(true)
-                .build()
-
-            nearPay?.setup(object : SetupListener {
-                override fun onSetupCompleted() {
-                    isSetupComplete = true
-                    Log.d(TAG, "NearPay SDK setup completed successfully")
+            val mobileLogin = MobileLogin(mobile)
+            
+            terminalSDK?.sendOTP(mobileLogin, object : SendOTPMobileListener {
+                override fun onSendOTPMobileSuccess(otpResponse: OtpResponse) {
+                    Log.d(TAG, "OTP sent successfully")
                     
                     val result = JSObject()
                     result.put("success", true)
-                    result.put("message", "NearPay SDK initialized and setup completed")
+                    result.put("message", "OTP sent to $mobile")
                     call.resolve(result)
                 }
 
-                override fun onSetupFailed(setupFailure: SetupFailure) {
-                    isSetupComplete = false
-                    val errorMessage = when (setupFailure) {
-                        is SetupFailure.AuthenticationFailed -> "Authentication failed"
-                        is SetupFailure.AlreadyInstalled -> "Plugin already installed"
-                        is SetupFailure.NotInstalled -> "Plugin not installed"
-                        is SetupFailure.InvalidStatus -> "Invalid status: ${setupFailure.status}"
-                        is SetupFailure.GeneralFailure -> "General failure"
-                    }
-                    
-                    Log.e(TAG, "NearPay SDK setup failed: $errorMessage")
-                    call.reject("Setup failed: $errorMessage")
+                override fun onSendOTPMobileFailure(otpMobileFailure: OTPMobileFailure) {
+                    Log.e(TAG, "OTP send failed: ${otpMobileFailure.message}")
+                    call.reject("Failed to send OTP: ${otpMobileFailure.message}")
                 }
             })
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize NearPay SDK", e)
-            call.reject("Failed to initialize NearPay: ${e.message}")
+            Log.e(TAG, "Error sending OTP", e)
+            call.reject("OTP send failed: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun verifyOTP(call: PluginCall) {
+        if (terminalSDK == null) {
+            call.reject("Terminal SDK not initialized. Call initialize() first.")
+            return
+        }
+
+        try {
+            val mobile = call.getString("mobile")
+            val code = call.getString("code")
+            
+            if (mobile.isNullOrEmpty() || code.isNullOrEmpty()) {
+                call.reject("Mobile number and OTP code are required")
+                return
+            }
+
+            val loginData = LoginData(mobile, code)
+            
+            terminalSDK?.verify(loginData, object : VerifyMobileListener {
+                override fun onVerifyMobileSuccess(user: User) {
+                    currentUser = user
+                    Log.d(TAG, "OTP verified successfully. User: ${user.name}")
+                    
+                    val result = JSObject()
+                    result.put("success", true)
+                    result.put("userId", user.id)
+                    result.put("userName", user.name)
+                    result.put("userMobile", user.mobile)
+                    call.resolve(result)
+                }
+
+                override fun onVerifyMobileFailure(verifyMobileFailure: VerifyMobileFailure) {
+                    Log.e(TAG, "OTP verification failed: ${verifyMobileFailure.message}")
+                    call.reject("OTP verification failed: ${verifyMobileFailure.message}")
+                }
+            })
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error verifying OTP", e)
+            call.reject("OTP verification failed: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun listTerminals(call: PluginCall) {
+        if (currentUser == null) {
+            call.reject("User not authenticated. Call verifyOTP() first.")
+            return
+        }
+
+        try {
+            val page = call.getInt("page") ?: 1
+            val pageSize = call.getInt("pageSize") ?: 10
+            
+            currentUser?.listTerminals(page, pageSize, null, object : GetTerminalsListener {
+                override fun onGetTerminalsSuccess(terminalsConnection: List<TerminalConnection>) {
+                    Log.d(TAG, "Terminals retrieved: ${terminalsConnection.size}")
+                    
+                    val result = JSObject()
+                    result.put("success", true)
+                    result.put("count", terminalsConnection.size)
+                    
+                    val terminalsArray = org.json.JSONArray()
+                    terminalsConnection.forEach { termConn ->
+                        val termObj = JSObject()
+                        termObj.put("id", termConn.terminalConnectionData.id)
+                        termObj.put("name", termConn.terminalConnectionData.name)
+                        terminalsArray.put(termObj)
+                    }
+                    result.put("terminals", terminalsArray)
+                    
+                    call.resolve(result)
+                }
+
+                override fun onGetTerminalsFailure(getTerminalsFailure: GetTerminalsFailure) {
+                    Log.e(TAG, "Failed to get terminals: ${getTerminalsFailure.message}")
+                    call.reject("Failed to get terminals: ${getTerminalsFailure.message}")
+                }
+            })
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error listing terminals", e)
+            call.reject("Failed to list terminals: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun connectTerminal(call: PluginCall) {
+        if (currentUser == null) {
+            call.reject("User not authenticated. Call verifyOTP() first.")
+            return
+        }
+
+        try {
+            // For stub implementation, create a mock terminal connection
+            // In real implementation, this would use the actual terminal from listTerminals
+            val terminalConnection = TerminalConnection(
+                TerminalConnectionData(
+                    id = "stub-terminal-1",
+                    name = "NFC Terminal"
+                )
+            )
+            
+            terminalConnection.connect(activity, object : ConnectTerminalListener {
+                override fun onConnectTerminalSuccess(terminal: Terminal) {
+                    currentTerminal = terminal
+                    Log.d(TAG, "Terminal connected successfully")
+                    
+                    val result = JSObject()
+                    result.put("success", true)
+                    result.put("terminalId", terminal.id)
+                    result.put("message", "Terminal connected")
+                    call.resolve(result)
+                }
+
+                override fun onConnectTerminalFailure(connectTerminalFailure: ConnectTerminalFailure) {
+                    Log.e(TAG, "Terminal connection failed: ${connectTerminalFailure.message}")
+                    call.reject("Terminal connection failed: ${connectTerminalFailure.message}")
+                }
+            })
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error connecting terminal", e)
+            call.reject("Failed to connect terminal: ${e.message}")
         }
     }
 
     @PluginMethod
     fun processPayment(call: PluginCall) {
-        if (nearPay == null) {
-            call.reject("NearPay SDK not initialized. Call initialize() first.")
-            return
-        }
-
-        if (!isSetupComplete) {
-            call.reject("NearPay SDK setup not complete. Please wait for initialization.")
+        if (currentTerminal == null) {
+            call.reject("Terminal not connected. Call connectTerminal() first.")
             return
         }
 
@@ -108,68 +243,82 @@ class NearPayPlugin : Plugin() {
             }
 
             val amountInMinorUnits = (amount * 100).toLong()
-            
-            val customerReferenceNumber = call.getString("reference") ?: UUID.randomUUID().toString()
-            val enableReceiptUi = true
-            val enableReversal = true
-            val finishTimeOut = 60L
-            val requestId = UUID.randomUUID()
-            val enableUiDismiss = true
+            val transactionUUID = UUID.randomUUID().toString()
+            val customerReferenceNumber = call.getString("reference") ?: ""
 
             Log.d(TAG, "Processing payment for amount: $amount (${amountInMinorUnits} minor units)")
 
-            nearPay?.purchase(
-                amountInMinorUnits,
-                customerReferenceNumber,
-                enableReceiptUi,
-                enableReversal,
-                finishTimeOut,
-                requestId,
-                enableUiDismiss,
-                object : PurchaseListener {
-                    override fun onPurchaseApproved(transactionData: TransactionData) {
-                        Log.d(TAG, "Payment approved: ${transactionData.uuid}")
+            currentTerminal?.purchase(
+                amount = amountInMinorUnits,
+                scheme = null,  // Accept all schemes
+                transactionUUID = transactionUUID,
+                customerReferenceNumber = customerReferenceNumber,
+                readCardListener = object : ReadCardListener {
+                    override fun onReadCardSuccess() {
+                        Log.d(TAG, "Card read successfully")
+                    }
+
+                    override fun onReadCardFailure(readCardFailure: ReadCardFailure) {
+                        Log.e(TAG, "Card read failed: ${readCardFailure.message}")
+                    }
+
+                    override fun onReaderDisplayed() {
+                        Log.d(TAG, "Reader displayed")
+                    }
+
+                    override fun onReaderClosed() {
+                        Log.d(TAG, "Reader closed")
+                    }
+
+                    override fun onReaderWaiting() {
+                        Log.d(TAG, "Reader waiting for card")
+                    }
+
+                    override fun onReaderReading() {
+                        Log.d(TAG, "Reading card")
+                    }
+
+                    override fun onReaderRetry() {
+                        Log.d(TAG, "Reader retry")
+                    }
+
+                    override fun onPinEntering() {
+                        Log.d(TAG, "PIN entry in progress")
+                    }
+
+                    override fun onReaderFinished() {
+                        Log.d(TAG, "Card read completed")
+                    }
+
+                    override fun onReadingStarted() {
+                        Log.d(TAG, "Card read started")
+                    }
+
+                    override fun onReaderError(error: String?) {
+                        Log.e(TAG, "Reader error: $error")
+                    }
+                },
+                sendTransactionListener = object : SendTransactionListener {
+                    override fun onSendTransactionCompleted(transactionResponse: TransactionResponse) {
+                        Log.d(TAG, "Transaction completed successfully")
                         
                         val response = JSObject()
                         response.put("success", true)
                         response.put("status", "APPROVED")
-                        response.put("transactionId", transactionData.uuid)
+                        response.put("transactionId", transactionUUID)
                         response.put("amount", amount)
                         response.put("reference", customerReferenceNumber)
-                        
-                        transactionData.scheme?.let { scheme ->
-                            val cardDetails = JSObject()
-                            cardDetails.put("type", scheme)
-                            transactionData.cardholderName?.let { cardDetails.put("cardholderName", it) }
-                            response.put("cardDetails", cardDetails)
-                        }
                         
                         call.resolve(response)
                     }
 
-                    override fun onPurchaseFailed(purchaseFailure: PurchaseFailure) {
-                        val (errorMessage, errorCode) = when (purchaseFailure) {
-                            is PurchaseFailure.PurchaseRejected -> {
-                                "Payment was rejected" to "PURCHASE_REJECTED"
-                            }
-                            is PurchaseFailure.AuthenticationFailed -> {
-                                "Authentication failed - invalid credentials" to "AUTH_FAILED"
-                            }
-                            is PurchaseFailure.InvalidStatus -> {
-                                "Invalid transaction status: ${purchaseFailure.status}" to "INVALID_STATUS"
-                            }
-                            is PurchaseFailure.GeneralFailure -> {
-                                "Payment failed" to "GENERAL_FAILURE"
-                            }
-                        }
-                        
-                        Log.e(TAG, "Payment failed: $errorMessage")
+                    override fun onSendTransactionFailure(failure: SendTransactionFailure) {
+                        Log.e(TAG, "Transaction failed: ${failure.message}")
                         
                         val response = JSObject()
                         response.put("success", false)
                         response.put("status", "FAILED")
-                        response.put("errorMessage", errorMessage)
-                        response.put("errorCode", errorCode)
+                        response.put("errorMessage", failure.message ?: "Transaction failed")
                         call.resolve(response)
                     }
                 }
@@ -183,14 +332,10 @@ class NearPayPlugin : Plugin() {
 
     @PluginMethod
     fun checkSession(call: PluginCall) {
-        if (nearPay == null) {
-            call.reject("NearPay SDK not initialized")
-            return
-        }
-
         val result = JSObject()
-        result.put("sessionActive", isSetupComplete)
-        result.put("sdkInitialized", true)
+        result.put("sdkInitialized", terminalSDK != null)
+        result.put("userAuthenticated", currentUser != null)
+        result.put("terminalConnected", currentTerminal != null)
         call.resolve(result)
     }
 }
