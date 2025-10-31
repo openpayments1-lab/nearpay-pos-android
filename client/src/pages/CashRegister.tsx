@@ -17,7 +17,7 @@ export default function CashRegister() {
   const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
-  // Initialize NearPay SDK on component mount
+  // Initialize NearPay SDK on component mount using JWT authentication
   useEffect(() => {
     const initializeNearPay = async () => {
       if (!Capacitor.isNativePlatform()) {
@@ -26,20 +26,57 @@ export default function CashRegister() {
       }
 
       try {
-        const result = await NearPay.initialize({
-          authToken: 'YOUR_JWT_TOKEN_HERE', // TODO: Get from settings/environment
+        // Step 1: Initialize NearPay SDK
+        await NearPay.initialize({
+          authToken: '', // Not used with JWT auth, but required by interface
           environment: 'sandbox'
         });
+        console.log('NearPay SDK initialized');
+
+        // Step 2: Fetch JWT token from backend
+        const response = await fetch('/api/nearpay/jwt');
+        const data = await response.json();
+        
+        if (!response.ok) {
+          // Show helpful error message for missing configuration
+          const errorMsg = data.message || data.error || 'Failed to generate JWT token';
+          console.error('JWT token generation failed:', errorMsg);
+          
+          toast({
+            title: "Configuration Error",
+            description: errorMsg,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Step 3: Authenticate with NearPay using JWT
+        const result = await NearPay.jwtLogin({ jwt: data.jwt });
         
         if (result.success) {
           setIsInitialized(true);
-          console.log('NearPay initialized successfully');
+          console.log('NearPay authenticated successfully', {
+            terminalUUID: result.terminalUUID,
+            terminalId: result.terminalId
+          });
+          
+          toast({
+            title: "Ready to Accept Payments",
+            description: `Terminal ${result.terminalId || 'connected'}`,
+          });
+        } else {
+          console.error('NearPay JWT login failed:', result.errorMessage);
+          toast({
+            title: "Authentication Failed",
+            description: result.errorMessage || 'Failed to authenticate with NearPay',
+            variant: "destructive"
+          });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to initialize NearPay:', error);
         toast({
           title: "Initialization Error",
-          description: "Failed to initialize payment system",
+          description: error.message || "Failed to initialize payment system",
           variant: "destructive"
         });
       }
@@ -72,6 +109,15 @@ export default function CashRegister() {
       toast({
         title: "Platform Not Supported",
         description: "NearPay is only available on Android devices",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!isInitialized) {
+      toast({
+        title: "Not Authenticated",
+        description: "Please wait for NearPay authentication to complete",
         variant: "destructive"
       });
       return;
@@ -229,7 +275,7 @@ export default function CashRegister() {
           {/* Pay Button */}
           <Button
             onClick={handlePayment}
-            disabled={!amount || parseFloat(amount) <= 0 || isProcessing}
+            disabled={!amount || parseFloat(amount) <= 0 || isProcessing || (Capacitor.isNativePlatform() && !isInitialized)}
             className="w-full h-14 text-lg font-semibold"
             data-testid="button-pay"
           >

@@ -17,6 +17,19 @@ export interface NearPayPlugin {
   }): Promise<{ success: boolean; message: string }>;
 
   /**
+   * Authenticate using JWT token
+   * @param options JWT authentication options
+   */
+  jwtLogin(options: {
+    jwt: string;
+  }): Promise<{
+    success: boolean;
+    terminalUUID?: string;
+    terminalId?: string;
+    errorMessage?: string;
+  }>;
+
+  /**
    * Process a payment using NFC
    * @param options Payment details
    */
@@ -50,6 +63,13 @@ const NearPay = registerPlugin<NearPayPlugin>('NearPay', {
     initialize: async () => {
       console.warn('NearPay is only available on Android devices');
       return { success: false, message: 'Not available on web' };
+    },
+    jwtLogin: async () => {
+      console.warn('NearPay is only available on Android devices');
+      return {
+        success: false,
+        errorMessage: 'NearPay is only available on Android devices'
+      };
     },
     processPayment: async () => {
       console.warn('NearPay is only available on Android devices');

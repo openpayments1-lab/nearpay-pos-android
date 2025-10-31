@@ -63,6 +63,47 @@ class NearPayPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun jwtLogin(call: PluginCall) {
+        if (terminalSDK == null) {
+            call.reject("Terminal SDK not initialized. Call initialize() first.")
+            return
+        }
+
+        try {
+            val jwt = call.getString("jwt")
+            if (jwt.isNullOrEmpty()) {
+                call.reject("JWT token is required")
+                return
+            }
+
+            val loginData = JWTLoginData(jwt = jwt)
+            
+            terminalSDK?.jwtLogin(loginData, object : JWTLoginListener {
+                override fun onJWTLoginSuccess(terminal: Terminal) {
+                    currentTerminal = terminal
+                    Log.d(TAG, "JWT Login success. Terminal UUID: ${terminal.terminalUUID}")
+                    
+                    val result = JSObject()
+                    result.put("success", true)
+                    result.put("terminalUUID", terminal.terminalUUID)
+                    result.put("terminalId", terminal.id)
+                    result.put("message", "JWT login successful")
+                    call.resolve(result)
+                }
+
+                override fun onJWTLoginFailure(jwtLoginFailure: JWTLoginFailure) {
+                    Log.e(TAG, "JWT Login failure: ${jwtLoginFailure.message}")
+                    call.reject("JWT login failed: ${jwtLoginFailure.message}")
+                }
+            })
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during JWT login", e)
+            call.reject("JWT login failed: ${e.message}")
+        }
+    }
+
+    @PluginMethod
     fun sendOTP(call: PluginCall) {
         if (terminalSDK == null) {
             call.reject("Terminal SDK not initialized. Call initialize() first.")

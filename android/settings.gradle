@@ -12,7 +12,7 @@ dependencyResolutionManagement {
             url 'https://gitlab.com/api/v4/projects/37026421/packages/maven'
             credentials(HttpHeaderCredentials) {
                 name = 'Private-Token'
-                value = System.getenv('NEARPAY_GITLAB_TOKEN') ?: 'atuJh7P2c1OqmihV98F6LbhEBvww1kcxQ30BUZjE6T4fMItH7fdX3myj0Bqf'
+                value = System.getenv('NEARPAY_GITLAB_TOKEN') ?: ''
             }
             authentication {
                 header(HttpHeaderAuthentication)
