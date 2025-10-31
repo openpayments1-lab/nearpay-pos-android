@@ -6,7 +6,7 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "app.cashmgmtnp.pos"
-        minSdkVersion 28  // Required by NearPay Terminal SDK
+        minSdkVersion 21  // NearPay Direct SDK minimum (increased from 23)
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
@@ -76,10 +76,13 @@ dependencies {
     // Kotlin standard library
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     
-    // NearPay Terminal SDK - Real SDK from GitLab private repository
-    implementation 'io.nearpay:terminalsdk-release:0.0.114'
-    implementation 'com.google.android.gms:play-services-location:20.0.0'
-    implementation 'com.huawei.hms:location:6.4.0.300'
+    // NearPay Direct SDK (SoftPOS - Tap to Pay on Phone)
+    // Try multiple potential artifact names from GitLab repository
+    // The exact artifact name will be confirmed after first build attempt
+    implementation 'io.nearpay:nearpay-sdk:2.1.91'  // Direct SDK for tap on phone
+    
+    // Fallback to publicly available Proxy SDK if Direct SDK not accessible
+    // implementation 'io.nearpay:nearpay-proxy-v2:0.0.2'
 }
 
 apply from: 'capacitor.build.gradle'
