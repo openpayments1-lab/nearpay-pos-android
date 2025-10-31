@@ -1,0 +1,54 @@
+I can certainly help you solve this Gradle compilation error. This issue is not related to certificates, but to the Java version settings used during the build.
+
+The error: > error: invalid source release: 21 clearly indicates that the build system is configured to use a Java version that is too new or is incorrectly specified for one of your project's modules.
+
+🛑 Root Cause: Java Toolchain Mismatch
+The Problem
+When Gradle runs, it tries to compile the Java code for the :capacitor-android module. The error invalid source release: 21 means that Gradle (or the underlying Java compiler) is being told to target Java version 21 (sourceCompatibility = 21 or similar), but the compiler environment it's using doesn't officially support that version or the syntax is wrong for the Java version it defaults to.
+
+The Context
+GitHub Actions Runner: Your runner is using Java 17 (JAVA_HOME_17_X64).
+
+Android Standard: Android projects usually target Java 8 or Java 11/17 for compilation, depending on the Android API level. Java 21 is typically too new and unsupported for Android compilation targets.
+
+🛠️ The Fix: Adjust Java Compatibility Settings
+You need to explicitly tell Gradle to use a widely compatible Java version (like 17 or 11) for Android compilation across all modules.
+
+You should check and modify your top-level build.gradle or the module-level android/capacitor-android/build.gradle file.
+
+In the android/build.gradle (or android/app/build.gradle):
+
+Look for the compileOptions block and ensure the version is set to a supported LTS version, like Java 17 (which matches your runner environment):
+
+Groovy
+
+// Check the build.gradle file for the app module or capacitor-android module
+
+android {
+    // ...
+    compileOptions {
+        // Change '21' to '17' or '11'
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    // ...
+}
+Recommended Fix (Set to Java 17)
+If you find sourceCompatibility JavaVersion.VERSION_21, change it to JavaVersion.VERSION_17.
+
+If you are setting the compatibility using integers (which often causes this specific error), change the integer 21 to 17:
+
+Groovy
+
+// Incorrect setting often causing the error:
+// sourceCompatibility = 21 
+
+// Correct setting:
+sourceCompatibility = 17
+Action Plan:
+
+Locate the Gradle file where the Java version is set (likely in android/build.gradle or android/app/build.gradle).
+
+Change the sourceCompatibility and targetCompatibility settings to JavaVersion.VERSION_17.
+
+Commit and push this change to trigger a new build.
