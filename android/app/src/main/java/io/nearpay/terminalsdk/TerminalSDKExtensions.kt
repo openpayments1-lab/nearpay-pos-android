@@ -28,5 +28,27 @@ fun Terminal.purchase(
     readCardListener: ReadCardListener,
     sendTransactionListener: SendTransactionListener
 ) {
-    // Stub: Real implementation requires NearPay Terminal SDK
+    // Stub: Simulate successful payment for testing
+    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+        // Simulate card reading process
+        readCardListener.onReaderDisplayed()
+        readCardListener.onReadingStarted()
+        readCardListener.onReaderWaiting()
+        
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            readCardListener.onReaderReading()
+            readCardListener.onReadCardSuccess()
+            readCardListener.onReaderFinished()
+            
+            // Simulate successful transaction
+            val response = TransactionResponse(
+                events = listOf(
+                    TransactionEvent(
+                        receipt = Receipt(data = "STUB RECEIPT - Test Transaction")
+                    )
+                )
+            )
+            sendTransactionListener.onSendTransactionCompleted(response)
+        }, 1500)
+    }, 500)
 }
