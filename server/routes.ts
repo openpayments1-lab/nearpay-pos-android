@@ -78,13 +78,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Generating NearPay JWT token');
     
     try {
-      const clientUuid = process.env.NEARPAY_CLIENT_UUID;
+      const merchantUuid = process.env.NEARPAY_MERCHANT_UUID || process.env.NEARPAY_CLIENT_UUID;
       const terminalId = process.env.NEARPAY_TERMINAL_ID;
       
-      if (!clientUuid) {
+      if (!merchantUuid) {
         return res.status(500).json({ 
-          error: 'NEARPAY_CLIENT_UUID not configured',
-          message: 'Add NEARPAY_CLIENT_UUID to Replit Secrets'
+          error: 'NEARPAY_MERCHANT_UUID not configured',
+          message: 'Add NEARPAY_MERCHANT_UUID (or NEARPAY_CLIENT_UUID) to Replit Secrets'
         });
       }
       
@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const payload = {
         data: {
           ops: "auth",
-          client_uuid: clientUuid,
+          merchant_uuid: merchantUuid,
           terminal_id: terminalId
         }
       };
