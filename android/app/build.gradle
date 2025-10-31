@@ -6,7 +6,7 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "app.cashmgmtnp.pos"
-        minSdkVersion 21  // NearPay Direct SDK minimum (increased from 23)
+        minSdkVersion rootProject.ext.minSdkVersion  // Capacitor requires 23 minimum
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
