@@ -13,7 +13,7 @@ dependencyResolutionManagement {
             credentials(HttpHeaderCredentials) {
                 name = 'Private-Token'
                 // Try Gradle property first, then environment variable
-                value = project.hasProperty('nearPayGitLabToken') ? project.nearPayGitLabToken : (System.getenv('NEARPAY_GITLAB_TOKEN') ?: '')
+                value = settings.hasProperty('nearPayGitLabToken') ? settings.nearPayGitLabToken : (System.getenv('NEARPAY_GITLAB_TOKEN') ?: '')
             }
             authentication {
                 header(HttpHeaderAuthentication)
