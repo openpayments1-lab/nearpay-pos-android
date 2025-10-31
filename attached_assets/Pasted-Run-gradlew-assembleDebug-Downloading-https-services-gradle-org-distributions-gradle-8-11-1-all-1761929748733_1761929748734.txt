@@ -1,0 +1,163 @@
+Run ./gradlew assembleDebug
+Downloading https://services.gradle.org/distributions/gradle-8.11.1-all.zip
+.....................10%......................20%......................30%......................40%......................50%......................60%......................70%......................80%......................90%......................100%
+
+Welcome to Gradle 8.11.1!
+
+Here are the highlights of this release:
+ - Parallel load and store for Configuration Cache
+ - Java compilation errors at the end of the build output
+ - Consolidated report for warnings and deprecations
+
+For more details see https://docs.gradle.org/8.11.1/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Configure project :capacitor-cordova-android-plugins
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :capacitor-android:preBuild UP-TO-DATE
+> Task :capacitor-android:preDebugBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preDebugBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:writeDebugAarMetadata
+> Task :capacitor-android:writeDebugAarMetadata
+> Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :capacitor-android:generateDebugResValues
+> Task :capacitor-android:generateDebugResources
+> Task :capacitor-android:packageDebugResources
+> Task :capacitor-cordova-android-plugins:generateDebugResValues
+> Task :capacitor-cordova-android-plugins:generateDebugResources
+> Task :capacitor-cordova-android-plugins:packageDebugResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :capacitor-android:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :capacitor-cordova-android-plugins:extractDeepLinksDebug
+> Task :capacitor-android:processDebugManifest
+> Task :capacitor-cordova-android-plugins:processDebugManifest
+> Task :app:mergeDebugResources
+> Task :capacitor-android:compileDebugLibraryResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :capacitor-cordova-android-plugins:compileDebugLibraryResources
+> Task :app:processDebugManifestForPackage
+> Task :capacitor-android:javaPreCompileDebug
+> Task :capacitor-cordova-android-plugins:javaPreCompileDebug
+> Task :app:javaPreCompileDebug
+> Task :capacitor-android:parseDebugLocalResources
+> Task :capacitor-cordova-android-plugins:parseDebugLocalResources
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :capacitor-android:mergeDebugShaders
+> Task :capacitor-android:compileDebugShaders NO-SOURCE
+> Task :capacitor-android:generateDebugAssets UP-TO-DATE
+> Task :capacitor-android:generateDebugRFile
+> Task :capacitor-android:packageDebugAssets
+> Task :capacitor-cordova-android-plugins:generateDebugRFile
+> Task :app:processDebugResources
+
+Note: Some input files use unchecked or unsafe operations.
+> Task :capacitor-android:compileDebugJavaWithJavac
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :capacitor-cordova-android-plugins:compileDebugJavaWithJavac NO-SOURCE
+> Task :capacitor-cordova-android-plugins:bundleLibCompileToJarDebug
+> Task :capacitor-cordova-android-plugins:mergeDebugShaders
+> Task :capacitor-cordova-android-plugins:compileDebugShaders NO-SOURCE
+> Task :capacitor-cordova-android-plugins:generateDebugAssets UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:packageDebugAssets
+> Task :capacitor-android:bundleLibCompileToJarDebug
+> Task :app:mergeDebugAssets
+> Task :capacitor-cordova-android-plugins:bundleLibRuntimeToJarDebug
+> Task :capacitor-android:bundleLibRuntimeToJarDebug
+> Task :app:compressDebugAssets
+> Task :app:desugarDebugFileDependencies
+> Task :capacitor-android:processDebugJavaRes NO-SOURCE
+> Task :capacitor-cordova-android-plugins:processDebugJavaRes NO-SOURCE
+> Task :app:mergeDebugJniLibFolders
+> Task :capacitor-android:mergeDebugJniLibFolders
+> Task :capacitor-android:mergeDebugNativeLibs NO-SOURCE
+> Task :app:checkDebugDuplicateClasses
+> Task :capacitor-android:copyDebugJniLibsProjectOnly
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:9:8 Unresolved reference: io
+
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:10:8 Unresolved reference: io
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:11:8 Unresolved reference: io
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:12:8 Unresolved reference: io
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:13:8 Unresolved reference: io
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:14:8 Unresolved reference: io
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:15:8 Unresolved reference: io
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:16:8 Unresolved reference: io
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:17:8 Unresolved reference: io
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:18:8 Unresolved reference: io
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:29:26 Unresolved reference: NearPay
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:44:17 Unresolved reference: Environments
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:46:17 Unresolved reference: Environments
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:49:23 Unresolved reference: NearPay
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:51:37 Unresolved reference: AuthenticationData
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:54:39 Unresolved reference: NetworkConfiguration
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:55:29 Unresolved reference: UIPosition
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:59:37 Unresolved reference: SetupListener
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:60:17 'onSetupCompleted' overrides nothing
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:70:17 'onSetupFailed' overrides nothing
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:70:58 Unresolved reference: SetupFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:72:40 'when' expression must be exhaustive, add necessary 'else' branch
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:73:28 Unresolved reference: SetupFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:74:28 Unresolved reference: SetupFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:75:28 Unresolved reference: SetupFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:76:28 Unresolved reference: SetupFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:77:28 Unresolved reference: SetupFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:129:26 Unresolved reference: PurchaseListener
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:130:21 'onPurchaseApproved' overrides nothing
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:130:70 Unresolved reference: TransactionData
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:140:55 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:142:41 Overload resolution ambiguity: 
+public open fun put(p0: String!, p1: Any!): JSObject! defined in com.getcapacitor.JSObject
+public open fun put(p0: String!, p1: Boolean): JSObject! defined in com.getcapacitor.JSObject
+public open fun put(p0: String!, p1: Double): JSObject! defined in com.getcapacitor.JSObject
+public open fun put(p0: String!, p1: Int): JSObject! defined in com.getcapacitor.JSObject
+public open fun put(p0: String!, p1: Long): JSObject! defined in com.getcapacitor.JSObject
+public open fun put(p0: String!, p1: String!): JSObject! defined in com.getcapacitor.JSObject
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:143:101 Unresolved reference: it
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:150:21 'onPurchaseFailed' overrides nothing
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:150:68 Unresolved reference: PurchaseFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:151:57 'when' expression must be exhaustive, add necessary 'else' branch
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:152:32 Unresolved reference: PurchaseFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:155:32 Unresolved reference: PurchaseFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:158:32 Unresolved reference: PurchaseFailure
+e: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt:161:32 Unresolved reference: PurchaseFailure
+
+> Task :app:mergeExtDexDebug
+[Incubating] Problems report is available at: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/build/reports/problems/problems-report.html
+54 actionable tasks: 54 executed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 4m 43s
+Error: Process completed with exit code 1.

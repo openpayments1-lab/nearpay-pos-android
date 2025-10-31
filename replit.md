@@ -40,6 +40,26 @@ A mobile point-of-sale application built with Capacitor and NearPay.io for accep
   - **Cleaned**: Old io/nearpay/payment directory removed
   - **Certificates**: Old keystores removed, need regeneration with new package name
 
+### NearPay SDK Stub Classes Created
+- **Date**: January 31, 2025
+- **Change**: Created complete stub SDK classes matching official NearPay SDK API structure
+- **Details**:
+  - **Purpose**: Enable APK compilation until real NearPay SDK access is granted
+  - **Package**: `io.nearpay.sdk.*` matching official SDK structure
+  - **Stub Classes Created**:
+    - `Environments` - SANDBOX and PRODUCTION environment enums
+    - `NearPay` - Main SDK class with Builder pattern
+    - `AuthenticationData.Jwt` - JWT authentication sealed class
+    - `TransactionData` - Transaction result data class
+    - `SetupFailure` - Setup error types (GeneralError, AuthenticationFailed, InvalidApiKey, NetworkError, DeviceNotSupported)
+    - `PurchaseFailure` - Purchase error types (GeneralError, AuthenticationFailed, InvalidAmount, UserCancelled)
+    - `NetworkConfiguration` - Payment network enums (DEFAULT, VISA, MASTERCARD, AMEX, MADA)
+    - `UIPosition` - UI positioning enums (CENTER, CENTER_BOTTOM, BOTTOM)
+    - `SetupListener` - Interface for SDK initialization callbacks
+    - `PurchaseListener` - Interface for payment transaction callbacks
+  - **Location**: `android/app/src/main/java/io/nearpay/sdk/`
+  - **Next Step**: Replace stubs with real SDK after NearPay approval
+
 ### Native Plugin Rewritten in Kotlin
 - **Date**: January 29, 2025
 - **Change**: Converted NearPayPlugin from Java to Kotlin for proper SDK compatibility
