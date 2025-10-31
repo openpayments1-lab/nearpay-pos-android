@@ -123,7 +123,7 @@ Key Password: nearpay${ENVIRONMENT}2025
 
 📧 Next Steps:
 1. Email $PEM_FILE to [email protected]
-2. Include your app package name: io.nearpay.payment
+2. Include your app package name: app.cashmgmtnp.pos
 3. Specify environment: $ENVIRONMENT
 4. Wait for NearPay confirmation
 5. Update build.gradle with signing configuration
@@ -136,7 +136,7 @@ echo "📧 NEXT STEPS:"
 echo "1. Send PEM certificate to NearPay:"
 echo "   📎 File: $PEM_FILE"
 echo "   ✉️  To: [email protected]"
-echo "   📝 Include: Package name (io.nearpay.payment) and environment ($ENVIRONMENT)"
+echo "   📝 Include: Package name (app.cashmgmtnp.pos) and environment ($ENVIRONMENT)"
 echo ""
 echo "2. Configure app signing (see INFRA.md)"
 echo ""

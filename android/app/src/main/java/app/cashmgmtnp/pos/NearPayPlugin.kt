@@ -1,4 +1,4 @@
-package io.nearpay.payment
+package app.cashmgmtnp.pos
 
 import android.util.Log
 import com.getcapacitor.JSObject

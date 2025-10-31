@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.nearpay.payment',
+  appId: 'app.cashmgmtnp.pos',
   appName: 'NearPay POS',
   webDir: 'dist/public',
   server: {

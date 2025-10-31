@@ -1,7 +1,9 @@
-# NearPay POS Android Application
+# Cash Management NFC POS Android Application
 
 ## Project Overview
 A mobile point-of-sale application built with Capacitor and NearPay.io for accepting NFC contactless payments on Android devices. Designed for seamless tap-to-pay transactions with comprehensive transaction tracking.
+
+**Package Name**: `app.cashmgmtnp.pos`
 
 ### Core Features
 - NFC payment processing via NearPay SDK

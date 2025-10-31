@@ -2,10 +2,10 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "io.nearpay.payment"
+    namespace "app.cashmgmtnp.pos"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "io.nearpay.payment"
+        applicationId "app.cashmgmtnp.pos"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
