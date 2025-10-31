@@ -24,6 +24,22 @@ A mobile point-of-sale application built with Capacitor and NearPay.io for accep
 
 ## Recent Changes (January 2025)
 
+### Package Name Migration to app.cashmgmtnp.pos
+- **Date**: January 31, 2025
+- **Change**: Changed package name from io.nearpay.payment to app.cashmgmtnp.pos
+- **Details**:
+  - **Reason**: Avoid conflicts with NearPay's official domain namespace
+  - **Updated Files**:
+    - android/app/build.gradle (namespace and applicationId)
+    - capacitor.config.ts (appId)
+    - MainActivity.java moved to app/cashmgmtnp/pos/
+    - NearPayPlugin.kt moved to app/cashmgmtnp/pos/
+    - capacitor.plugins.json updated
+    - strings.xml package references
+    - scripts/generate-keystore.sh
+  - **Cleaned**: Old io/nearpay/payment directory removed
+  - **Certificates**: Old keystores removed, need regeneration with new package name
+
 ### Native Plugin Rewritten in Kotlin
 - **Date**: January 29, 2025
 - **Change**: Converted NearPayPlugin from Java to Kotlin for proper SDK compatibility
@@ -38,9 +54,10 @@ A mobile point-of-sale application built with Capacitor and NearPay.io for accep
   - **Build Configuration**: 
     - Added Kotlin plugin (kotlin-android) and kotlin-stdlib dependency
     - Kotlin version: 1.9.22
-    - Java compatibility: VERSION_17 (Kotlin doesn't support JVM target 21)
-    - GitHub Actions: Java 17 LTS (downgraded from 21)
-  - **File**: `android/app/src/main/java/io/nearpay/payment/NearPayPlugin.kt`
+    - Java compatibility: VERSION_17 (Kotlin 1.9.22 doesn't support JVM target 21)
+    - GitHub Actions: Java 17 LTS
+    - Force all subprojects (including Capacitor libs) to use Java 17 in root build.gradle
+  - **File**: `android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt`
 
 ### Complete Platform Migration to NearPay
 - **Date**: January 29, 2025
