@@ -77,11 +77,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     
     // NearPay Terminal SDK - Official Android SDK
-    // Using stub classes until GitLab access credentials are confirmed working
-    // TODO: Uncomment when GitLab token is verified:
-    // implementation 'io.nearpay:terminalsdk-release:0.0.111'
-    // implementation 'com.google.android.gms:play-services-location:20.0.0'
-    // implementation 'com.huawei.hms:location:6.4.0.300'
+    implementation 'io.nearpay:terminalsdk-release:0.0.114'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'com.huawei.hms:location:6.11.0.301'
 }
 
 apply from: 'capacitor.build.gradle'

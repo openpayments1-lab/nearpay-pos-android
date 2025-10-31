@@ -1,0 +1,984 @@
+Configuring the Secure Maven Repository / Dependencies
+For the ReaderCore library, you can include the following configuration in your root-level settings.gradle(.kts) file:
+
+if your project is using Groovy settings.gradle, you can use the following configuration:
+
+Very important:
+To get the private token , you need to contact Nearpay to get the token for the private repository.
+
+kotlin
+Groovy
+Dart & React
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven(url = "https://developer.huawei.com/repo/")
+        maven {
+            url = uri("https://gitlab.com/api/v4/projects/37026421/packages/maven")
+            credentials(HttpHeaderCredentials::class) {
+                name = "Private-Token"
+                value = nearpayPosGitlabReadToken // will be supported from Nearpay Product Team
+            }
+            authentication {
+                create<HttpHeaderAuthentication>("header")
+            }
+        }
+    }
+}
+
+Copy
+Copied!
+You should include the following dependencies in your Module level build.gradle file:
+
+kotlin
+Groovy
+dart
+React Native
+implementation("io.nearpay:terminalsdk-release:0.0.114")
+implementation("com.google.android.gms:play-services-location:20.0.0")
+implementation("com.huawei.hms:location:6.4.0.300")
+
+Copy
+Copied!
+In addition, you have to change the minSdk version to 28 in your build.gradle file:
+
+kotlin
+Groovy
+    android {
+        defaultConfig {
+            applicationId = "com.example.example"
+            minSdk = 28 
+        }
+    }
+
+Copy
+Copied!
+Contact Nearpay to register your applicationId and get the necessary credentials.
+
+AndroidManifest.xml Configuration
+In your AndroidManifest.xml file, add the following line:
+
+
+<application
+    android:allowBackup="true"
+    tools:replace="android:allowBackup" // Add this line to avoid manifest merger issues
+
+
+Make sure the following tools namespace is present in your <manifest> tag:// xmlns:tools="http://schemas.android.com/tools"
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"> // this tools namespace
+
+...
+
+Copy
+Copied!
+Part 2: Getting Started with TerminalSDK
+To start using TerminalSDK, initialize it with the necessary configurations.
+
+kotlin
+Java
+dart
+React Native
+// initializing the terminalSDK may throw an exception, so wrap it in a try-catch block
+try {
+    val nearpay = TerminalSDK.Builder()
+        .activity(this)  // Sets the activity context
+        .environment(SdkEnvironment.SANDBOX)  // Choose SANDBOX or PRODUCTION or INTERNAL
+        .googleCloudProjectNumber(12345678)  // Set Google Cloud project number
+        .huaweiSafetyDetectApiKey("your_api_key")  // Set Huawei API key
+        .country(Country.SA)  // Set country SA, TR, USA, KEN ,
+        .uiDockPosition(UiDockPosition.BOTTOM_CENTER) // Optional: set the location of the Tap to Pay modal 
+        .build()
+    } catch (e: Throwable) {
+        Timber.e("Error initializing TerminalSDK: $e")
+    }
+
+Copy
+Copied!
+Permissions and Requirements
+Check Required Permissions
+The SDK provides methods to check and verify required permissions and device capabilities.
+
+Check all required permissions and return a list of PermissionStatus objects.
+
+kotlin
+Java
+// Check all required permissions
+val permissionStatuses = nearpay.checkRequiredPermissions()
+permissionStatuses.forEach { status ->
+    if (!status.isGranted) {
+        // Handle missing permission
+        Log.d("Permissions", "Missing permission: ${status.permission}")
+    }
+}
+
+Copy
+Copied!
+The required permissions include:
+
+Manifest.permission.ACCESS_FINE_LOCATION
+Manifest.permission.ACCESS_NETWORK_STATE
+Manifest.permission.INTERNET
+Manifest.permission.READ_PHONE_STATE
+Manifest.permission.NFC
+The following code snippets show how to check permissions, then ask for missing permissions if needed, and also check if NFC and WiFi are enabled.
+
+kotlin
+Java
+
+        var PERMISSIONS_REQUEST_CODE = 0
+    // Check permissions
+        val missingPermissions =
+            nearpay.checkRequiredPermissions().filter { !it.isGranted }.map { it.permission }
+
+        if (missingPermissions.isNotEmpty()) {
+    // Request missing permissions
+            ActivityCompat.requestPermissions(
+                this, missingPermissions.toTypedArray(), PERMISSIONS_REQUEST_CODE //0 for example
+            )
+        }
+
+    // Check NFC
+        if (!nearpay.isNfcEnabled(this)) {
+            Log.d("MainActivity", "NFC is disabled");
+        }
+
+    // Check WiFi
+        if (!nearpay.isWifiEnabled(this)) {
+            Log.d("MainActivity", "WiFi is disabled");
+        }
+
+
+Copy
+Copied!
+Part 3: Authentication
+Send OTP
+The SDK supports both mobile and email OTP authentication.
+
+Mobile Authentication
+kotlin
+Java
+dart
+React Native
+val mobileLogin = MobileLogin("+966500000000")
+nearpay.sendOTP(mobileLogin, object : SendOTPMobileListener {
+    override fun onSendOTPMobileSuccess(otpResponse: OtpResponse) {
+        Log.d("Login", " onSendOTPMobileSuccess ($otpResponse)")
+    }
+    override fun onSendOTPMobileFailure(otpMobileFailure: OTPMobileFailure) {
+        Log.d("Login", " onSendOTPMobileFailure ($otpMobileFailure)")
+    }
+})
+
+Copy
+Copied!
+Email Authentication
+kotlin
+Java
+dart
+React Native
+val emailLogin = EmailLogin("user@example.com")
+nearpay.sendOTP(emailLogin, object : SendOTPEmailListener {
+    override fun onSendOTPEmailSuccess(otpResponse: OtpResponse) {
+        Log.d("Login", " onSendOTPEmailSuccess ($otpResponse)")
+    }
+    override fun onSendOTPEmailFailure(otpEmailFailure: OTPEmailFailure) {
+        Log.d("Login", " onSendOTPEmailFailure ($otpEmailFailure)")
+    }
+})
+
+Copy
+Copied!
+Verify OTP
+After sending the OTP, verify it to authenticate the user.
+
+Mobile Verification
+kotlin
+Java
+dart
+React Native
+val loginData = LoginData(
+    mobile = "+966500000000",
+    code = "123456"
+)
+nearpay.verify(loginData, object : VerifyMobileListener {
+    override fun onVerifyMobileSuccess(user: User) {
+        Log.d("Login", " onVerifyMobileSuccess ${user.name}")
+        userUuid = user.userUUID()  // Retrieve the UUID of the currently logged-in user. This value can be reused later to fetch user details using getUserByUUID().
+    }
+    override fun onVerifyMobileFailure(verifyMobileFailure: VerifyMobileFailure) {
+        Log.d("Login", " onVerifyMobileFailure ($failure)")
+    }
+})
+
+
+Copy
+Copied!
+Email Verification
+kotlin
+Java
+dart
+React Native
+val loginData = LoginData(
+    email = "user@example.com",
+    code = "123456"
+)
+nearpay.verify(loginData, object : VerifyEmailListener {
+    override fun onVerifyEmailSuccess(user: User) {
+        Log.d("Login", " onVerifyEmailSuccess ($user.name)")
+        userUuid = user.userUUID()  // Retrieve the UUID of the currently logged-in user. This value can be reused later to fetch user details using getUserByUUID().
+    }
+    override fun onVerifyEmailFailure(verifyEmailFailure: VerifyEmailFailure) {
+        Log.d("Login", " onVerifyEmailFailure ($verifyMobileFailure)")
+    }
+})
+
+Copy
+Copied!
+JWT Verification
+For creating a JWT token, please visit this link : JWT Token Generator
+
+kotlin
+Java
+dart
+React Native
+val loginData = JWTLoginData(
+    jwt = "jwt_token"
+)
+nearpay.jwtLogin(loginData, object : JWTLoginListener {
+            override fun onJWTLoginSuccess(terminal: Terminal) {
+                Log.d("Login", "JWT Login success + ${terminal.terminalUUID}")
+                terminalUUID = terminal.terminalUUID  // Retrieve the UUID of the currently terminal session. This value can be reused later to fetch terminal session details using getTerminal().
+            }
+
+            override fun onJWTLoginFailure(jwtLoginFailure: JWTLoginFailure) {
+                Log.d("Login", "JWT Login failure: $jwtLoginFailure")
+            }
+        })
+
+
+Copy
+Copied!
+Get User
+You can also get a User instance after calling the getUserByUUID method if the user has already been authenticated before using the SDK and you have their UUID from the previously returned User instance.
+
+Saving the user UUID is the responsibility of the developer, not the SDK.
+
+kotlin
+Java
+dart
+React Native
+try{
+    val user = nearpay.getUserByUUID(userUuid)
+} catch (e: Exception) {
+    Log.d("UserSDK", "User connection failed: ${e}")
+}
+// The returned user object also becomes the active user
+
+Copy
+Copied!
+Logout User
+To log out a user and delete its instance from memory, call the logout method.
+
+Takes a User UUID as a parameter and logs out the user.
+
+kotlin
+Java
+dart
+React Native
+try {
+    nearpay.logout(uuid)
+} catch (e: Exception) {
+    Log.d("UserSDK", "User logout failed: ${e}")
+}
+
+Copy
+Copied!
+Part 4: User Operations
+The User class is initialized internally by the SDK and provides methods for managing terminals.
+
+List Terminals
+Retrieves a paginated list of terminals associated with the user.
+
+Usage
+kotlin
+Java
+dart
+React Native
+lateinit var fetchedTerminals : List<TerminalConnection>
+userInstance.listTerminals(
+    page = 1,
+    pageSize = 10,
+    filter = null, // You can pass the terminal ID to get a specific terminal
+    object : GetTerminalsListener {
+        override fun onGetTerminalsSuccess(terminalsConnection: List<TerminalConnection>) {
+            
+            fetchedTerminals = terminalsConnection // list of terminals that assigned to the connected user 
+            
+        }
+
+        override fun onGetTerminalsFailure(getTerminalsFailure: GetTerminalsFailure) {
+            // Handle failure
+            Log.d("Terminals", "Terminals list failure: $getTerminalsFailure")
+        }
+    },
+    )
+
+
+Copy
+Copied!
+Part 5: Terminal Connection Operations
+Connect Terminal
+Establishes a connection with a terminal.
+
+Usage
+kotlin
+Java
+dart
+React Native
+
+var firstTerminal = fetchedTerminals[0] ; // Retrieve the specific terminal connection from the list of fetched terminals. This terminal will be used to perform operations.
+
+firstTerminal.connect(
+    activity = this,
+    listener = object : ConnectTerminalListener {
+        override fun onConnectTerminalSuccess(terminal: Terminal) {
+            // Terminal connected successfully
+            // Store terminal instance for future operations
+            terminalInstance = terminal
+            terminalUUID = terminalInstance.terminalUUID  // Retrieve the UUID of the currently terminal session. This value can be reused later to fetch terminal session details using getTerminal().
+            
+        }
+
+        override fun onConnectTerminalFailure(connectTerminalFailure: ConnectTerminalFailure) {
+            // Handle failure
+            Log.d("Terminal", "Terminal connection failed: $connectTerminalFailure")
+        }
+    }
+)
+
+Copy
+Copied!
+Part 6: Terminal Operations
+Before getting into Terminal class functions, you can also get a Terminal instance after calling the getTerminal method and passing the terminal's ID instead of using a TerminalConnection instance.
+
+Get Terminal
+Retrieves a Terminal instance for a specific terminal ID.
+
+kotlin
+Java
+dart
+React Native
+try {
+
+private var terminalUUID: String = "7d74bc33-d14a-4111-bba3-b33707d57ae4"
+
+val terminalInstance = nearpay.getTerminal(
+    activity = this,
+    uuid = terminalUUID
+)
+} catch (e: Exception) {
+     Log.d("TerminalSDK", "Terminal connection failed: ${e}")
+}
+
+Copy
+Copied!
+Purchase
+Initiates a purchase transaction by reading the card and sending the transaction.
+
+kotlin
+Java
+dart
+React Native
+    var amount = 100
+    var intentUuid = UUID.randomUUID().toString() // the transaction UUID should be unique for each transaction and managed by the developer to communicate with the SDK
+    var customerReferenceNumber = "" //[optional] any number you want to add as a refrence
+
+    terminal.purchase(
+        amount = amount,
+        scheme = null, // eg.PaymentScheme.VISA, specifying this as null will allow all schemes to be accepted
+        intentUuid = transactionUUID,
+        customerReferenceNumber = customerReferenceNumber,
+        readCardListener = object : ReadCardListener {
+            override fun onReadCardSuccess() {
+                // Card read successfully
+                Log.d("ReadCard", "Card read successfully")
+            }
+
+            // Called when the card reading process fails - issues with the specific card or its interaction
+            // Examples: card removed too quickly, unreadable card, wrong card orientation
+            override fun onReadCardFailure(readCardFailure: ReadCardFailure) {
+                // Handle card read failure
+                Log.d("ReadCard", "Card read failure: $readCardFailure")
+            }
+
+            override fun onReaderDisplayed() {
+                Log.d("ReaderCard", "Reader Displayed")
+            }
+
+            override fun onReaderClosed() {
+                Log.d("ReaderCard", "Reading Closed")
+            }
+
+            override fun onReaderWaiting() {
+                // Reader waiting for card
+                Log.d("ReadCard", "Reader waiting for card")
+            }
+
+            override fun onReaderReading() {
+                // Reading card in progress
+                Log.d("ReadCard", "Reading card in progress")
+            }
+
+            override fun onReaderRetry() {
+                // Reader retry needed
+                Log.d("ReadCard", "Reader retry needed")
+            }
+
+            override fun onPinEntering() {
+                // PIN entry in progress
+                Log.d("ReadCard", "PIN entry in progress")
+            }
+
+            override fun onReaderFinished() {
+                // Card read completed
+                Log.d("ReadCard", "Card read completed")
+            }
+            override fun onReadingStarted() {
+                // Card read started
+                Log.d("ReadCard", "Card read started")
+            }
+
+            // Called when the card reader device itself encounters an error
+            // Examples: hardware malfunction, connection issues, device not ready
+            override fun onReaderError(error: String?) {
+                // Handle reader error
+                Log.d("ReadCard", "Reader error: $error")
+            }
+        },
+        sendTransactionListener = object : SendTransactionListener {
+            override fun onSendTransactionCompleted(purchaseResponse: PurchaseResponse) {
+                // Handle completed transaction
+
+                //PurchaseResponse will return all transaction with same intent id "transactionUUID"
+                //purchaseResponse.status will return the status of last transaction of the same intent id
+
+
+                Log.d("Transaction", "Transaction completed: $purchaseResponse")
+                // To get the approved receipt based on the country you can got it like :
+                // purchaseResponse.getLastReceipt().getMadaReceipt() for Saudi Arabia
+                // purchaseResponse.getLastReceipt().getEPXReceipt() for USA
+                // purchaseResponse.getLastReceipt().getBKMReceipt() for Turkey
+            }
+
+            override fun onSendTransactionFailure(failure: SendTransactionFailure) {
+                // Handle transaction failure
+                Log.d("Transaction", "Transaction failure: $failure")
+            }
+        }
+    )
+
+Copy
+Copied!
+Refund
+Initiates a refund transaction by reading the card and sending the transaction.
+
+kotlin
+Java
+dart
+JavaScript
+    var amount = 1000L
+    var intentUuid = "1234567890" // the same transaction UUID used in the purchase transaction "Intent ID"
+    var refundUUID = UUID.randomUUID().toString() // the refund UUID should be unique for each refund transaction and managed by the developer to communicate with the SDK
+    var customerReferenceNumber = "" //[optional] any number you want to add as a refrence
+
+terminal.refund(
+    amount = amount,
+    scheme = null, // eg.PaymentScheme.VISA, specifying this as null will allow all schemes to be accepted
+    intentUuid = transactionUUID,
+    refundUUID = refundUUID,
+    customerReferenceNumber = customerReferenceNumber,
+    readCardListener = object : ReadCardListener {
+        // Card reading callbacks
+        // Same implementation as purchase
+    },
+    refundTransactionListener = object : RefundTransactionListener {
+        override fun onRefundTransactionCompleted(refundResponse: RefundResponse) {
+            // Handle successful refund
+            Log.d("Refund", "Refund success: $refundResponse.getLastReceipt()")
+        }
+
+        override fun onRefundTransactionFailure(refundTransactionFailure: RefundTransactionFailure) {
+            // Handle refund failure
+            Log.d("Refund", "Refund failure: $refundTransactionFailure")
+        }
+    }
+)
+
+Copy
+Copied!
+Cancel Transaction
+Cancels a transaction by providing the transaction ID.
+
+kotlin
+Java
+dart
+React Native
+var transactionUUID = "transaction-uuid"
+
+terminal.cancelTransaction(
+    id = transactionUUID, // Transaction ID
+    cancelTransactionListener = object : CancelTransactionListener {
+        override fun onCancelTransactionSuccess(canceledState : CanceledState) {
+            Log.d("Cancel", "Transaction Cancelled: ${canceledState.canceled}")
+        }
+
+        override fun onCancelTransactionFailure(cancelTransactionFailure: CancelTransactionFailure) {
+            Log.d("Cancel", "Transaction Cancelled Failure: $cancelTransactionFailure")
+        }
+    }
+)
+
+Copy
+Copied!
+Reverse Transaction
+Reverses a transaction by providing the transaction ID.
+
+kotlin
+Java
+dart
+React Native
+terminal.reverseTransaction(
+        intentId = intentUuid, 
+        transactionID = transactionUUID,
+        object : ReverseTransactionListener {
+            override fun onReverseTransactionCompleted(reverseResponse: ReverseResponse) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    Log.d("Transaction", "Transaction reversed: $reverseResponse")
+                }
+            }
+
+            override fun onReverseTransactionFailure(reverseTransactionFailure: ReverseTransactionFailure) {
+                    Log.d("Transaction", "Transaction reverse failure: $reverseTransactionFailure")
+
+            }
+
+        }
+    )
+
+Copy
+Copied!
+Reconcile
+Reconciles a terminal's unreconciled transactions.
+
+kotlin
+Java
+dart
+React Native
+terminal.reconcile(
+    reconcileListener = object : ReconcileListener {
+
+        override fun onReconcileCompleted(reconciliationReceiptsResponse: ReconciliationReceiptsResponse) {
+            // Handle success
+            Log.d("Reconcile", "Reconcile Success: $reconciliationReceiptsResponse")
+        }
+
+        override fun onReconcileFailure(reconcileFailure: ReconcileFailure) {
+            // Handle failure
+            Log.d("Reconcile", "Reconcile Failure: $reconcileFailure")
+        }
+    }
+)
+
+
+Copy
+Copied!
+Authorize
+Initiates an authorize transaction by reading the card and sending the transaction
+
+kotlin
+Java
+dart
+React Native
+    var amount = 100
+    var uuid = UUID.randomUUID().toString() // the authorization UUID should be unique for each transaction and managed by the developer to communicate with the SDK
+    var customerReferenceNumber = "" //[optional] any number you want to add as a refrence
+terminal.authorize(
+    amount = amount,
+    scheme = null, // eg.PaymentScheme.VISA, specifying this as null will allow all schemes to be accepted
+    uuid = uuid,
+    customerReferenceNumber = customerReferenceNumber, 
+    readCardListener = object : ReadCardListener {
+          // Card reading callbacks
+          // Same implementation as purchase
+    },
+    authorizeListener = object : AuthorizeListener {
+        override fun onAuthorizeCompleted(response: AuthorizeResponse) {
+            // Handle completed transaction
+            Log.d("Authorize", "Authorization completed: ${response.getLastReceipt()}") 
+        }
+
+        override fun onAuthorizeFailure(failure: AuthorizeFailure) {
+            // Handle transaction failure
+            Log.d("Authorize", "Authorization failure: $failure")
+        }
+    } 
+)
+
+Copy
+Copied!
+Increment Authorization
+Increment an authorization transaction
+
+kotlin
+Java
+dart
+JavaScript
+
+    var amount = 100
+    var authorizationUuid = "123456" // the uuid generated during authorize, aka the intentId found in AuthorizeResponse
+    var uuid = UUID.randomUUID().toString() // the increment authorization UUID should be unique for each transaction and managed by the developer to communicate with the SDK
+terminal.incrementAuthorization(
+    amount = amount,
+    authorizationUuid = authorizationUuid, // the uuid generated during authorize, aka the intentId found in AuthorizeResponse
+    uuid = uuid,
+    incrementAuthorizationListener = object : IncrementAuthorizationListener{
+        override fun onIncrementAuthorizationCompleted(incrementResponse: IncrementResponse) {
+            // Handle completed transaction
+            Log.d("Increment Authorization", "Increment authorization completed: ${incrementResponse.getLastReceipt()}" )
+        }
+
+        override fun onIncrementAuthorizationFailure(failure: IncrementAuthorizationFailure) {
+            // Handle transaction failure
+            Log.d("Increment Authorization", "Increment authorization failure: $failure")
+        }
+
+    }
+)
+
+Copy
+Copied!
+Capture Authorization
+Capture an authorization transaction
+
+kotlin
+Java
+dart
+JavaScript
+
+    var amount = 100
+    var authorizationUuid = "123456" // the uuid generated during authorize, aka the intentId found in AuthorizeResponse
+    var uuid = UUID.randomUUID().toString() // the capture authorization UUID should be unique for each transaction and managed by the developer to communicate with the SDK
+terminal.captureAuthorization(
+    amount = amount,
+    authorizationUuid = authorizationUuid,
+    uuid = uuid,
+    captureAuthorizationListener = object : CaptureAuthorizationListener{
+        override fun onCaptureAuthorizationCompleted(captureAuthorization: CaptureResponse) { 
+            // Handle completed transaction
+            Log.d("Capture Authorization", "Capture authorization completed: ${captureAuthorization.getLastReceipt()}" )
+        }
+
+        override fun onCaptureAuthorizationFailure(failure: CaptureAuthorizationFailure) {
+            // Handle transaction failure
+            Log.d("Capture Authorization", "Capture authorization failure: $failure")
+        }
+
+    }
+)
+
+Copy
+Copied!
+Void Authorization
+Void an authorization transaction
+
+kotlin
+Java
+dart
+JavaScript
+
+    var authorizationUuid = "123456" // the uuid generated during authorize, aka the intentId found in AuthorizeResponse
+terminal.voidAuthorization(
+    id = authorizationUuid,
+    voidListener = object : VoidListener{
+        override fun onVoidCompleted(voidResponse: TransactionResponseUSA) { 
+            // Handle completed transaction
+            Log.d("Void Authorization", "Void authorization completed: ${voidResponse.getLastReceipt()}" )
+        }
+
+        override fun onVoidFailure(failure: VoidFailure) {
+            // Handle transaction failure
+            Log.d("Void Authorization", "Void authorization failure: $failure")
+        }
+
+    }
+)
+
+Copy
+Copied!
+Add Tip to purchase
+Add tip to purchase transaction
+
+kotlin
+Java
+JavaScript
+dart
+
+    var amount = 100
+    var transactionUuid = "123456" // the purchase UUID that will add tip to 
+terminal.tipTransaction(
+    id = transactionUuid,
+    amount = amount, 
+    tipTransactionListener = object : TipTransactionListener{
+        override fun onTipTransactionSuccess(purchaseResponse: PurchaseResponse) { 
+            // Handle completed transaction
+            Log.d("Tip", "Tip completed: ${purchaseResponse.getLastReceipt()}" )
+        }
+
+        override fun onTipTransactionFailure(failure: TipTransactionFailure) {
+            // Handle transaction failure
+            Log.d("Tip", "Tip failure: $failure")
+        }
+
+    }
+)
+
+Copy
+Copied!
+Get Intents List
+Retrieves a paginated list of intents.
+
+kotlin
+Java
+dart
+JavaScript
+terminal.getIntentsList(
+    page = 1,
+    pageSize = 10,
+    isReconciled = true, // do not specify it if all transactions are needed
+    startDate = 1733961600000,
+    endDate = 1735084800000, // Optional date range in timestamp format
+    customerReferenceNumber = "customer_reference_number", // Optional customer reference number
+    getIntentsListListener = object : GetIntentsListListener {
+
+        override fun onGetIntentsListSuccess(intentsList: IntentsListResponse) {
+            Log.d("intentsList", "intents List : $intentsList")
+        }
+
+        override fun onGetIntentsListFailure(error: GetIntentsListFailure) {
+            Log.d("intentsList", "intents List Failure: $error")
+        }
+    }
+)
+
+
+Copy
+Copied!
+Get Intent Details
+Retrieves the details of a specific intent by providing the intent ID.
+
+kotlin
+Java
+dart
+React Native
+var intentID = "cc8b303d-b448-4ef9-80e6-e8e51bb43766"
+terminal.getIntent(
+    intentID, // intent ID
+        getIntentListener = object : GetIntentListener {
+
+        override fun onGetIntentSuccess(intent: IntentDetails) {
+            Log.d("intent", "Intent Details: $intent")
+        }
+
+        override fun onGetIntentFailure(error: GetIntentFailure) {
+            Log.d("Transaction", "Transaction Details Failure: $error")
+        }
+    }
+)
+
+Copy
+Copied!
+Get Reconciliation List
+Retrieves a paginated list of reconciliations.
+
+kotlin
+Java
+dart
+JavaScript
+terminal.getReconciliationList(
+    page = 1,
+    pageSize = 10,
+    startDate = null, //in timestamp format
+    endDate = null, //in timestamp format
+    getReconciliationListListener = object : GetReconciliationListListener {
+        override fun onGetReconciliationListSuccess(reconciliationListResponse: ReconciliationListResponse) {
+            // Handle success
+            Log.d("Reconciliation", "Reconciliation List: $reconciliationListResponse")
+        }
+
+        override fun onGetReconciliationListFailure(error: GetReconciliationListFailure) {
+            // Handle failure
+            Log.d("Reconciliation", "Reconciliation List Failure: $error")
+        }
+    }
+)
+
+
+Copy
+Copied!
+Get Reconciliation Details
+Retrieves the details of a specific reconciliation by providing the reconciliation ID.
+
+kotlin
+Java
+dart
+React Native
+terminal.getReconciliation(
+    "reconciliation-id", // Reconciliation ID
+    getReconciliationListListener = object : GetReconciliationListener {
+        override fun onGetReconciliationSuccess(reconciliationReceiptsResponse: ReconciliationReceiptsResponse) {
+            // Handle success
+            Log.d("handleReadCard", "GetReconciliation success $reconciliationReceiptsResponse")
+        }
+
+        override fun onGetReconciliationFailure(error: GetReconciliationFailure) {
+            // Handle failure
+            Log.d("handleReadCard", "GetReconciliation failure $error")
+        }
+    }
+)
+
+Copy
+Copied!
+Part 7: Callback Listeners
+Callback Listeners
+SendOTPMobileListener
+onSendOTPMobileSuccess(OtpResponse otpResponse)
+Called when OTP is successfully sent.
+
+onSendOTPMobileFailure(OTPMobileFailure otpMobileFailure)
+Called when OTP sending fails.
+
+SendOTPEmailListener
+onSendOTPEmailSuccess(OtpResponse otpResponse)
+Called when OTP is successfully sent to email.
+
+onSendOTPEmailFailure(OTPEmailFailure otpEmailFailure)
+Called when OTP sending to email fails.
+
+VerifyMobileListener
+onVerifyMobileSuccess(User user)
+Called when OTP verification and user authentication succeed.
+
+onVerifyMobileFailure(VerifyMobileFailure verifyMobileFailure)
+Called when OTP verification fails.
+
+VerifyEmailListener
+onVerifyEmailSuccess(User user)
+Called when email OTP verification succeeds.
+
+onVerifyEmailFailure(VerifyEmailFailure verifyEmailFailure)
+Called when email OTP verification fails.
+
+GetTerminalsListener
+onGetTerminalsSuccess(List<TerminalConnection> terminalsConnection)
+Called when terminals are successfully retrieved.
+
+onGetTerminalsFailure(GetTerminalsFailure getTerminalsFailure)
+Called when fetching terminals fails.
+
+ConnectTerminalListener
+onConnectTerminalSuccess(Terminal terminal)
+Called when terminal connection is successful.
+
+onConnectTerminalFailure(ConnectTerminalFailure connectTerminalFailure)
+Called when terminal connection fails.
+
+ReadCardListener
+onReadCardSuccess()
+Called when card reading is successful.
+
+onReadCardFailure(ReadCardFailure readCardFailure)
+Called when card reading fails.
+
+onReaderDisplayed()
+Called when the reader is displayed.
+
+onReaderClosed()
+Called when the reader is closed.
+
+onReaderWaiting()
+Called when the reader is waiting for a card.
+
+onReaderReading()
+Called when the reader is actively reading the card.
+
+onReaderRetry()
+Called when the reader is retrying.
+
+onPinEntering()
+Called when the reader prompts for PIN entry.
+
+onReaderFinished()
+Called when the reader operation is completed.
+
+onReaderError(String error)
+Called when an error occurs in the reader.
+
+SendTransactionListener
+onSendTransactionCompleted(TransactionResponse transactionResponse)
+Called when the transaction is successfully processed.
+
+onSendTransactionFailure(SendTransactionFailure sendTransactionFailure)
+Called when the transaction fails.
+
+GetTransactionsListListener
+onGetTransactionsListSuccess(TransactionsResponse transactionsList)
+Called when the transactions list is successfully retrieved.
+
+onGetTransactionsListFailure(GetTransactionsListFailure error)
+Called when fetching transactions list fails.
+
+GetTransactionListener
+onGetTransactionSuccess(ReceiptsResponse transaction)
+Called when a specific transaction's details are successfully retrieved.
+
+onGetTransactionFailure(GetTransactionFailure error)
+Called when fetching transaction details fails.
+
+ReconcileListener
+onReconcileCompleted(ReconciliationReceiptsResponse reconciliationReceiptsResponse)
+Called when transaction reconciliation is successful.
+
+onReconcileFailure(ReconcileFailure reconcileFailure)
+Called when transaction reconciliation fails.
+
+GetReconciliationListListener
+onGetReconciliationListSuccess(ReconciliationListResponse reconciliationListResponse)
+Called when the reconciliation list is successfully retrieved.
+
+onGetReconciliationListFailure(GetReconciliationListFailure error)
+Called when fetching reconciliation list fails.
+
+GetReconciliationListener
+onGetReconciliationSuccess(ReconciliationReceiptsResponse reconciliationReceiptsResponse)
+Called when specific reconciliation details are successfully retrieved.
+
+onGetReconciliationFailure(GetReconciliationFailure error)
+Called when fetching reconciliation details fails.
+
+CancelTransactionListener
+onCancelTransactionSuccess(Canceled canceled)
+Called when transaction cancellation is successful.
+
+onCancelTransactionFailure(CancelTransactionFailure cancelTransactionFailure)
+Called when transaction cancellation fails.
+
+RefundTransactionListener
+onRefundTransactionCompleted(TransactionResponse transactionResponse)
+Called when refund transaction is successful.
+
+onRefundTransactionFailure(RefundTransactionFailure refundTransactionFailure)
+Called when refund transaction fails.

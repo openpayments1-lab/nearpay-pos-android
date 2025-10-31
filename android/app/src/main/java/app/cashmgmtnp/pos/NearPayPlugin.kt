@@ -46,8 +46,6 @@ class NearPayPlugin : Plugin() {
             terminalSDK = TerminalSDK.Builder()
                 .activity(activity)
                 .environment(sdkEnv)
-                .googleCloudProjectNumber(12345678)  // TODO: Get from config
-                .huaweiSafetyDetectApiKey("your_api_key")  // TODO: Get from config
                 .country(sdkCountry)
                 .build()
 
@@ -231,11 +229,9 @@ class NearPayPlugin : Plugin() {
 
     @PluginMethod
     fun processPayment(call: PluginCall) {
-        // STUB MODE: Auto-connect terminal if not connected
-        // In production, this would require the full authentication flow
         if (currentTerminal == null) {
-            Log.d(TAG, "Auto-connecting stub terminal for testing")
-            currentTerminal = Terminal(id = "stub-terminal-auto")
+            call.reject("Terminal not connected. Call connectTerminal() first.")
+            return
         }
 
         try {
