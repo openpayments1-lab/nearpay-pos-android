@@ -16,7 +16,7 @@ dependencyResolutionManagement {
                 value = settings.hasProperty('nearPayGitLabToken') ? settings.nearPayGitLabToken : (System.getenv('NEARPAY_GITLAB_TOKEN') ?: '')
             }
             authentication {
-                header(HttpHeaderAuthentication)
+                value = System.getProperty('nearPayGitLabToken') ?: ''
             }
         }
     }
