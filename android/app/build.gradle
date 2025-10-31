@@ -6,7 +6,7 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "app.cashmgmtnp.pos"
-        minSdkVersion rootProject.ext.minSdkVersion
+        minSdkVersion 28  // Required by NearPay Terminal SDK
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
@@ -59,6 +59,7 @@ repositories {
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
     maven { url 'https://jitpack.io' }
+    maven { url 'https://developer.huawei.com/repo/' }
 }
 
 dependencies {
@@ -75,9 +76,10 @@ dependencies {
     // Kotlin standard library
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     
-    // NearPay SDK - Using stub classes until real SDK access granted
-    // TODO: Replace with real SDK when approved by NearPay
-    // implementation 'io.nearpay:nearpay-sdk-store:2.1.94'
+    // NearPay Terminal SDK - Real SDK from GitLab private repository
+    implementation 'io.nearpay:terminalsdk-release:0.0.114'
+    implementation 'com.google.android.gms:play-services-location:20.0.0'
+    implementation 'com.huawei.hms:location:6.4.0.300'
 }
 
 apply from: 'capacitor.build.gradle'

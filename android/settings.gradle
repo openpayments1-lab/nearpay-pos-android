@@ -2,4 +2,23 @@ include ':app'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
 
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://developer.huawei.com/repo/' }
+        maven {
+            url 'https://gitlab.com/api/v4/projects/37026421/packages/maven'
+            credentials(HttpHeaderCredentials) {
+                name = 'Private-Token'
+                value = 'glpat-sKLp4IGiRyjLmOuat6ccnW86MQp1OmRyOXk1Cw.01.121b1ld54'
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
+}
+
 apply from: 'capacitor.settings.gradle'
