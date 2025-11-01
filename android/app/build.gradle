@@ -89,8 +89,8 @@ dependencies {
     // Kotlin standard library
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     
-    // NearPay Terminal SDK v2.1.95 - SoftPOS (Tap-to-Pay)
-    implementation 'io.nearpay:terminalsdk-release:2.1.95'
+    // NearPay Terminal SDK - Official documented version
+    implementation 'io.nearpay:terminalsdk-release:0.0.114'
     implementation 'com.google.android.gms:play-services-location:21.0.1'
     implementation 'com.huawei.hms:location:6.11.0.301'
 }
