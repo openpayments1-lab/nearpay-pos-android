@@ -1,0 +1,95 @@
+Good — this log gives us a very clear picture.
+You’re now getting a pure Kotlin compilation failure, not a configuration issue.
+
+Let’s interpret this precisely and fix it step-by-step.
+
+🧩 What the log actually says
+
+The key error:
+
+Execution failed for task ':app:compileDebugKotlin'.
+> Compilation error. See log for more details
+
+
+and you have no earlier Kotlin syntax error shown, which means the compiler crashed rather than flagged a syntax problem.
+This almost always points to a Kotlin plugin / bytecode incompatibility between:
+
+Component	Version
+Gradle wrapper	8.11.1
+Android Gradle Plugin	8.7.2
+Kotlin	1.9.22
+Java	17
+⚠️ Why it fails
+
+Kotlin 1.9.22 is not fully compatible with AGP 8.7.x and Gradle 8.11.x.
+AGP 8.7 introduced a stricter Kotlin K2 backend handling.
+That’s why your build hits GradleKotlinCompilerWorkAction → internal compiler error.
+The D8 warnings about Expected stack map table are secondary — they’re coming from vendor .jars (newland and dspread) built with older Java 6/7 toolchains.
+
+✅ Fix in three parts
+1️⃣ Upgrade the Kotlin plugin version
+
+Open your root build.gradle and change:
+
+ext.kotlin_version = '1.9.25'
+
+
+Then in dependencies keep:
+
+classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+
+
+(1.9.25 is the minimum version tested against AGP 8.7.x; 2.0.x is also fine if you later bump to AGP 8.8.)
+
+2️⃣ Clean everything and rebuild
+cd android
+./gradlew --stop
+./gradlew clean --refresh-dependencies
+rm -rf ~/.gradle/caches/
+./gradlew assembleDebug --stacktrace --no-daemon
+
+
+That forces Gradle to pull the new Kotlin compiler and drop any corrupted build cache.
+
+3️⃣ Silence / mitigate the D8 “stack map” warnings
+
+These JARs are pre-Java 8 and not fully verified under D8; they’re safe if they’re vendor SDKs.
+Add at the bottom of your proguard-rules.pro (or create one if missing):
+
+-dontwarn com.newland.**
+-dontwarn com.dspread.**
+
+
+Or inside your module build.gradle:
+
+android {
+    lintOptions {
+        abortOnError false
+    }
+}
+
+
+That keeps your CI logs readable.
+
+🧱 After fix, your final toolchain should be
+Tool	Version
+Gradle wrapper	8.11.1
+Android Gradle Plugin	8.7.2
+Kotlin	1.9.25
+Java	17
+Capacitor	5.x
+Command	./gradlew assembleDebug --stacktrace --no-daemon
+🧠 If it still fails after this
+
+Run:
+
+./gradlew :app:compileDebugKotlin --stacktrace --info
+
+
+and check for:
+
+e: /app/src/main/... .kt: (line, col): error message
+
+
+If you see a real Kotlin source error then it’s now a normal compile problem (syntax or missing symbol).
+If not, the issue was 100 % the Kotlin/AGP mismatch and will be resolved by the plugin bump.

@@ -1,0 +1,89 @@
+Immediate Actions Needed
+1. Get the Actual Compilation Error
+The current log doesn't show WHY the Kotlin compilation failed. Run with verbose logging:
+bash./gradlew assembleDebug --no-daemon -DnearPayGitLabToken="***" --stacktrace --info
+Or even more detailed:
+bash./gradlew assembleDebug --no-daemon -DnearPayGitLabToken="***" --stacktrace --debug > build.log 2>&1
+```
+
+Then search the output for lines starting with `e:` (Kotlin errors) or look near the end before "BUILD FAILED".
+
+### 2. **Check the Problems Report**
+The build mentions a problems report at:
+```
+file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/build/reports/problems/problems-report.html
+If you're on a CI system (looks like GitHub Actions), download this artifact to see detailed errors.
+Common Kotlin Compilation Issues
+Based on the warnings about D8 stack map tables for newland and dspread libraries, here are likely causes:
+Issue 1: Java/Kotlin Version Mismatch
+The libraries were compiled with an older Java version. Add to app/build.gradle:
+gradleandroid {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    
+    kotlinOptions {
+        jvmTarget = "17"
+        freeCompilerArgs += [
+            "-Xjvm-default=all"
+        ]
+    }
+    
+    // Add this to handle legacy libraries
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+}
+Issue 2: Kotlin Version Compatibility
+Check your project-level build.gradle or build.gradle.kts:
+gradlebuildscript {
+    ext.kotlin_version = '1.9.20' // or higher
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+Issue 3: Desugaring for Legacy Libraries
+These old libraries might need desugaring:
+gradleandroid {
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+}
+GitHub Actions Specific Fix
+If you're running this in GitHub Actions, add this step to capture the full error:
+yaml- name: Build Android Debug APK
+  run: |
+    cd android
+    ./gradlew assembleDebug --no-daemon -DnearPayGitLabToken="${{ secrets.NEARPAY_GITLAB_TOKEN }}" --stacktrace --info 2>&1 | tee build.log
+  continue-on-error: true
+
+- name: Upload build log on failure
+  if: failure()
+  uses: actions/upload-artifact@v3
+  with:
+    name: build-logs
+    path: android/build.log
+
+- name: Upload problem reports
+  if: failure()
+  uses: actions/upload-artifact@v3
+  with:
+    name: problem-reports
+    path: android/build/reports/
+Quick Diagnostic Commands
+Run these to check your setup:
+bash# Check Kotlin version
+./gradlew -q dependencies --configuration classpath | grep kotlin
+
+# Check Java version
+./gradlew -version
+
+# List all Kotlin files being compiled
+find . -name "*.kt" -type f
