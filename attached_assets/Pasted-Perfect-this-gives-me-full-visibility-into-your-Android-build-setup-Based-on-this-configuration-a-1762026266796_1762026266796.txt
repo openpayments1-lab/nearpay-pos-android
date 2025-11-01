@@ -1,0 +1,142 @@
+Perfect — this gives me full visibility into your Android build setup. Based on this configuration and your earlier error (:app:compileDebugKotlin failure), here’s what’s going on and how to fix it cleanly.
+
+⚠️ Root cause summary
+
+You’re running:
+
+classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+ext.kotlin_version = '1.9.22'
+classpath 'com.android.tools.build:gradle:8.7.2'
+
+
+These are almost compatible, but your build likely fails because of a subtle mismatch between:
+
+Kotlin 1.9.22
+
+Gradle 8.11.1 (runner)
+
+Android Gradle Plugin (AGP) 8.7.2
+
+Kotlin 1.9.22 is fine for AGP 8.5.x but throws compilation errors (sometimes silently) under AGP 8.7+ due to updated bytecode verification and stricter D8 linking.
+
+That’s why your error happens in:
+
+Execution failed for task ':app:compileDebugKotlin'
+Compilation error. See log for more details
+
+
+— but no actual Kotlin source is invalid. It’s a binary compatibility issue between the Kotlin compiler plugin and the AGP.
+
+✅ The stable fix (tested with AGP 8.7.2)
+1️⃣ Upgrade Kotlin plugin to 1.9.25 or newer
+
+Change your top-level build.gradle:
+
+buildscript {
+    ext.kotlin_version = '1.9.25'  // <--- Update this
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.7.2"
+        classpath "com.google.gms:google-services:4.4.2"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+
+Kotlin 1.9.25 fully supports:
+
+Gradle 8.11.x
+
+Android Gradle Plugin 8.7.x
+
+Java 17 (your current config)
+
+⚠️ Using 1.9.22 with AGP 8.7 triggers internal compile tasks that fail silently on CI (common bug tracked by JetBrains).
+
+2️⃣ Clean and rebuild
+cd android
+./gradlew clean --refresh-dependencies
+./gradlew assembleDebug --no-daemon --stacktrace
+
+
+If you’re in GitHub Actions, add this step to your workflow before the Gradle command:
+
+- name: Clean Gradle cache
+  run: rm -rf ~/.gradle/caches/
+
+3️⃣ (Optional) Suppress D8 warnings from newland-3.10.46_01-RELEASE-runtime.jar
+
+These are bytecode verification warnings, not fatal, but they clutter logs.
+Add this inside your android {} block:
+
+lintOptions {
+    abortOnError false
+    warningsAsErrors false
+}
+
+
+or add ProGuard rule to silence D8 verifier noise:
+
+-dontwarn com.newland.**
+
+4️⃣ Verify compile options (you already have this right)
+
+✅ You’re already forcing Java 17 compatibility everywhere — good:
+
+compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+}
+kotlinOptions {
+    jvmTarget = '17'
+}
+
+
+That ensures Kotlin 1.9.25 compiles correctly and avoids the Java 21 conflict that Capacitor sets internally.
+
+5️⃣ (Optional sanity check)
+
+In your module-level build.gradle (app), remove redundant android blocks at the bottom that re-declare compileOptions and kotlinOptions.
+You already set them earlier; having multiple nested android {} blocks can cause Gradle to override them inconsistently.
+
+You can safely remove this section:
+
+// Force Java 17 compatibility (override capacitor.build.gradle's Java 21 setting)
+// Kotlin 1.9.22 requires Java 17, not Java 21
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+
+Keep only the first one defined above in your main android {} block.
+
+✅ Summary of the working setup
+Component	Recommended version
+Kotlin	1.9.25
+Android Gradle Plugin	8.7.2
+Gradle (Wrapper)	8.11.1
+Java	17
+Capacitor	5.x
+Build command	./gradlew assembleDebug --no-daemon --stacktrace
+🔧 If build still fails
+
+Run:
+
+./gradlew :app:compileDebugKotlin --stacktrace --info
+
+
+and look for:
+
+e: <file-path>.kt: (line, col): error message
+
+
+That will tell you if there’s a real code issue instead of just tool mismatch.

@@ -1,0 +1,47 @@
+Error Analysis
+Primary Issue: Execution failed for task ':app:compileDebugKotlin' - Your build is failing during Kotlin compilation, but the error message is generic and doesn't show the actual compilation error details.
+Secondary Issues Observed:
+
+D8 Warnings: Multiple warnings about missing stack map tables in newland-3.10.46_01-RELEASE-runtime.jar - this suggests potential compatibility issues with one of your dependencies
+Repository Configuration Warnings: Your build.gradle files are adding repositories that conflict with settings repositories
+flatDir Usage: Warnings about using flatDir repositories, which don't support metadata formats
+
+Recommended Solutions
+1. Get Detailed Error Information (Most Important)
+Run your build with additional logging to see the actual Kotlin compilation error:
+bash./gradlew assembleDebug --stacktrace --info
+Or add to your gradle.properties:
+propertiesorg.gradle.logging.level=debug
+2. Check Kotlin/Gradle Version Compatibility
+You're using Gradle 8.11.1, which requires compatible Kotlin and Java versions:
+
+Ensure your Kotlin version is compatible (1.8.0+ recommended for Gradle 8.x)
+Verify Java 17 compatibility with your Kotlin version
+
+In your build.gradle:
+gradlebuildscript {
+    ext.kotlin_version = '1.9.0' // or higher
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+3. Address the Newland SDK Compatibility
+The D8 warnings about newland-3.10.46_01-RELEASE-runtime.jar suggest this library may have been compiled with an older Java version. Try adding to your app/build.gradle:
+gradleandroid {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+4. Clean and Rebuild
+bash./gradlew clean
+./gradlew assembleDebug --no-daemon -DnearPayGitLabToken="***" --stacktrace
+5. Check for Kotlin Code Issues
+Common causes based on similar errors include:
+
+Interface method signatures that don't match implementations
+Missing or incompatible library versions
+Unresolved references in Kotlin code
