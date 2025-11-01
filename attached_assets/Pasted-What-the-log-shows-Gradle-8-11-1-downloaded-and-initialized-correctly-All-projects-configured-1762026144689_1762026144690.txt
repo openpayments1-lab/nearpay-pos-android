@@ -1,0 +1,135 @@
+What the log shows
+
+✅ Gradle 8.11.1 downloaded and initialized correctly.
+
+✅ All projects configured (you can ignore the “repository added” warnings).
+
+⚠️ Dozens of D8 warnings from newland-3.10.46_01-RELEASE-runtime.jar — these are bytecode structure warnings (not fatal).
+
+❌ Actual build failure:
+
+Execution failed for task ':app:compileDebugKotlin'
+> Compilation error. See log for more details
+
+
+That means Kotlin code somewhere in your app failed to compile — syntax error, missing import, incompatible API, or a plugin mismatch.
+
+🧠 Root causes to check (common for this pattern)
+1️⃣ Recent Kotlin or Gradle version mismatch
+
+Kotlin plugin version might be incompatible with Gradle 8.11.1.
+
+You can check your android/build.gradle or build.gradle.kts for:
+
+plugins {
+    id 'org.jetbrains.kotlin.android' version '1.9.x'
+}
+
+
+If it’s below 1.9.0, update it (e.g. to 1.9.25 or newer).
+
+✅ Fix:
+In your top-level build.gradle:
+
+buildscript {
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25"
+    }
+}
+
+
+Then rerun ./gradlew clean assembleDebug --no-daemon.
+
+2️⃣ Corrupted third-party .jar (Newland library)
+
+You see repeated:
+
+D8: Expected stack map table for method with non-linear control flow.
+
+
+That’s an internal JVM verification warning — but if Kotlin references classes in that JAR, compilation can fail.
+
+✅ Fix options:
+
+Exclude that JAR temporarily to test:
+
+dependencies {
+    implementation (files('libs/newland-3.10.46_01-RELEASE-runtime.jar')) {
+        exclude module: 'newland'
+    }
+}
+
+
+Or upgrade/downgrade that library to a stable build (Newland SDKs often need a matching Kotlin target version).
+
+3️⃣ Gradle cache corruption
+
+Sometimes CI/CD caches corrupted Kotlin build outputs.
+
+✅ Fix:
+Clear Gradle caches before rebuild:
+
+./gradlew clean build --no-daemon --refresh-dependencies
+
+4️⃣ Kotlin source syntax error
+
+If you recently committed code changes, there might be an actual syntax or type error that CI/CD doesn’t show fully.
+To see it:
+
+✅ Run locally:
+
+./gradlew assembleDebug --stacktrace
+
+
+or
+
+./gradlew :app:compileDebugKotlin --info
+
+
+You’ll get the exact file and line number of the failing Kotlin source.
+
+5️⃣ Capacitor / Cordova Android plugin conflict
+
+You’re building a Capacitor app, and several Gradle modules (capacitor-android, capacitor-cordova-android-plugins) are loaded.
+If you’ve updated Android Gradle Plugin recently, some capacitor plugin Kotlin files may not compile.
+
+✅ Fix:
+
+Update Capacitor Android to latest (4.x or 5.x depending on your project):
+
+npm install @capacitor/android@latest
+npx cap sync android
+
+
+Then rebuild.
+
+🧹 Recommended cleanup command sequence
+
+Try this in your CI or locally to reset:
+
+cd android
+./gradlew --stop
+./gradlew clean
+rm -rf ~/.gradle/caches/
+rm -rf ~/.gradle/daemon/
+rm -rf ~/.gradle/native/
+rm -rf ~/.gradle/wrapper/
+./gradlew assembleDebug --stacktrace --no-daemon
+
+🧩 If you want to debug this in GitHub Actions
+
+Add a step to print full compile logs:
+
+- name: Build Android APK
+  run: ./gradlew assembleDebug --stacktrace --info --no-daemon
+
+
+That will show the actual Kotlin file that failed.
+
+🟢 TL;DR Fix Summary
+Issue	Action
+Kotlin plugin too old	Update to 1.9.25
+Newland JAR corrupt	Replace or exclude it
+Gradle cache corruption	./gradlew clean --refresh-dependencies
+Syntax error	Re-run with --stacktrace to locate file
+Capacitor plugin mismatch	Update Capacitor + re-sync Android
