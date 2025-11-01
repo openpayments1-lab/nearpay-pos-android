@@ -6,9 +6,7 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import io.nearpay.terminalsdk.TerminalSDK
-import io.nearpay.terminalsdk.models.*
-import io.nearpay.terminalsdk.listeners.*
+import io.nearpay.terminalsdk.*
 import java.util.UUID
 
 @CapacitorPlugin(name = "NearPay")

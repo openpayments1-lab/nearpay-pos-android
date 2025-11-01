@@ -1,0 +1,64 @@
+The latest log confirms the following:
+
+Successful Code Checkout and Setup: The GitHub Actions workflow is running smoothly, checking out code, setting up Node and Java, installing dependencies, and generating the keystore.
+
+No Immediate Dependency Failure: The build proceeded well past the dependency resolution stage, meaning your fixes for the GitLab token and/or version number successfully allowed the NearPay SDK to be downloaded.
+
+New Failure: The build failed again on the Kotlin compilation step (> Task :app:compileDebugKotlin FAILED).
+
+🛑 Current Error Diagnosis: Unresolved References
+The list of compilation errors below the compileDebugKotlin FAILED message clearly points to unresolved references in your NearPayPlugin.kt file. This means that despite fixing the API usage in the purchase method, you are likely missing imports for core NearPay types (data classes, enums, listeners, etc.) that live in specific packages within the new SDK version.
+
+Key Errors from the Log:
+The compiler is unable to find the definitions for several NearPay types:
+
+e: file:///.../NearPayPlugin.kt:10:31 Unresolved reference: models
+
+e: file:///.../NearPayPlugin.kt:22:30 Unresolved reference: User
+
+e: file:///.../NearPayPlugin.kt:23:34 Unresolved reference: Terminal
+
+e: file:///.../NearPayPlugin.kt:39:17 Unresolved reference: SdkEnvironment
+
+e: file:///.../NearPayPlugin.kt:127:31 Unresolved reference: MobileLogin
+
+🛠️ The Fix: Review and Consolidate Kotlin Imports
+The structure of Kotlin packages often changes between SDK versions. When dealing with an external dependency like NearPay, you need to ensure every class or type you use in your Kotlin plugin has the correct, fully-qualified import statement at the top of your NearPayPlugin.kt file.
+
+You previously attempted to import several packages:
+
+Kotlin
+
+import io.nearpay.terminalsdk.TerminalSDK
+import io.nearpay.terminalsdk.data.*
+import io.nearpay.terminalsdk.SdkEnvironment
+import io.nearpay.terminalsdk.Country
+import io.nearpay.terminalsdk.data.models.* // <- The models package might be wrong
+import io.nearpay.terminalsdk.data.dto.*
+import io.nearpay.terminalsdk.listeners.*
+import io.nearpay.terminalsdk.*
+import io.nearpay.terminalsdk.listeners.failures.*
+import java.util.UUID
+If the SDK version is v0.0.114, the path to those internal classes (User, Terminal, SdkEnvironment, etc.) is likely different from the paths you listed. For example, SdkEnvironment might not be at the root of io.nearpay.terminalsdk.
+
+Action: You need to get the definitive imports for the specific NearPay SDK version (v0.0.114) you are using.
+
+Based on standard Android SDK conventions, the solution is usually to find the full package path for each unresolved class (like Terminal, User, SdkEnvironment) and add it explicitly.
+
+Find the definitive documentation for v0.0.114 (the provided link is generally correct but may not have captured every internal class path).
+
+Explicitly import the missing classes.
+
+If you have access to the decompiled SDK source (often found inside the downloaded .aar file under terminalsdk-release.aar), you can check the package name at the top of the Terminal.kt, User.kt, and SdkEnvironment.kt files.
+
+Can you re-examine the NearPay documentation (or check the SDK source code if possible) to confirm the exact package paths for the following missing classes?
+
+User
+
+Terminal
+
+SdkEnvironment
+
+Country
+
+JWTLoginData
