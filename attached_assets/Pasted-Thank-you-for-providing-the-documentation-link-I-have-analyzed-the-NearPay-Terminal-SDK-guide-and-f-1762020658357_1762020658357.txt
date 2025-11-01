@@ -1,0 +1,43 @@
+Thank you for providing the documentation link! I have analyzed the NearPay Terminal SDK guide and found the exact dependency declaration needed to fix your build.
+
+🎯 Dependency Fix
+The documentation confirms the necessary dependency line and repository setup:
+
+1. Correct Dependency Line
+The app/build.gradle dependency line required in the dependencies block is:
+
+Groovy
+
+implementation("io.nearpay:terminalsdk-release:0.0.114") 
+2. The Problem with Your Current Build
+Your current build is failing because it's looking for:
+
+Artifact: io.nearpay:terminalsdk-release
+
+Version: 2.1.95 (from your last log)
+
+The documentation suggests the version is currently much lower (0.0.114).
+
+You must update the dependency line in your android/app/build.gradle to match the version you were instructed to use by the NearPay team, or verify the latest available version.
+
+Action: If you were told to use version 2.1.95, you must confirm that version is available in the GitLab package registry. If not, try using the version suggested by the documentation (0.0.114) or any version confirmed by the NearPay team.
+
+🔧 Recommended Fix: Update app/build.gradle
+Please check your android/app/build.gradle file and update the version number to the correct one (let's assume the issue is a version mismatch, and you should use the version you were given, 2.1.95, if you're sure it exists).
+
+Since your log is looking for 2.1.95, let's assume that's the intended version.
+
+Please check the dependency block in your android/app/build.gradle and ensure it looks exactly like this:
+
+Groovy
+
+dependencies {
+    // ... other dependencies
+    implementation("io.nearpay:terminalsdk-release:2.1.95") // <-- Use the version you intended
+    // OR if 2.1.95 is not found, try the version from the public docs:
+    // implementation("io.nearpay:terminalsdk-release:0.0.114")
+    // ...
+}
+If the Artifact ID is also wrong, that would also cause the "Could not find" error. Ensure the full path io.nearpay:terminalsdk-release is correct as well.
+
+Once you ensure the dependency line is correct and that the private GitLab token is valid (as discussed in the previous step), the build should succeed.
