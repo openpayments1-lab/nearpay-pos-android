@@ -7,12 +7,8 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import io.nearpay.terminalsdk.TerminalSDK
-import io.nearpay.terminalsdk.SdkEnvironment
-import io.nearpay.terminalsdk.Country
-import io.nearpay.terminalsdk.data.models.*
-import io.nearpay.terminalsdk.data.dto.*
+import io.nearpay.terminalsdk.models.*
 import io.nearpay.terminalsdk.listeners.*
-import io.nearpay.terminalsdk.listeners.failures.*
 import java.util.UUID
 
 @CapacitorPlugin(name = "NearPay")
@@ -25,6 +21,7 @@ class NearPayPlugin : Plugin() {
     private var terminalSDK: TerminalSDK? = null
     private var currentUser: User? = null
     private var currentTerminal: Terminal? = null
+    private var availableTerminals: List<TerminalConnection> = emptyList()
 
     @PluginMethod
     fun initialize(call: PluginCall) {
@@ -167,7 +164,7 @@ class NearPayPlugin : Plugin() {
                 return
             }
 
-            val loginData = LoginData(mobile, code)
+            val loginData = LoginData(mobile = mobile, code = code)
             
             terminalSDK?.verify(loginData, object : VerifyMobileListener {
                 override fun onVerifyMobileSuccess(user: User) {
@@ -209,6 +206,8 @@ class NearPayPlugin : Plugin() {
                 override fun onGetTerminalsSuccess(terminalsConnection: List<TerminalConnection>) {
                     Log.d(TAG, "Terminals retrieved: ${terminalsConnection.size}")
                     
+                    availableTerminals = terminalsConnection
+                    
                     val result = JSObject()
                     result.put("success", true)
                     result.put("count", terminalsConnection.size)
@@ -216,7 +215,7 @@ class NearPayPlugin : Plugin() {
                     val terminalsArray = org.json.JSONArray()
                     terminalsConnection.forEach { termConn ->
                         val termObj = JSObject()
-                        termObj.put("id", termConn.terminalConnectionData.id)
+                        termObj.put("id", termConn.id)
                         termObj.put("name", termConn.terminalConnectionData.name)
                         terminalsArray.put(termObj)
                     }
@@ -245,14 +244,22 @@ class NearPayPlugin : Plugin() {
         }
 
         try {
-            // For stub implementation, create a mock terminal connection
-            // In real implementation, this would use the actual terminal from listTerminals
-            val terminalConnection = TerminalConnection(
-                TerminalConnectionData(
-                    id = "stub-terminal-1",
-                    name = "NFC Terminal"
-                )
-            )
+            if (availableTerminals.isEmpty()) {
+                call.reject("No terminals available. Call listTerminals() first.")
+                return
+            }
+            
+            val terminalId = call.getString("terminalId")
+            val terminalConnection = if (terminalId != null) {
+                availableTerminals.find { it.id == terminalId }
+            } else {
+                availableTerminals.firstOrNull()
+            }
+            
+            if (terminalConnection == null) {
+                call.reject("Terminal not found. Please call listTerminals() first.")
+                return
+            }
             
             terminalConnection.connect(activity, object : ConnectTerminalListener {
                 override fun onConnectTerminalSuccess(terminal: Terminal) {
@@ -293,16 +300,14 @@ class NearPayPlugin : Plugin() {
             }
 
             val amountInMinorUnits = (amount * 100).toLong()
-            val intentUUID = UUID.randomUUID().toString()
-            val customerReferenceNumber = call.getString("reference") ?: ""
+            val transactionUUID = UUID.randomUUID().toString()
 
             Log.d(TAG, "Processing payment for amount: $amount (${amountInMinorUnits} minor units)")
 
             currentTerminal?.purchase(
                 amount = amountInMinorUnits,
                 scheme = null,  // Accept all schemes
-                intentUUID = intentUUID,
-                customerReferenceNumber = customerReferenceNumber,
+                transactionUUID = transactionUUID,
                 readCardListener = object : ReadCardListener {
                     override fun onReadCardSuccess() {
                         Log.d(TAG, "Card read successfully")
@@ -312,14 +317,6 @@ class NearPayPlugin : Plugin() {
                         Log.e(TAG, "Card read failed: ${readCardFailure.message}")
                     }
 
-                    override fun onReaderDisplayed() {
-                        Log.d(TAG, "Reader displayed")
-                    }
-
-                    override fun onReaderClosed() {
-                        Log.d(TAG, "Reader closed")
-                    }
-
                     override fun onReaderWaiting() {
                         Log.d(TAG, "Reader waiting for card")
                     }
@@ -327,37 +324,16 @@ class NearPayPlugin : Plugin() {
                     override fun onReaderReading() {
                         Log.d(TAG, "Reading card")
                     }
-
-                    override fun onReaderRetry() {
-                        Log.d(TAG, "Reader retry")
-                    }
-
-                    override fun onPinEntering() {
-                        Log.d(TAG, "PIN entry in progress")
-                    }
-
-                    override fun onReaderFinished() {
-                        Log.d(TAG, "Card read completed")
-                    }
-
-                    override fun onReadingStarted() {
-                        Log.d(TAG, "Card read started")
-                    }
-
-                    override fun onReaderError(error: String?) {
-                        Log.e(TAG, "Reader error: $error")
-                    }
                 },
                 sendTransactionListener = object : SendTransactionListener {
-                    override fun onSendTransactionCompleted(purchaseResponse: PurchaseResponse) {
+                    override fun onSendTransactionSuccess(purchaseResponse: PurchaseResponse) {
                         Log.d(TAG, "Transaction completed successfully")
                         
                         val response = JSObject()
                         response.put("success", true)
                         response.put("status", purchaseResponse.status ?: "APPROVED")
-                        response.put("transactionId", intentUUID)
+                        response.put("transactionId", transactionUUID)
                         response.put("amount", amount)
-                        response.put("reference", customerReferenceNumber)
                         
                         call.resolve(response)
                     }
