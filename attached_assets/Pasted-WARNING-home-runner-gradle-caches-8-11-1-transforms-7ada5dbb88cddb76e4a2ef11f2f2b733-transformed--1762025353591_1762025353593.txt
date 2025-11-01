@@ -1,0 +1,39 @@
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+WARNING: /home/runner/.gradle/caches/8.11.1/transforms/7ada5dbb88cddb76e4a2ef11f2f2b733/transformed/newland-3.10.46_01-RELEASE-runtime.jar: D8: Expected stack map table for method with non-linear control flow.
+
+> Task :app:compileDebugKotlin FAILED
+
+[Incubating] Problems report is available at: file:///home/runner/work/nearpay-pos-android/nearpay-pos-android/android/build/reports/problems/problems-report.html
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 5m 27s
+51 actionable tasks: 51 executed
+Error: Process completed with exit code 1.
