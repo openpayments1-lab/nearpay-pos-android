@@ -1,0 +1,50 @@
+Failure Analysis and Fix
+1. The D8 Warnings (Not the Cause, but a Hint)
+The repetitive warnings involving the newland-3.10.46_01-RELEASE-runtime.jar and the D8 compiler (Expected stack map table for method with non-linear control flow) indicate that this is an older library compiled with an older JVM version or bytecode format that the modern Android D8/DEX tools find questionable.
+
+While these warnings usually don't halt the build, they draw attention to the problematic third-party library: newland-3.10.46_01-RELEASE-runtime.jar.
+
+2. The Kotlin Compilation Error (The Cause)
+The ultimate failure is:
+
+> Task :app:compileDebugKotlin FAILED
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+This is a generic error that often occurs when the Kotlin compiler struggles to process a dependency—especially when it's dealing with older or custom-compiled Java bytecode (like the one generating the D8 warnings).
+
+🛠️ The Fix: Exclude the Problematic Dependency or Downgrade Kotlin
+Since this is an incompatibility issue with a third-party library (newland), the safest and most common fix is to specifically exclude it from the Kotlin compiler's analysis by adjusting your app/build.gradle.
+
+You can often tell the Kotlin compiler to ignore specific .jar files that aren't written in Kotlin but are causing conflicts.
+
+Step 1: Add Kotlin Exclusion to app/build.gradle
+In your android/app/build.gradle file, find the android block and add or modify the kotlinOptions section to exclude the problematic library:
+
+Groovy
+
+android {
+    // ... existing android configuration ...
+
+    kotlinOptions {
+        // Add this list to explicitly exclude the Newland JAR from Kotlin's analysis
+        freeCompilerArgs += [
+            "-Xallow-jsr305",
+            "-Xskip-prerelease-check",
+            "-Xsuppress-version-warnings"
+        ]
+        
+        // This is the critical line to exclude non-Kotlin dependencies that cause issues
+        jvmTarget = "1.8"
+        
+        // Exclude the problematic JAR explicitly if the issue persists
+        // You may need to adjust the path based on your project structure or dependency
+        // freeCompilerArgs += ["-Xuse-javac"] 
+    }
+}
+
+// NOTE: If the above is not enough, you may need to exclude the dependency transitively
+// from the main NearPay SDK dependency, but try the kotlinOptions first.
+Step ⚠️ Alternative: Downgrade Kotlin Version
+If the exclusion above doesn't work, the issue might be a hard incompatibility with the specific Kotlin Gradle plugin version you are using. You would need to check your top-level build.gradle file and try temporarily using a slightly older version of the Kotlin plugin.
+
+Next Step: Apply the kotlinOptions fix to your android/app/build.gradle and re-run the build. If the issue continues, we'll need the exact dependency tree details or the failure log contents (if available) to identify the conflicting library more precisely.

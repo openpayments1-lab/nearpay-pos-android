@@ -7,9 +7,12 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import io.nearpay.terminalsdk.TerminalSDK
-import io.nearpay.terminalsdk.data.*
+import io.nearpay.terminalsdk.SdkEnvironment
+import io.nearpay.terminalsdk.Country
+import io.nearpay.terminalsdk.data.models.*
+import io.nearpay.terminalsdk.data.dto.*
 import io.nearpay.terminalsdk.listeners.*
-import io.nearpay.terminalsdk.*
+import io.nearpay.terminalsdk.listeners.failures.*
 import java.util.UUID
 
 @CapacitorPlugin(name = "NearPay")
@@ -290,7 +293,7 @@ class NearPayPlugin : Plugin() {
             }
 
             val amountInMinorUnits = (amount * 100).toLong()
-            val transactionUUID = UUID.randomUUID().toString()
+            val intentUUID = UUID.randomUUID().toString()
             val customerReferenceNumber = call.getString("reference") ?: ""
 
             Log.d(TAG, "Processing payment for amount: $amount (${amountInMinorUnits} minor units)")
@@ -298,7 +301,7 @@ class NearPayPlugin : Plugin() {
             currentTerminal?.purchase(
                 amount = amountInMinorUnits,
                 scheme = null,  // Accept all schemes
-                transactionUUID = transactionUUID,
+                intentUUID = intentUUID,
                 customerReferenceNumber = customerReferenceNumber,
                 readCardListener = object : ReadCardListener {
                     override fun onReadCardSuccess() {
@@ -346,13 +349,13 @@ class NearPayPlugin : Plugin() {
                     }
                 },
                 sendTransactionListener = object : SendTransactionListener {
-                    override fun onSendTransactionCompleted(transactionResponse: TransactionResponse) {
+                    override fun onSendTransactionCompleted(purchaseResponse: PurchaseResponse) {
                         Log.d(TAG, "Transaction completed successfully")
                         
                         val response = JSObject()
                         response.put("success", true)
-                        response.put("status", "APPROVED")
-                        response.put("transactionId", transactionUUID)
+                        response.put("status", purchaseResponse.status ?: "APPROVED")
+                        response.put("transactionId", intentUUID)
                         response.put("amount", amount)
                         response.put("reference", customerReferenceNumber)
                         
