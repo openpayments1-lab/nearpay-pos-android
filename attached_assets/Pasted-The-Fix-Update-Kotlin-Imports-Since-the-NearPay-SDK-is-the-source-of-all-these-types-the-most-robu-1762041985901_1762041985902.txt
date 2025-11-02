@@ -1,0 +1,33 @@
+The Fix: Update Kotlin Imports
+Since the NearPay SDK is the source of all these types, the most robust way to solve this is to import the core packages the SDK uses. You have some imports that are too narrow, and others that are incorrect for the specific version.
+
+Here are the consolidated and corrected imports that should resolve the compilation errors for a typical older NearPay SDK structure:
+
+Corrected NearPayPlugin.kt Imports
+Replace the existing import block in your NearPayPlugin.kt with the following:
+
+Kotlin
+
+// NearPayPlugin.kt - UPDATED IMPORTS
+import com.getcapacitor.PluginMethod
+import com.getcapacitor.annotation.CapacitorPlugin
+import io.nearpay.terminalsdk.TerminalSDK
+import io.nearpay.terminalsdk.exceptions.* import io.nearpay.terminalsdk.listeners.*
+import io.nearpay.terminalsdk.requests.* // Contains MobileLogin, LoginData, etc.
+import io.nearpay.terminalsdk.responses.* // Contains PurchaseResponse, etc.
+import io.nearpay.terminalsdk.data.* // Contains SdkEnvironment, Country, User, Terminal (likely)
+import java.util.UUID
+
+// Your plugin implementation starts here...
+@CapacitorPlugin(name = "NearPay")
+class NearPayPlugin : Plugin() {
+    // ... rest of your code ...
+}
+Key Changes Explained:
+We kept the main classes (TerminalSDK).
+
+We replaced the individual or generic imports with requests.* and responses.* and generalized the path to data.*—these are the typical package names where data transfer objects (MobileLogin, LoginData, PurchaseResponse), enums (SdkEnvironment, Country), and core entities (User, Terminal) reside in most Android libraries.
+
+By using these broad, standard package names (and assuming the io.nearpay:terminalsdk-release artifact includes them), the Kotlin compiler should be able to resolve all those previously "unresolved references" and finish compiling your plugin code.
+
+Next Step: Update your NearPayPlugin.kt file with the corrected imports above and commit the change to trigger the next GitHub Actions build. If the build succeeds, we'll know the entire integration pipeline is finally working!
