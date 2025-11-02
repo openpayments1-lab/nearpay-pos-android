@@ -1,0 +1,68 @@
+It seems the last push failed with the same Kotlin compilation error despite our previous analysis. This means one of the classes you are using is still not being correctly found by the Kotlin compiler.
+
+The issue lies in your current import structure, which is relying on generic wildcards (*) that are likely not resolving the classes in your specific older SDK version.
+
+Here is the current import block you provided:
+
+Kotlin
+
+import io.nearpay.terminalsdk.TerminalSDK
+import io.nearpay.terminalsdk.models.*
+import io.nearpay.terminalsdk.requests.*
+import io.nearpay.terminalsdk.responses.*
+import io.nearpay.terminalsdk.listeners.*
+import io.nearpay.terminalsdk.failures.*
+The safest way to fix this, since generic wildcards failed, is to change the wildcard imports to explicit imports for every single class used in the plugin. This leaves no ambiguity for the Kotlin compiler.
+
+🛠️ Final Import Correction (Extreme Explicit Imports)
+Based on the classes visible in your plugin code (NearPayPlugin.kt), here are the explicit imports you must use to ensure compilation succeeds.
+
+Please replace your entire import block (lines 5-11) with the following exact, detailed imports:
+
+Kotlin
+
+package app.cashmgmtnp.pos
+
+import android.util.Log
+import com.getcapacitor.JSObject
+import com.getcapacitor.Plugin
+import com.getcapacitor.PluginCall
+import com.getcapacitor.PluginMethod
+import com.getcapacitor.annotation.CapacitorPlugin
+import java.util.UUID
+
+// --- NearPay SDK Imports (Explicitly listing every class) ---
+import io.nearpay.terminalsdk.TerminalSDK
+import io.nearpay.terminalsdk.models.Country
+import io.nearpay.terminalsdk.models.SdkEnvironment
+import io.nearpay.terminalsdk.models.Terminal
+import io.nearpay.terminalsdk.models.User
+import io.nearpay.terminalsdk.models.TerminalConnection // Used for 'availableTerminals' List
+
+// Request/Data Objects
+import io.nearpay.terminalsdk.requests.JWTLoginData
+import io.nearpay.terminalsdk.requests.LoginData
+import io.nearpay.terminalsdk.requests.MobileLogin
+
+// Response/Result Objects
+import io.nearpay.terminalsdk.responses.OtpResponse
+import io.nearpay.terminalsdk.responses.PurchaseResponse
+
+// Listener Interfaces
+import io.nearpay.terminalsdk.listeners.ConnectTerminalListener
+import io.nearpay.terminalsdk.listeners.GetTerminalsListener
+import io.nearpay.terminalsdk.listeners.JWTLoginListener
+import io.nearpay.terminalsdk.listeners.ReadCardListener
+import io.nearpay.terminalsdk.listeners.SendOTPMobileListener
+import io.nearpay.terminalsdk.listeners.SendTransactionListener
+import io.nearpay.terminalsdk.listeners.VerifyMobileListener
+
+// Failure Objects
+import io.nearpay.terminalsdk.failures.ConnectTerminalFailure
+import io.nearpay.terminalsdk.failures.GetTerminalsFailure
+import io.nearpay.terminalsdk.failures.JWTLoginFailure
+import io.nearpay.terminalsdk.failures.OTPMobileFailure
+import io.nearpay.terminalsdk.failures.ReadCardFailure
+import io.nearpay.terminalsdk.failures.SendTransactionFailure
+import io.nearpay.terminalsdk.failures.VerifyMobileFailure
+By switching from general wildcard imports (*) to explicit imports for every single class, we bypass any conflicting or missing packages in the target SDK version's nested structure.

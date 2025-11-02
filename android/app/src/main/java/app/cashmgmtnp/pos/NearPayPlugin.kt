@@ -7,11 +7,30 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import io.nearpay.terminalsdk.TerminalSDK
-import io.nearpay.terminalsdk.models.*
-import io.nearpay.terminalsdk.requests.*
-import io.nearpay.terminalsdk.responses.*
-import io.nearpay.terminalsdk.listeners.*
-import io.nearpay.terminalsdk.failures.*
+import io.nearpay.terminalsdk.models.SdkEnvironment
+import io.nearpay.terminalsdk.models.Country
+import io.nearpay.terminalsdk.models.User
+import io.nearpay.terminalsdk.models.Terminal
+import io.nearpay.terminalsdk.models.TerminalConnection
+import io.nearpay.terminalsdk.models.MobileLogin
+import io.nearpay.terminalsdk.models.LoginData
+import io.nearpay.terminalsdk.models.JWTLoginData
+import io.nearpay.terminalsdk.models.OtpResponse
+import io.nearpay.terminalsdk.listeners.SendOTPMobileListener
+import io.nearpay.terminalsdk.listeners.VerifyMobileListener
+import io.nearpay.terminalsdk.listeners.JWTLoginListener
+import io.nearpay.terminalsdk.listeners.GetTerminalsListener
+import io.nearpay.terminalsdk.listeners.ConnectTerminalListener
+import io.nearpay.terminalsdk.failures.OTPMobileFailure
+import io.nearpay.terminalsdk.failures.VerifyMobileFailure
+import io.nearpay.terminalsdk.failures.JWTLoginFailure
+import io.nearpay.terminalsdk.failures.GetTerminalsFailure
+import io.nearpay.terminalsdk.failures.ConnectTerminalFailure
+import io.nearpay.terminalsdk.failures.ReadCardFailure
+import io.nearpay.terminalsdk.failures.SendTransactionFailure
+import io.nearpay.terminalsdk.listeners.ReadCardListener
+import io.nearpay.terminalsdk.listeners.SendTransactionListener
+import io.nearpay.terminalsdk.responses.PurchaseResponse
 import java.util.UUID
 
 @CapacitorPlugin(name = "NearPay")
@@ -96,7 +115,6 @@ class NearPayPlugin : Plugin() {
                     val result = JSObject()
                     result.put("success", true)
                     result.put("terminalUUID", terminal.terminalUUID)
-                    result.put("terminalId", terminal.id)
                     result.put("message", "JWT login successful")
                     call.resolve(result)
                 }
@@ -176,9 +194,8 @@ class NearPayPlugin : Plugin() {
                     
                     val result = JSObject()
                     result.put("success", true)
-                    result.put("userId", user.id)
+                    result.put("userUUID", user.userUUID())
                     result.put("userName", user.name)
-                    result.put("userMobile", user.mobile)
                     call.resolve(result)
                 }
 
@@ -271,7 +288,7 @@ class NearPayPlugin : Plugin() {
                     
                     val result = JSObject()
                     result.put("success", true)
-                    result.put("terminalId", terminal.id)
+                    result.put("terminalUUID", terminal.terminalUUID)
                     result.put("message", "Terminal connected")
                     call.resolve(result)
                 }
@@ -309,7 +326,7 @@ class NearPayPlugin : Plugin() {
 
             currentTerminal?.purchase(
                 amount = amountInMinorUnits,
-                scheme = null,  // Accept all schemes
+                scheme = null,
                 transactionUUID = transactionUUID,
                 readCardListener = object : ReadCardListener {
                     override fun onReadCardSuccess() {
@@ -334,8 +351,7 @@ class NearPayPlugin : Plugin() {
                         
                         val response = JSObject()
                         response.put("success", true)
-                        response.put("status", purchaseResponse.status ?: "APPROVED")
-                        response.put("transactionId", transactionUUID)
+                        response.put("transactionUUID", transactionUUID)
                         response.put("amount", amount)
                         
                         call.resolve(response)
@@ -346,7 +362,6 @@ class NearPayPlugin : Plugin() {
                         
                         val response = JSObject()
                         response.put("success", false)
-                        response.put("status", "FAILED")
                         response.put("errorMessage", failure.message ?: "Transaction failed")
                         call.resolve(response)
                     }
