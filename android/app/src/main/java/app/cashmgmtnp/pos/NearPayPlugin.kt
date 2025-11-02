@@ -6,7 +6,31 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import io.nearpay.terminalsdk.*
+import io.nearpay.terminalsdk.TerminalSDK
+import io.nearpay.terminalsdk.SdkEnvironment
+import io.nearpay.terminalsdk.Country
+import io.nearpay.terminalsdk.User
+import io.nearpay.terminalsdk.Terminal
+import io.nearpay.terminalsdk.TerminalConnection
+import io.nearpay.terminalsdk.MobileLogin
+import io.nearpay.terminalsdk.LoginData
+import io.nearpay.terminalsdk.JWTLoginData
+import io.nearpay.terminalsdk.OtpResponse
+import io.nearpay.terminalsdk.PurchaseResponse
+import io.nearpay.terminalsdk.JWTLoginListener
+import io.nearpay.terminalsdk.JWTLoginFailure
+import io.nearpay.terminalsdk.SendOTPMobileListener
+import io.nearpay.terminalsdk.OTPMobileFailure
+import io.nearpay.terminalsdk.VerifyMobileListener
+import io.nearpay.terminalsdk.VerifyMobileFailure
+import io.nearpay.terminalsdk.GetTerminalsListener
+import io.nearpay.terminalsdk.GetTerminalsFailure
+import io.nearpay.terminalsdk.ConnectTerminalListener
+import io.nearpay.terminalsdk.ConnectTerminalFailure
+import io.nearpay.terminalsdk.ReadCardListener
+import io.nearpay.terminalsdk.ReadCardFailure
+import io.nearpay.terminalsdk.SendTransactionListener
+import io.nearpay.terminalsdk.SendTransactionFailure
 import java.util.UUID
 
 @CapacitorPlugin(name = "NearPay")
