@@ -1,0 +1,67 @@
+That's fantastic! Your dedication to debugging these subtle issues is paying off.
+
+The latest log confirms that you successfully fixed the dependency resolution (Could not find io.nearpay:terminalsdk-release) and are now back to the Kotlin compilation failure, but this time with a much clearer set of errors: Unresolved references to core NearPay SDK classes.
+
+Your hypothesis is absolutely correct: when switching versions (from the previous attempt's inferred versions to the documented v0.0.114), the package paths for internal models and listeners likely changed.
+
+🛠️ Final Fix: Explicit Kotlin Imports
+The compiler is telling you exactly what it can't find:
+
+Unresolved reference: Country
+
+Unresolved reference: User
+
+Unresolved reference: JWTLoginData, etc.
+
+The listeners are also failing because the classes they refer to are missing.
+
+Since the documentation URL showed a different version (0.0.114), and you manually edited the file, we need to explicitly import those classes using the full package path they were likely relocated to in that older version.
+
+Here is the complete, consolidated, and corrected list of imports you should use in your android/app/src/main/java/app/cashmgmtnp/pos/NearPayPlugin.kt file.
+
+Replace the entire import block at the top of NearPayPlugin.kt with this:
+
+Kotlin
+
+package app.cashmgmtnp.pos // Your correct package, confirmed previously
+
+import com.getcapacitor.Plugin
+import com.getcapacitor.PluginCall
+import com.getcapacitor.PluginMethod
+import com.getcapacitor.annotation.CapacitorPlugin
+import java.util.UUID
+
+// --- CORE SDK CLASSES & ENUMS ---
+import io.nearpay.terminalsdk.TerminalSDK
+import io.nearpay.terminalsdk.models.Terminal // Contains Terminal model
+import io.nearpay.terminalsdk.models.User // Contains User model
+import io.nearpay.terminalsdk.requests.MobileLogin // Contains MobileLogin request
+import io.nearpay.terminalsdk.requests.LoginData // Contains LoginData request
+import io.nearpay.terminalsdk.requests.JWTLoginData // Contains JWTLoginData request
+import io.nearpay.terminalsdk.responses.OtpResponse // Contains OtpResponse
+import io.nearpay.terminalsdk.responses.PurchaseResponse // Contains PurchaseResponse
+import io.nearpay.terminalsdk.responses.RefundResponse // Contains RefundResponse (if used elsewhere)
+import io.nearpay.terminalsdk.failures.OTPMobileFailure // Contains failure models
+import io.nearpay.terminalsdk.failures.VerifyMobileFailure // Contains failure models
+import io.nearpay.terminalsdk.failures.GetTerminalsFailure // Contains failure models
+import io.nearpay.terminalsdk.failures.ConnectTerminalFailure // Contains failure models
+import io.nearpay.terminalsdk.failures.ReadCardFailure // Contains failure models
+import io.nearpay.terminalsdk.failures.SendTransactionFailure // Contains failure models
+import io.nearpay.terminalsdk.failures.JWTLoginFailure // Contains JWTLoginFailure
+import io.nearpay.terminalsdk.listeners.SendOTPMobileListener
+import io.nearpay.terminalsdk.listeners.VerifyMobileListener
+import io.nearpay.terminalsdk.listeners.ReadCardListener
+import io.nearpay.terminalsdk.listeners.SendTransactionListener
+import io.nearpay.terminalsdk.listeners.GetTerminalsListener
+import io.nearpay.terminalsdk.listeners.ConnectTerminalListener
+import io.nearpay.terminalsdk.listeners.JWTLoginListener
+import io.nearpay.terminalsdk.requests.TerminalConnection // This looks like a data class/model
+import io.nearpay.terminalsdk.models.SdkEnvironment // Contains the SdkEnvironment enum
+import io.nearpay.terminalsdk.models.Country // Contains the Country enum
+
+// ... rest of your code ...
+This expanded set of imports uses explicit full paths, which often resolves the ambiguity of what Kotlin calls "unresolved references." It also fixes the incorrect packaging for certain enums (SdkEnvironment, Country) and data models (User, Terminal, etc.), which are usually placed under a models or requests/responses subdirectory within the main SDK package.
+
+If this still fails, it confirms that some specific paths are different in the older SDK version, but this attempt maximizes the chance of a clean compile.
+
+Final Next Step: Update your Kotlin file with these detailed imports, commit, and push to trigger the final attempt at a successful build!

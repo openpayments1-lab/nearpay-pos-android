@@ -1,0 +1,32 @@
+2025-11-02T00:04:02.8866285Z 52 actionable tasks: 52 executed
+2025-11-02T00:04:02.8866918Z FAILURE: Build failed with an exception.
+2025-11-02T00:04:02.8867788Z 
+2025-11-02T00:04:02.8868088Z * What went wrong:
+2025-11-02T00:04:02.8868703Z Execution failed for task ':app:compileDebugKotlin'.
+2025-11-02T00:04:02.8870230Z > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+2025-11-02T00:04:02.8871721Z    > Compilation error. See log for more details
+2025-11-02T00:04:02.8872126Z 
+2025-11-02T00:04:02.8872429Z * Try:
+2025-11-02T00:04:02.8872889Z > Run with --stacktrace option to get the stack trace.
+2025-11-02T00:04:02.8873588Z > Run with --info or --debug option to get more log output.
+2025-11-02T00:04:02.8874190Z > Run with --scan to get full insights.
+2025-11-02T00:04:02.8874713Z > Get more help at https://help.gradle.org.
+2025-11-02T00:04:02.8875017Z 
+2025-11-02T00:04:02.8875171Z BUILD FAILED in 4m 38s
+2025-11-02T00:04:03.4322524Z ##[error]Process completed with exit code 1.
+2025-11-02T00:04:03.4401016Z Post job cleanup.
+2025-11-02T00:04:03.6148296Z Post job cleanup.
+2025-11-02T00:04:03.7228126Z [command]/usr/bin/git version
+2025-11-02T00:04:03.7264253Z git version 2.51.2
+2025-11-02T00:04:03.7309947Z Temporarily overriding HOME='/home/runner/work/_temp/ee4a85e5-d103-44a2-b650-a93b2c4050d7' before making global git config changes
+2025-11-02T00:04:03.7311681Z Adding repository directory to the temporary git global config as a safe directory
+2025-11-02T00:04:03.7323936Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/nearpay-pos-android/nearpay-pos-android
+2025-11-02T00:04:03.7358398Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-11-02T00:04:03.7390957Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-11-02T00:04:03.7617274Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-11-02T00:04:03.7637430Z http.https://github.com/.extraheader
+2025-11-02T00:04:03.7650323Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-11-02T00:04:03.7681394Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-11-02T00:04:03.8001728Z Cleaning up orphan processes
+2025-11-02T00:04:03.8322839Z Terminate orphan process: pid (2403) (java)
+2025-11-02T00:04:03.8341094Z Terminate orphan process: pid (2736) (java)
